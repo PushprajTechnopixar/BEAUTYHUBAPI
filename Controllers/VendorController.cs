@@ -1514,5 +1514,167 @@ namespace BeautyHubAPI.Controllers
         }
         #endregion
 
+        #region GetVendorAppointmentList
+        /// <summary>
+        ///  Get appointment list for vendor {date format : yyyy-MM-dd}.
+        /// </summary>
+        [HttpGet("GetVendorOrderList")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [Authorize]
+        public async Task<IActionResult> GetVendorOrderList([FromQuery] OrderFilterationListDTO model)
+        {
+            try
+            {
+                string currentUserId = (HttpContext.User.Claims.First().Value);
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Token expired.";
+                    return Ok(_response);
+                }
+
+                List<BookedService>? bookedService;
+                double? finalPrice = 0;
+                var orderList = new List<AppointmentedListDTO>();
+
+                if (model.salonId > 0)
+                {
+                    bookedService = await _context.BookedService.Where(u => u.SalonId == model.salonId).ToListAsync();
+                    foreach (var item in bookedService)
+                    {
+                        finalPrice = finalPrice + item.FinalPrice;
+                    }
+                    if (bookedService == null)
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Messages = "Not found any record.";
+                        return Ok(_response);
+                    }
+                }
+                else if (!string.IsNullOrEmpty(model.vendorId))
+                {
+                    bookedService = await _context.BookedService.Where(u => u.VendorId == model.vendorId).ToListAsync();
+                    foreach (var item in bookedService)
+                    {
+                        finalPrice = finalPrice + item.FinalPrice;
+                    }
+                    if (bookedService == null)
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Messages = "Not found any record.";
+                        return Ok(_response);
+                    }
+                }
+                else
+                {
+                    bookedService = await _context.BookedService.ToListAsync();
+                }
+
+                bookedService = bookedService.DistinctBy(u => u.AppointmentId).OrderByDescending(u => u.CreateDate).ToList();
+
+                foreach (var item in bookedService)
+                {
+                    Appointment? appointmentDetail;
+                    // orderDetail = await _OrderDetailRepository.GetAsync(u => u.OrderDetailId == item.OrderDetailId);
+                    appointmentDetail = await _context.Appointment.Where(u => u.AppointmentId == item.AppointmentId).FirstOrDefaultAsync();
+
+                    var mappedData = _mapper.Map<AppointmentedListDTO>(appointmentDetail);
+                    _mapper.Map(item, mappedData);
+
+                    if (model.fromDate != null && model.toDate != null)
+                    {
+                        if (appointmentDetail.CreateDate.Date >= model.fromDate && appointmentDetail.CreateDate.Date <= model.toDate)
+                        {
+                            mappedData.appointmentDate = appointmentDetail.CreateDate.ToString(@"dd-MM-yyyy");
+                            orderList.Add(mappedData);
+                        }
+                    }
+                    else
+                    {
+                        mappedData.appointmentDate = appointmentDetail.CreateDate.ToString(@"dd-MM-yyyy");
+                        orderList.Add(mappedData);
+                    }
+                }
+
+                // if (!string.IsNullOrEmpty(model.paymentStatus))
+                // {
+                //     orderList = orderList.Where(x => (x.PaymentStatus?.IndexOf(model.paymentStatus, StringComparison.OrdinalIgnoreCase) >= 0)
+                //     ).ToList();
+                // }
+                // if (!string.IsNullOrEmpty(model.orderStatus))
+                // {
+                //     orderList = orderList.Where(x => (x.OrderStatus?.IndexOf(model.orderStatus, StringComparison.OrdinalIgnoreCase) >= 0)
+                //     ).ToList();
+                // }
+
+                // if (!string.IsNullOrEmpty(model.searchQuery))
+                // {
+                //     orderList = orderList.Where(x => (x.CustomerFirstName?.IndexOf(model.searchQuery, StringComparison.OrdinalIgnoreCase) >= 0)
+                //     ).ToList();
+                // }         
+
+                // Get's No of Rows Count   
+                int count = orderList.Count();
+
+                // Parameter is passed from Query string if it is null then it default Value will be pageNumber:1  
+                int CurrentPage = model.pageNumber;
+
+                // Parameter is passed from Query string if it is null then it default Value will be pageSize:20  
+                int PageSize = model.pageSize;
+
+                // Display TotalCount to Records to User  
+                int TotalCount = count;
+
+                // Calculating Totalpage by Dividing (No of Records / Pagesize)  
+                int TotalPages = (int)Math.Ceiling(count / (double)PageSize);
+
+                // Returns List of Customer after applying Paging   
+                var items = orderList.Skip((CurrentPage - 1) * PageSize).Take(PageSize).ToList();
+
+                // if CurrentPage is greater than 1 means it has previousPage  
+                var previousPage = CurrentPage > 1 ? "Yes" : "No";
+
+                // if TotalPages is greater than CurrentPage means it has nextPage  
+                var nextPage = CurrentPage < TotalPages ? "Yes" : "No";
+
+                // Returing List of Customers Collections  
+                FilterationResponseModel<AppointmentedListDTO> obj = new FilterationResponseModel<AppointmentedListDTO>();
+                obj.totalCount = TotalCount;
+                obj.pageSize = PageSize;
+                obj.currentPage = CurrentPage;
+                obj.totalPages = TotalPages;
+                obj.previousPage = previousPage;
+                obj.nextPage = nextPage;
+                obj.searchQuery = string.IsNullOrEmpty(model.searchQuery) ? "no parameter passed" : model.searchQuery;
+                obj.dataList = items.ToList();
+
+                if (obj == null)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Something went wrong.";
+                    return Ok(_response);
+                }
+
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = true;
+                _response.Data = orderList;
+                _response.Messages = "order list shown successfully.";
+                return Ok(_response);
+            }
+            catch (Exception ex)
+            {
+                _response.StatusCode = HttpStatusCode.InternalServerError;
+                _response.IsSuccess = false;
+                _response.Messages = ex.Message;
+                return Ok(_response);
+            }
+        }
+        #endregion
+
     }
 }

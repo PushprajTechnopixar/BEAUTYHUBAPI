@@ -1699,6 +1699,7 @@ namespace BeautyHubAPI.Controllers
                     bookedService.ListingPrice = ServiceDetail.ListingPrice * item.ServiceCountInCart;
                     bookedService.BasePrice = (double)ServiceDetail.BasePrice * item.ServiceCountInCart;
                     bookedService.Discount = ServiceDetail.Discount * item.ServiceCountInCart;
+                    bookedService.TotalDiscount = ServiceDetail.Discount * item.ServiceCountInCart;
                     bookedService.SalonId = ServiceDetail.SalonId;
                     bookedService.DurationInMinutes = ServiceDetail.DurationInMinutes;
                     var salonDetail = await _context.SalonDetail.FirstOrDefaultAsync(u => u.SalonId == ServiceDetail.SalonId);
@@ -1706,9 +1707,10 @@ namespace BeautyHubAPI.Controllers
                     var user = _userManager.FindByIdAsync(salonDetail.VendorId).GetAwaiter().GetResult();
                     bookedService.SalonName = bookedService.SalonName;
                     bookedService.VendorName = user.FirstName + " " + user.LastName;
-                    basePrice = (double)(basePrice + ServiceDetail.BasePrice);
-                    finalPrice = (double)(finalPrice + ServiceDetail.ListingPrice);
+                    basePrice = (double)(basePrice + bookedService.BasePrice);
+                    finalPrice = (double)(finalPrice + bookedService.ListingPrice);
                     totalServices = (int)(totalServices + item.ServiceCountInCart);
+                    bookedService.FinalPrice = bookedService.ListingPrice;
                     var slotDetail = await _context.TimeSlot.Where(u => u.SlotId == item.SlotId).FirstOrDefaultAsync();
                     bookedService.AppointmentDate = slotDetail.SlotDate;
                     bookedService.FromTime = slotDetail.FromTime;
