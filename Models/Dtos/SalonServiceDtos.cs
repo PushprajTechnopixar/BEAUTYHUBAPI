@@ -90,6 +90,7 @@
         public string serviceName { get; set; }
         public string? serviceDescription { get; set; }
         public List<ServiceImageDTO>? serviceImage { get; set; }
+        public string? serviceIconImage { get; set; }
         public double basePrice { get; set; }
         public double? discount { get; set; }
         public double listingPrice { get; set; }

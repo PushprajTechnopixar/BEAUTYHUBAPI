@@ -15,6 +15,7 @@ namespace BeautyHubAPI.Models
         public int ServiceId { get; set; }
         public int SalonId { get; set; }
         public string ServiceName { get; set; } = null!;
+        public string? ServiceIconImage { get; set; }
         public string? ServiceImage1 { get; set; }
         public string? ServiceImage2 { get; set; }
         public string? ServiceImage3 { get; set; }

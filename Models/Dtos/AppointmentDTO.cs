@@ -129,19 +129,23 @@ namespace BeautyHubAPI.Models.Dtos
         public string customerUserId { get; set; }
         public string appointmentTitle { get; set; }
         public string? appointmentDescription { get; set; }
-        public string? aerviceImage { get; set; }
+        public string? serviceImage { get; set; }
         public string? appointmentStatus { get; set; }
         public string? paymentMethod { get; set; }
         public string? paymentStatus { get; set; }
-        public double? totalSellingPrice { get; set; }
+        public double? finalPrice { get; set; }
         // public double? ShippingCharges { get; set; }
         public string appointmentDate { get; set; }
-        public string appointmentTime { get; set; }
+        public string appointmentFromTime { get; set; }
+        public string appointmentToTime { get; set; }
         public int totalServices { get; set; }
         public bool favoritesStatus { get; set; }
-        public string totalServicesInCollection { get; set; }
         public string? paymentReceipt { get; set; }
         public string CreateDate { get; set; }
+        public string salonLatitude { get; set; }
+        public string salonLongitude { get; set; }
+        public string salonAddress { get; set; }
+        public string salonName { get; set; }
     }
 
 }

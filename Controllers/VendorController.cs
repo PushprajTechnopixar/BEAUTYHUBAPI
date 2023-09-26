@@ -1517,16 +1517,15 @@ namespace BeautyHubAPI.Controllers
         }
         #endregion
 
-        #region SetPaymentStatus
+        #region GetVendorAppointmentList
         /// <summary>
-        /// Set payment status {OnHold, Paid, Unpaid, Refunded}.
+        ///  Get appointment list for vendor {date format : yyyy-MM-dd}.
         /// </summary>
-        [HttpPost]
-        [Route("SetPaymentStatus")]
+        [HttpGet("GetVendorOrderList")]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [Authorize(Roles = "Vendor")]
-        public async Task<IActionResult> SetPaymentStatus(SetPaymentStatusDTO model)
+        [Authorize]
+        public async Task<IActionResult> GetVendorOrderList([FromQuery] OrderFilterationListDTO model)
         {
             try
             {
@@ -1539,125 +1538,142 @@ namespace BeautyHubAPI.Controllers
                     return Ok(_response);
                 }
 
-                if (model.paymentStatus != PaymentStatus.OnHold.ToString()
-                && model.paymentStatus != PaymentStatus.Paid.ToString()
-                && model.paymentStatus != PaymentStatus.Unpaid.ToString()
-                && model.paymentStatus != PaymentStatus.Refunded.ToString())
-                {
-                    _response.StatusCode = HttpStatusCode.OK;
-                    _response.IsSuccess = false;
-                    _response.Messages = "Please select a valid status.";
-                    return Ok(_response);
-                }
+                List<BookedService>? bookedService;
+                double? finalPrice = 0;
+                var orderList = new List<AppointmentedListDTO>();
 
-                var appointmentDetail = await _context.Appointment.Where(u => u.AppointmentId == model.appointmentId).FirstOrDefaultAsync();
-                if (appointmentDetail == null)
+                if (model.salonId > 0)
                 {
-                    _response.StatusCode = HttpStatusCode.OK;
-                    _response.IsSuccess = false;
-                    _response.Data = new Object { };
-                    _response.Messages = "Not found any order.";
-                    return Ok(_response);
-                }
-
-                if (appointmentDetail.AppointmentStatus == AppointmentStatus.Confirmed.ToString())
-                {
-                    _response.StatusCode = HttpStatusCode.OK;
-                    _response.IsSuccess = false;
-                    _response.Data = new Object { };
-                    _response.Messages = "Can't change Appointment status after confirmed.";
-                    return Ok(_response);
-                }
-
-                if (appointmentDetail.PaymentStatus == PaymentStatus.Paid.ToString())
-                {
-                    if (model.paymentStatus == PaymentStatus.OnHold.ToString()
-                    || model.paymentStatus == PaymentStatus.Unpaid.ToString())
+                    bookedService = await _context.BookedService.Where(u => u.SalonId == model.salonId).ToListAsync();
+                    foreach (var item in bookedService)
+                    {
+                        finalPrice = finalPrice + item.FinalPrice;
+                    }
+                    if (bookedService == null)
                     {
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = false;
-                        _response.Data = new Object { };
-                        _response.Messages = "Please enter valid payment status.";
+                        _response.Messages = "Not found any record.";
                         return Ok(_response);
                     }
                 }
-
-                if (appointmentDetail.PaymentStatus == PaymentStatus.Refunded.ToString())
+                else if (!string.IsNullOrEmpty(model.vendorId))
                 {
-                    if (model.paymentStatus == PaymentStatus.OnHold.ToString()
-                    || model.paymentStatus == PaymentStatus.Paid.ToString()
-                    || model.paymentStatus == PaymentStatus.Unpaid.ToString())
+                    bookedService = await _context.BookedService.Where(u => u.VendorId == model.vendorId).ToListAsync();
+                    foreach (var item in bookedService)
+                    {
+                        finalPrice = finalPrice + item.FinalPrice;
+                    }
+                    if (bookedService == null)
                     {
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = false;
-                        _response.Data = new Object { };
-                        _response.Messages = "Please enter valid payment status.";
+                        _response.Messages = "Not found any record.";
                         return Ok(_response);
                     }
-                }
-
-                appointmentDetail.PaymentStatus = model.paymentStatus;
-                _context.Appointment.Update(appointmentDetail);
-                await _context.SaveChangesAsync();
-                // send Notification
-
-                string motificationMessage = "";
-
-                if (appointmentDetail.PaymentStatus == PaymentStatus.Unpaid.ToString())
-                {
-                    motificationMessage = "Payment remain unpaid.";
-                }
-                else if (appointmentDetail.PaymentStatus == PaymentStatus.Paid.ToString())
-                {
-                    motificationMessage = "Paid successfully.";
-                }
-                else if (appointmentDetail.PaymentStatus == PaymentStatus.OnHold.ToString())
-                {
-                    motificationMessage = "Your payment is on hold.";
                 }
                 else
                 {
-                    motificationMessage = "Your payment has been refunded.";
+                    bookedService = await _context.BookedService.ToListAsync();
                 }
 
-                var user = await _context.UserDetail.Where(a => (a.UserId == appointmentDetail.CustomerUserId) && (a.IsDeleted != true)).FirstOrDefaultAsync();
-                var userprofileDetail = _userManager.FindByIdAsync(user.UserId).GetAwaiter().GetResult();
-                var token = user.Fcmtoken;
-                var title = "Payment Status";
-                var description = String.Format("Hi {0},\n{1}", userprofileDetail.FirstName, motificationMessage);
-                if (!string.IsNullOrEmpty(token))
-                {
-                    // if (user.IsNotificationEnabled == true)
-                    // {
-                    var resp = await _mobileMessagingClient.SendNotificationAsync(token, title, description);
-                    // if (!string.IsNullOrEmpty(resp))
-                    // {
-                    // update notification sent
-                    var notificationSent = new NotificationSent();
-                    notificationSent.Title = title;
-                    notificationSent.Description = description;
-                    notificationSent.NotificationType = NotificationType.Order.ToString();
-                    notificationSent.UserId = user.UserId;
+                bookedService = bookedService.DistinctBy(u => u.AppointmentId).OrderByDescending(u => u.CreateDate).ToList();
 
-                    await _context.AddAsync(notificationSent);
-                    await _context.SaveChangesAsync();
-                    // }
-                    // }
+                foreach (var item in bookedService)
+                {
+                    Appointment? appointmentDetail;
+                    // orderDetail = await _OrderDetailRepository.GetAsync(u => u.OrderDetailId == item.OrderDetailId);
+                    appointmentDetail = await _context.Appointment.Where(u => u.AppointmentId == item.AppointmentId).FirstOrDefaultAsync();
+
+                    var mappedData = _mapper.Map<AppointmentedListDTO>(appointmentDetail);
+                    _mapper.Map(item, mappedData);
+
+                    if (model.fromDate != null && model.toDate != null)
+                    {
+                        if (appointmentDetail.CreateDate.Date >= model.fromDate && appointmentDetail.CreateDate.Date <= model.toDate)
+                        {
+                            mappedData.appointmentDate = appointmentDetail.CreateDate.ToString(@"dd-MM-yyyy");
+                            orderList.Add(mappedData);
+                        }
+                    }
+                    else
+                    {
+                        mappedData.appointmentDate = appointmentDetail.CreateDate.ToString(@"dd-MM-yyyy");
+                        orderList.Add(mappedData);
+                    }
+                }
+
+                // if (!string.IsNullOrEmpty(model.paymentStatus))
+                // {
+                //     orderList = orderList.Where(x => (x.PaymentStatus?.IndexOf(model.paymentStatus, StringComparison.OrdinalIgnoreCase) >= 0)
+                //     ).ToList();
+                // }
+                // if (!string.IsNullOrEmpty(model.orderStatus))
+                // {
+                //     orderList = orderList.Where(x => (x.OrderStatus?.IndexOf(model.orderStatus, StringComparison.OrdinalIgnoreCase) >= 0)
+                //     ).ToList();
+                // }
+
+                // if (!string.IsNullOrEmpty(model.searchQuery))
+                // {
+                //     orderList = orderList.Where(x => (x.CustomerFirstName?.IndexOf(model.searchQuery, StringComparison.OrdinalIgnoreCase) >= 0)
+                //     ).ToList();
+                // }         
+
+                // Get's No of Rows Count   
+                int count = orderList.Count();
+
+                // Parameter is passed from Query string if it is null then it default Value will be pageNumber:1  
+                int CurrentPage = model.pageNumber;
+
+                // Parameter is passed from Query string if it is null then it default Value will be pageSize:20  
+                int PageSize = model.pageSize;
+
+                // Display TotalCount to Records to User  
+                int TotalCount = count;
+
+                // Calculating Totalpage by Dividing (No of Records / Pagesize)  
+                int TotalPages = (int)Math.Ceiling(count / (double)PageSize);
+
+                // Returns List of Customer after applying Paging   
+                var items = orderList.Skip((CurrentPage - 1) * PageSize).Take(PageSize).ToList();
+
+                // if CurrentPage is greater than 1 means it has previousPage  
+                var previousPage = CurrentPage > 1 ? "Yes" : "No";
+
+                // if TotalPages is greater than CurrentPage means it has nextPage  
+                var nextPage = CurrentPage < TotalPages ? "Yes" : "No";
+
+                // Returing List of Customers Collections  
+                FilterationResponseModel<AppointmentedListDTO> obj = new FilterationResponseModel<AppointmentedListDTO>();
+                obj.totalCount = TotalCount;
+                obj.pageSize = PageSize;
+                obj.currentPage = CurrentPage;
+                obj.totalPages = TotalPages;
+                obj.previousPage = previousPage;
+                obj.nextPage = nextPage;
+                obj.searchQuery = string.IsNullOrEmpty(model.searchQuery) ? "no parameter passed" : model.searchQuery;
+                obj.dataList = items.ToList();
+
+                if (obj == null)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Something went wrong.";
+                    return Ok(_response);
                 }
 
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
-                // _response.Data = response;
-                _response.Messages = "Payment status" + ResponseMessages.msgUpdationSuccess;
+                _response.Data = orderList;
+                _response.Messages = "order list shown successfully.";
                 return Ok(_response);
-
             }
             catch (Exception ex)
             {
                 _response.StatusCode = HttpStatusCode.InternalServerError;
                 _response.IsSuccess = false;
-                _response.Data = new { };
-                _response.Messages = ResponseMessages.msgSomethingWentWrong + ex.Message;
+                _response.Messages = ex.Message;
                 return Ok(_response);
             }
         }

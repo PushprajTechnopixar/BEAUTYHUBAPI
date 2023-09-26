@@ -19,7 +19,7 @@ dotnet ef dbcontext scaffold "Server=BeautyHubAPI.ctqf1e2kdq7l.us-east-2.rds.ama
 
 dotnet ef dbcontext scaffold "Server=BeautyHubAPItest.ctqf1e2kdq7l.us-east-2.rds.amazonaws.com,1433;Database=BeautyHubAPItestDb;User Id=admin;Password=vshZj1ltHUCF7bWUq1cv;MultipleActiveResultSets=true" Microsoft.EntityFrameworkCore.SqlServer --output-dir .\Models1 --namespace BeautyHubAPI.Models1 --context-namespace BeautyHubAPI.Models1 --context-dir .\Models1 --context ApplicationDbContext --force --no-build --no-pluralize --no-onconfiguring
 
-dotnet ef dbcontext scaffold "Server=DESKTOP-G14R8VA;Database=BeautyHubAPI;User Id=sa;Password=;Integrated Security=true;TrustServerCertificate=True;MultipleActiveResultSets=true" Microsoft.EntityFrameworkCore.SqlServer --output-dir .\Models1 --namespace BeautyHubAPI.Models1 --context-namespace BeautyHubAPI.Models1 --context-dir .\Models1 --context ApplicationDbContext --force --no-build --no-pluralize --no-onconfiguring
+dotnet ef dbcontext scaffold "Server=DESKTOP-G14R8VA;Database=BeautyHub;User Id=sa;Password=;Integrated Security=true;TrustServerCertificate=True;MultipleActiveResultSets=true" Microsoft.EntityFrameworkCore.SqlServer --output-dir .\Models1 --namespace BeautyHubAPI.Models1 --context-namespace BeautyHubAPI.Models1 --context-dir .\Models1 --context ApplicationDbContext --force --no-build --no-pluralize --no-onconfiguring
 
 
 ```
