@@ -86,6 +86,7 @@ namespace BeautyHubAPI.Data
                 entity.Property(e => e.ToTime).HasMaxLength(50);
 
                 entity.Property(e => e.VendorId).HasMaxLength(450);
+                entity.Property(e => e.BookingStatus).HasMaxLength(100);
 
                 entity.HasOne(d => d.Appointment)
                     .WithMany(p => p.BookedService)

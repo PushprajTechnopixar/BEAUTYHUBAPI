@@ -483,7 +483,7 @@ namespace BeautyHubAPI.Controllers
                             subCategoryId = t1.SubcategoryId,
                             subCategoryName = _context.SubCategory.Where(u => u.SubCategoryId == (t1.SubcategoryId != null ? t1.SubcategoryId : 0)).Select(u => u.CategoryName).FirstOrDefault(),
                             serviceDescription = t1.ServiceDescription,
-                            serviceImage = t1.ServiceImage1,
+                            serviceImage = t1.ServiceIconImage,
                             listingPrice = t1.ListingPrice,
                             basePrice = (double)t1.BasePrice,
                             favoritesStatus = (_context.FavouriteService.Where(u => u.ServiceId == t1.ServiceId && u.CustomerUserId == currentUserId)).FirstOrDefault() != null ? true : false,
@@ -556,7 +556,7 @@ namespace BeautyHubAPI.Controllers
                             subCategoryId = t1.SubcategoryId,
                             subCategoryName = _context.SubCategory.Where(u => u.SubCategoryId == (t1.SubcategoryId != null ? t1.SubcategoryId : 0)).Select(u => u.CategoryName).FirstOrDefault(),
                             serviceDescription = t1.ServiceDescription,
-                            serviceImage = t1.ServiceImage1,
+                            serviceImage = t1.ServiceIconImage,
                             listingPrice = t1.ListingPrice,
                             basePrice = (double)t1.BasePrice,
                             //  favoritesStatus = (_context.FavouriteProduct.Where(u => u.ProductId == t1.ProductId && u.CustomerUserId == currentUserId)).FirstOrDefault() != null ? true : false,
@@ -742,6 +742,14 @@ namespace BeautyHubAPI.Controllers
                 _response.Messages = "User does not exists.";
                 return Ok(_response);
             }
+
+            // var serviceDetail1 = await _context.SalonService.ToListAsync();
+            // foreach (var item in serviceDetail1)
+            // {
+            //     item.ServiceIconImage = item.ServiceImage1;
+            //     _context.Update(item);
+            //     _context.SaveChanges();
+            // }
 
             var serviceDetail = await _context.SalonService.FirstOrDefaultAsync(u => u.ServiceId == serviceId);
             if (serviceDetail == null)

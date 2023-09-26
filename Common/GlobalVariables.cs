@@ -117,9 +117,9 @@
         public enum AppointmentStatus
         {
             Pending = 0,
-            Confirmed = 1,
+            Scheduled = 1,
             Cancelled,
-            Returned
+            Completed
         }
 
         public enum SubscriptionStatus
@@ -136,7 +136,7 @@
         }
         public enum NotificationType
         {
-            Order = 0,
+            Appointment = 0,
             Broadcast,
             Subscription
         }

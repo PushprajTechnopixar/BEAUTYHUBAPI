@@ -561,5 +561,90 @@ namespace BeautyHubAPI.Controllers
         }
         #endregion
 
+        #region UploadServiceIconImage
+        /// <summary>
+        ///  Upload service icon image
+        /// </summary>
+        [HttpPost("UploadServiceIconImage")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [Authorize]
+        public async Task<IActionResult> UploadServiceIconImage([FromForm] UploadServiceIconImageDTO model)
+        {
+            try
+            {
+                string currentUserId = (HttpContext.User.Claims.First().Value);
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Token expired.";
+                    return Ok(_response);
+                }
+
+                if (model.salonServiceIconImage == null)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Please select image.";
+                    return Ok(_response);
+                }
+
+                var serviceDetail = await _context.SalonService.Where(u => (u.ServiceId == model.serviceId)).FirstOrDefaultAsync();
+                if (serviceDetail == null)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Record not found.";
+                    return Ok(_response);
+                }
+
+                // Delete previous file
+                if (!string.IsNullOrEmpty(serviceDetail.ServiceIconImage))
+                {
+                    var chk = await _uploadRepository.DeleteFilesFromServer("FileToSave/" + serviceDetail.ServiceImage1);
+                }
+
+                // Delete document path
+                serviceDetail.ServiceIconImage = string.Empty;
+
+                _context.Update(serviceDetail);
+                await _context.SaveChangesAsync();
+
+                var documentFile = ContentDispositionHeaderValue.Parse(model.salonServiceIconImage.ContentDisposition).FileName.Trim('"');
+                documentFile = CommonMethod.EnsureCorrectFilename(documentFile);
+                documentFile = CommonMethod.RenameFileName(documentFile);
+
+                var documentPath = serviceImageContainer + documentFile;
+                bool uploadStatus = await _uploadRepository.UploadFilesToServer(
+                        model.salonServiceIconImage,
+                        serviceImageContainer,
+                        documentFile
+                    );
+
+                serviceDetail.ServiceIconImage = documentPath;
+
+                _context.Update(serviceDetail);
+                await _context.SaveChangesAsync();
+
+                var getService = await _context.SalonService.FirstOrDefaultAsync(u => u.ServiceId == serviceDetail.ServiceId);
+                var response = _mapper.Map<serviceDetailDTO>(serviceDetail);
+
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = true;
+                _response.Data = response;
+                _response.Messages = "Service image uploaded successfully.";
+                return Ok(_response);
+            }
+            catch (Exception ex)
+            {
+                _response.StatusCode = HttpStatusCode.InternalServerError;
+                _response.IsSuccess = false;
+                _response.Messages = ex.Message;
+                return Ok(_response);
+            }
+        }
+        #endregion
+
     }
 }

@@ -21,7 +21,7 @@ namespace BeautyHubAPI.Models
     {
         public int? mainCategoryId { get; set; }
         public int? subCategoryId { get; set; }
-      //  public int? SubSubProductCategoryId { get; set; }
+        //  public int? SubSubProductCategoryId { get; set; }
         public IFormFile categoryImage { get; set; }
     }
     public partial class UploadBrandImageDTO
@@ -59,6 +59,12 @@ namespace BeautyHubAPI.Models
         public int serviceId { get; set; }
         // public string? Status { get; set; }
         public List<IFormFile>? salonServiceImage { get; set; }
+    }
+    public partial class UploadServiceIconImageDTO
+    {
+        public int serviceId { get; set; }
+        // public string? Status { get; set; }
+        public IFormFile? salonServiceIconImage { get; set; }
     }
     public partial class UploadCollectionImageDTO
     {

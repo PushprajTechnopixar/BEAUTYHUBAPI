@@ -70,19 +70,15 @@
         public string? morningOrEveningOrder { get; set; }
     }
 
-    public class CustomerOrderFilterationListDTO
+    public class CustomerAppointmentFilterationListDTO
     {
         public int pageNumber { get; set; }
         public int pageSize { get; set; }
-        public string? deliveryType { get; set; }
         public string? paymentStatus { get; set; }
         public DateTime? fromDate { get; set; }
         public DateTime? toDate { get; set; }
-        public string? AppointmentStatus { get; set; }
+        public string? appointmentStatus { get; set; }
         public string? searchQuery { get; set; }
-        public int? isDairyProduct { get; set; }
-        public int? isSubscriptionProduct { get; set; }
-
     }
 
     public class DistributorEarning
