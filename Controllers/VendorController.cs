@@ -38,12 +38,14 @@ namespace BeautyHubAPI.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IMembershipRecordRepository _membershipRecordRepository;
         private readonly IWebHostEnvironment _hostingEnvironment;
+        private readonly IMobileMessagingClient _mobileMessagingClient;
 
         public VendorController(IMapper mapper,
         IUploadRepository uploadRepository,
         ApplicationDbContext context,
         UserManager<ApplicationUser> userManager,
         IMembershipRecordRepository membershipRecordRepository,
+        IMobileMessagingClient mobileMessagingClient,
 
         IWebHostEnvironment hostingEnvironment
         )
@@ -54,6 +56,7 @@ namespace BeautyHubAPI.Controllers
             _context = context;
             _userManager = userManager;
             _membershipRecordRepository = membershipRecordRepository;
+            _mobileMessagingClient = mobileMessagingClient;
             httpClient = new HttpClient();
 
         }
@@ -1505,6 +1508,152 @@ namespace BeautyHubAPI.Controllers
             catch (System.Exception ex)
             {
 
+                _response.StatusCode = HttpStatusCode.InternalServerError;
+                _response.IsSuccess = false;
+                _response.Data = new { };
+                _response.Messages = ResponseMessages.msgSomethingWentWrong + ex.Message;
+                return Ok(_response);
+            }
+        }
+        #endregion
+
+        #region SetPaymentStatus
+        /// <summary>
+        /// Set payment status {OnHold, Paid, Unpaid, Refunded}.
+        /// </summary>
+        [HttpPost]
+        [Route("SetPaymentStatus")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [Authorize(Roles = "Vendor")]
+        public async Task<IActionResult> SetPaymentStatus(SetPaymentStatusDTO model)
+        {
+            try
+            {
+                string currentUserId = (HttpContext.User.Claims.First().Value);
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Token expired.";
+                    return Ok(_response);
+                }
+
+                if (model.paymentStatus != PaymentStatus.OnHold.ToString()
+                && model.paymentStatus != PaymentStatus.Paid.ToString()
+                && model.paymentStatus != PaymentStatus.Unpaid.ToString()
+                && model.paymentStatus != PaymentStatus.Refunded.ToString())
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Please select a valid status.";
+                    return Ok(_response);
+                }
+
+                var appointmentDetail = await _context.Appointment.Where(u => u.AppointmentId == model.appointmentId).FirstOrDefaultAsync();
+                if (appointmentDetail == null)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Data = new Object { };
+                    _response.Messages = "Not found any order.";
+                    return Ok(_response);
+                }
+
+                if (appointmentDetail.AppointmentStatus == AppointmentStatus.Confirmed.ToString())
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Data = new Object { };
+                    _response.Messages = "Can't change Appointment status after confirmed.";
+                    return Ok(_response);
+                }
+
+                if (appointmentDetail.PaymentStatus == PaymentStatus.Paid.ToString())
+                {
+                    if (model.paymentStatus == PaymentStatus.OnHold.ToString()
+                    || model.paymentStatus == PaymentStatus.Unpaid.ToString())
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Data = new Object { };
+                        _response.Messages = "Please enter valid payment status.";
+                        return Ok(_response);
+                    }
+                }
+
+                if (appointmentDetail.PaymentStatus == PaymentStatus.Refunded.ToString())
+                {
+                    if (model.paymentStatus == PaymentStatus.OnHold.ToString()
+                    || model.paymentStatus == PaymentStatus.Paid.ToString()
+                    || model.paymentStatus == PaymentStatus.Unpaid.ToString())
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Data = new Object { };
+                        _response.Messages = "Please enter valid payment status.";
+                        return Ok(_response);
+                    }
+                }
+
+                appointmentDetail.PaymentStatus = model.paymentStatus;
+                _context.Appointment.Update(appointmentDetail);
+                await _context.SaveChangesAsync();
+                // send Notification
+
+                string motificationMessage = "";
+
+                if (appointmentDetail.PaymentStatus == PaymentStatus.Unpaid.ToString())
+                {
+                    motificationMessage = "Payment remain unpaid.";
+                }
+                else if (appointmentDetail.PaymentStatus == PaymentStatus.Paid.ToString())
+                {
+                    motificationMessage = "Paid successfully.";
+                }
+                else if (appointmentDetail.PaymentStatus == PaymentStatus.OnHold.ToString())
+                {
+                    motificationMessage = "Your payment is on hold.";
+                }
+                else
+                {
+                    motificationMessage = "Your payment has been refunded.";
+                }
+
+                var user = await _context.UserDetail.Where(a => (a.UserId == appointmentDetail.CustomerUserId) && (a.IsDeleted != true)).FirstOrDefaultAsync();
+                var userprofileDetail = _userManager.FindByIdAsync(user.UserId).GetAwaiter().GetResult();
+                var token = user.Fcmtoken;
+                var title = "Payment Status";
+                var description = String.Format("Hi {0},\n{1}", userprofileDetail.FirstName, motificationMessage);
+                if (!string.IsNullOrEmpty(token))
+                {
+                    // if (user.IsNotificationEnabled == true)
+                    // {
+                    var resp = await _mobileMessagingClient.SendNotificationAsync(token, title, description);
+                    // if (!string.IsNullOrEmpty(resp))
+                    // {
+                    // update notification sent
+                    var notificationSent = new NotificationSent();
+                    notificationSent.Title = title;
+                    notificationSent.Description = description;
+                    notificationSent.NotificationType = NotificationType.Order.ToString();
+                    notificationSent.UserId = user.UserId;
+
+                    await _context.AddAsync(notificationSent);
+                    await _context.SaveChangesAsync();
+                    // }
+                    // }
+                }
+
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = true;
+                // _response.Data = response;
+                _response.Messages = "Payment status" + ResponseMessages.msgUpdationSuccess;
+                return Ok(_response);
+
+            }
+            catch (Exception ex)
+            {
                 _response.StatusCode = HttpStatusCode.InternalServerError;
                 _response.IsSuccess = false;
                 _response.Data = new { };

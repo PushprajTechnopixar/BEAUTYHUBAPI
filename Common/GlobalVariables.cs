@@ -116,10 +116,11 @@
         }
         public enum AppointmentStatus
         {
-            Pending = 0,
-            Confirmed = 1,
+           // Pending = 0,
+            Confirmed = 0,
+            Scheduled = 1,
             Cancelled,
-            Returned
+            
         }
 
         public enum SubscriptionStatus

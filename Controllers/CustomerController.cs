@@ -1821,5 +1821,144 @@ namespace BeautyHubAPI.Controllers
         }
         #endregion
 
+        #region SetAppointmentStatus
+        /// <summary>
+        /// Set Appointment Status
+        /// </summary>
+        [HttpPost]
+        [Route("SetAppointmentStatus")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [Authorize(Roles = "Customer")]
+        public async Task<IActionResult> SetAppointmentStatus(SetAppointmentStatusDTO model)
+        {
+            try
+            {
+                string currentUserId = (HttpContext.User.Claims.First().Value);
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Token expired.";
+                    return Ok(_response);
+                }
+
+                if (model.appointmentStatus != AppointmentStatus.Scheduled.ToString()
+                && model.appointmentStatus != AppointmentStatus.Confirmed.ToString()
+                && model.appointmentStatus != AppointmentStatus.Cancelled.ToString())
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Please select a valid status.";
+                    return Ok(_response);
+                }
+
+                var appointmentDetail = await _context.Appointment.Where(u => u.AppointmentId == model.appointmentId).FirstOrDefaultAsync();
+                if (appointmentDetail == null)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Data = new Object { };
+                    _response.Messages = "Not found any Appointment.";
+                    return Ok(_response);
+                }
+
+                if (appointmentDetail.PaymentStatus == PaymentStatus.Refunded.ToString())
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Data = new Object { };
+                    _response.Messages = "Can't change paymentstatus status after refunded.";
+                    return Ok(_response);
+                }
+
+                if (appointmentDetail.AppointmentStatus == AppointmentStatus.Confirmed.ToString())
+                {
+                    if (model.appointmentStatus == AppointmentStatus.Cancelled.ToString()
+                    || model.appointmentStatus == AppointmentStatus.Scheduled.ToString())
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Data = new Object { };
+                        _response.Messages = "Please enter valid appointment status.";
+                        return Ok(_response);
+                    }
+                }
+
+                if (appointmentDetail.AppointmentStatus == AppointmentStatus.Scheduled.ToString())
+                {
+                    if (model.appointmentStatus == AppointmentStatus.Confirmed.ToString()
+                    || model.appointmentStatus == AppointmentStatus.Cancelled.ToString())
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Data = new Object { };
+                        _response.Messages = "Please enter valid Appointment status.";
+                        return Ok(_response);
+                    }
+                }
+
+                appointmentDetail.AppointmentStatus = model.appointmentStatus;
+                _context.Appointment.Update(appointmentDetail);
+                await _context.SaveChangesAsync();
+                // send Notification
+
+                string motificationMessage = "";
+
+                if (appointmentDetail.AppointmentStatus == AppointmentStatus.Scheduled.ToString())
+                {
+                    motificationMessage = "Appointment Scheduled.";
+                }
+                else if (appointmentDetail.AppointmentStatus == AppointmentStatus.Confirmed.ToString())
+                {
+                    motificationMessage = "Appointment confirmed.";
+                }
+                else if (appointmentDetail.AppointmentStatus == AppointmentStatus.Cancelled.ToString())
+                {
+                    motificationMessage = "Your Appointment is cancelled";
+                }
+
+                var user = await _context.UserDetail.Where(a => (a.UserId == appointmentDetail.CustomerUserId) && (a.IsDeleted != true)).FirstOrDefaultAsync();
+                var userprofileDetail = _userManager.FindByIdAsync(user.UserId).GetAwaiter().GetResult();
+                var token = user.Fcmtoken;
+                var title = "Payment Status";
+                var description = String.Format("Hi {0},\n{1}", userprofileDetail.FirstName, motificationMessage);
+                if (!string.IsNullOrEmpty(token))
+                {
+                    // if (user.IsNotificationEnabled == true)
+                    // {
+                    var resp = await _mobileMessagingClient.SendNotificationAsync(token, title, description);
+                    // if (!string.IsNullOrEmpty(resp))
+                    // {
+                    // update notification sent
+                    var notificationSent = new NotificationSent();
+                    notificationSent.Title = title;
+                    notificationSent.Description = description;
+                    notificationSent.NotificationType = NotificationType.Order.ToString();
+                    notificationSent.UserId = user.UserId;
+
+                    await _context.AddAsync(notificationSent);
+                    await _context.SaveChangesAsync();
+                    // }
+                    // }
+                }
+
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = true;
+                // _response.Data = response;
+                _response.Messages = "Appointment status" + ResponseMessages.msgUpdationSuccess;
+                return Ok(_response);
+
+            }
+            catch (Exception ex)
+            {
+                _response.StatusCode = HttpStatusCode.InternalServerError;
+                _response.IsSuccess = false;
+                _response.Data = new { };
+                _response.Messages = ResponseMessages.msgSomethingWentWrong + ex.Message;
+                return Ok(_response);
+            }
+        }
+        #endregion
     }
 }
