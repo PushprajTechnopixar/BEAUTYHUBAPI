@@ -50,9 +50,10 @@
         public string? vendorId { get; set; }
         public int? salonId { get; set; }
         public string? paymentStatus { get; set; }
-        public DateTime? fromDate { get; set; }
-        public DateTime? toDate { get; set; }
-        public string? AppointmentStatus { get; set; }
+        public string? fromDate { get; set; }
+        public string? toDate { get; set; }
+        public int? sortDateBy { get; set; }
+        public string? appointmentStatus { get; set; }
         public string? searchQuery { get; set; }
     }
     public class SubscriptionFilterationListDTO
@@ -73,8 +74,9 @@
         public int pageNumber { get; set; }
         public int pageSize { get; set; }
         public string? paymentStatus { get; set; }
-        public DateTime? fromDate { get; set; }
-        public DateTime? toDate { get; set; }
+        public string? fromDate { get; set; }
+        public string? toDate { get; set; }
+        public int? sortDateBy { get; set; }
         public string? appointmentStatus { get; set; }
         public string? searchQuery { get; set; }
     }
@@ -87,15 +89,5 @@
         //public string Month { get; set; }
 
     }
-    public class DeliveryManFilterationDTO
-    {
-        public int pageNumber { get; set; }
-        public int pageSize { get; set; }
-        public int salonId { get; set; }
-        public string? MorningOrEveningOrder { get; set; }
-        public string? AppointmentStatus { get; set; }
-        public int? isDairyProduct { get; set; }
-        public string? searchQuery { get; set; }
-        public DateTime? searchByDate { get; set; }
-    }
+
 }

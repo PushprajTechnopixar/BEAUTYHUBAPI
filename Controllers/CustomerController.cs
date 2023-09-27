@@ -1717,6 +1717,7 @@ namespace BeautyHubAPI.Controllers
                     bookedService.ToTime = slotDetail.ToTime;
                     bookedService.BookingStatus = AppointmentStatus.Scheduled.ToString();
                     vendorId = salonDetail.VendorId;
+                    bookedService.SlotId = item.SlotId;
                     bookedService.ServiceCountInCart = item.ServiceCountInCart;
 
                     await _context.BookedService.AddAsync(bookedService);
@@ -1857,6 +1858,18 @@ namespace BeautyHubAPI.Controllers
                     _response.Messages = "Token expired.";
                     return Ok(_response);
                 }
+
+                if (!CommonMethod.IsValidDateFormat_ddmmyyyy(model.fromDate) || !CommonMethod.IsValidDateFormat_ddmmyyyy(model.toDate))
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Please enter date in dd-MM-yyyy format.";
+                    return Ok(_response);
+                }
+
+                DateTime fromDate = Convert.ToDateTime(model.fromDate);
+                DateTime toDate = Convert.ToDateTime(model.toDate);
+
                 List<Appointment>? appointmentList;
                 string appointmentTitle = "";
                 string appointmentDescription = "";
@@ -1865,7 +1878,7 @@ namespace BeautyHubAPI.Controllers
 
                 if (model.fromDate != null && model.toDate != null)
                 {
-                    appointmentList = appointmentList.Where(x => (x.CreateDate.Date >= model.fromDate) && (x.CreateDate.Date <= model.toDate)).ToList();
+                    appointmentList = appointmentList.Where(x => (x.CreateDate.Date >= fromDate) && (x.CreateDate.Date <= toDate)).ToList();
                 }
 
                 var response = _mapper.Map<List<CustomerAppointmentedListDTO>>(appointmentList);
@@ -1881,7 +1894,7 @@ namespace BeautyHubAPI.Controllers
                         if (bookedServices.Where(a => a.BookingStatus == AppointmentStatus.Scheduled.ToString()) != null)
                         {
                             bookedServices = bookedServices.Where(a => a.BookingStatus == AppointmentStatus.Scheduled.ToString()).ToList();
-                            appointmentStatus = AppointmentStatus.Pending.ToString();
+                            appointmentStatus = AppointmentStatus.Scheduled.ToString();
                         }
                         else
                         {
@@ -1905,6 +1918,7 @@ namespace BeautyHubAPI.Controllers
                             appointmentDescription = bookedServices.FirstOrDefault().ServiceName;
                         }
                         var salonDetail = await _context.SalonDetail.Where(u => u.SalonId == bookedServices.FirstOrDefault().SalonId).FirstOrDefaultAsync();
+                        var vendorDetail = await _context.Users.Where(u => u.Id == salonDetail.VendorId).FirstOrDefaultAsync();
 
                         // totalServices = (int)_context.BookedService.Where(a => a.AppointmentId == item.appointmentId).Sum(a => a.ServiceCountInCart);
                         item.salonName = salonDetail.SalonName;
@@ -1912,6 +1926,7 @@ namespace BeautyHubAPI.Controllers
                         item.salonLongitude = salonDetail.AddressLongitude;
                         item.salonAddress = salonDetail.SalonAddress;
                         item.appointmentTitle = salonDetail.SalonName;
+                        item.salonPhoneNumber = vendorDetail.PhoneNumber;
                         item.appointmentDescription = appointmentDescription;
                         // item.totalServices = totalServices;
                         item.serviceImage = bookedServices.FirstOrDefault().ServiceImage; ;
@@ -1921,6 +1936,7 @@ namespace BeautyHubAPI.Controllers
                         var favoritesStatus = await _context.FavouriteService.Where(u => u.ServiceId == bookedServices.FirstOrDefault().ServiceId && u.CustomerUserId == currentUserId).FirstOrDefaultAsync();
                         item.favoritesStatus = favoritesStatus != null ? true : false;
                     }
+
                 }
 
                 if (!string.IsNullOrEmpty(model.paymentStatus))
@@ -1940,6 +1956,14 @@ namespace BeautyHubAPI.Controllers
                     ).ToList();
                 }
 
+                if (model.sortDateBy == 2)
+                {
+                    if (model.fromDate != null && model.toDate != null)
+                    {
+                        response = response.Where(x => (Convert.ToDateTime(x.appointmentDate).Date >= fromDate) && (Convert.ToDateTime(x.appointmentDate) <= toDate)).ToList();
+                    }
+
+                }
                 // Get's No of Rows Count   
                 int count = response.Count();
 

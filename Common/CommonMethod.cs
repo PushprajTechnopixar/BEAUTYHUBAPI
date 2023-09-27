@@ -193,6 +193,11 @@ namespace BeautyHubAPI.Models.Helper
             DateTime dummyOutput;
             return DateTime.TryParseExact(timeString, "HH:mm", null, System.Globalization.DateTimeStyles.None, out dummyOutput);
         }
+        public static bool IsValidDateFormat_ddmmyyyy(string timeString)
+        {
+            DateTime dummyOutput;
+            return DateTime.TryParseExact(timeString, "dd-MM-yyyy", null, System.Globalization.DateTimeStyles.None, out dummyOutput);
+        }
         public static async Task<DistanceMatrixAPIResponse> GoogleDistanceMatrixAPILatLonAsync(double startLat, double startLong, double endLat, double endLong)
         {
             DistanceMatrixAPIResponse dmapir = new DistanceMatrixAPIResponse();

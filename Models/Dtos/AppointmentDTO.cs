@@ -116,12 +116,15 @@ namespace BeautyHubAPI.Models.Dtos
         public string customerUserId { get; set; }
         public string customerFirstName { get; set; }
         public string? customerLastName { get; set; }
+        public string? phoneNumber { get; set; }
         public string? appointmentStatus { get; set; }
         public string? paymentMethod { get; set; }
         public string? paymentStatus { get; set; }
-        public double? totalPrice { get; set; }
+        public double? finalPrice { get; set; }
         public string appointmentDate { get; set; }
+        public string createDate { get; set; }
         public string? paymentReceipt { get; set; }
+        public string? totalServices { get; set; }
     }
     public class CustomerAppointmentedListDTO
     {
@@ -144,6 +147,7 @@ namespace BeautyHubAPI.Models.Dtos
         public string CreateDate { get; set; }
         public string salonLatitude { get; set; }
         public string salonLongitude { get; set; }
+        public string salonPhoneNumber { get; set; }
         public string salonAddress { get; set; }
         public string salonName { get; set; }
     }
