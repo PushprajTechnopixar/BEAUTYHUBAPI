@@ -1714,5 +1714,69 @@ namespace BeautyHubAPI.Controllers
         }
         #endregion
 
+        #region GetVendorAppointmentDetail
+        /// <summary>
+        ///  Get Vendor Appointment Detail
+        /// </summary>
+        [HttpGet("GetVendorAppointmentDetail")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [Authorize(Roles = "Vendor")]
+        public async Task<IActionResult> GetVendorAppointmentDetail(int appointmentId)
+        {
+            try
+            {
+                string currentUserId = (HttpContext.User.Claims.First().Value);
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Token expired.";
+                    return Ok(_response);
+                }
+
+                var appointmentDetail = await _context.Appointment.FirstOrDefaultAsync(u => (u.AppointmentId == appointmentId));
+
+                var response = _mapper.Map<VendorAppointmentDetailDTO>(appointmentDetail);
+                // convert datetime into india time zone
+                var ctz = TZConvert.GetTimeZoneInfo("India Standard Time");
+                var convrtedZoneDate = TimeZoneInfo.ConvertTimeFromUtc(Convert.ToDateTime(appointmentDetail.CreateDate), ctz);
+                response.createDate = Convert.ToDateTime(convrtedZoneDate).ToString(@"hh:mm tt");
+                response.createDate = Convert.ToDateTime(convrtedZoneDate).ToString(@"dd-MM-yyyy");
+
+                var appointmentList = await _context.BookedService.Where(u => u.AppointmentId == response.appointmentId && u.VendorId == currentUserId).ToListAsync();
+                appointmentList = appointmentList.OrderByDescending(u => u.CreateDate).ToList();
+                var bookedServices = _mapper.Map<List<BookedServicesDTO>>(appointmentList);
+                response.basePrice = 0;
+                response.finalPrice = 0;
+                response.discount= 0;
+                response.totalDiscount = 0;
+                response.totalServices = 0;
+                foreach (var item in bookedServices)
+                {
+                    response.basePrice = response.basePrice + item.basePrice;
+                    response.finalPrice = response.finalPrice + item.finalPrice;
+                    response.totalServices = response.totalServices + 1;
+                }
+                response.totalDiscount = response.basePrice - response.finalPrice;
+
+                response.bookedServices = bookedServices;
+
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = true;
+                _response.Data = response;
+                _response.Messages = "Vendor Appointment detail shown successfully.";
+                return Ok(_response);
+            }
+            catch (Exception ex)
+            {
+                _response.StatusCode = HttpStatusCode.InternalServerError;
+                _response.IsSuccess = false;
+                _response.Messages = ex.Message;
+                return Ok(_response);
+            }
+        }
+        #endregion
+
     }
 }

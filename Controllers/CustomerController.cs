@@ -1929,7 +1929,7 @@ namespace BeautyHubAPI.Controllers
                         item.salonPhoneNumber = vendorDetail.PhoneNumber;
                         item.appointmentDescription = appointmentDescription;
                         // item.totalServices = totalServices;
-                        item.serviceImage = bookedServices.FirstOrDefault().ServiceImage; ;
+                        item.serviceImage = bookedServices.FirstOrDefault().ServiceImage; 
                         item.appointmentFromTime = bookedServices.FirstOrDefault().FromTime;
                         item.appointmentToTime = bookedServices.FirstOrDefault().ToTime;
                         item.appointmentDate = bookedServices.FirstOrDefault().AppointmentDate.ToString(@"dd-MM-yyyy");
@@ -2011,6 +2011,91 @@ namespace BeautyHubAPI.Controllers
                 _response.IsSuccess = true;
                 _response.Data = obj;
                 _response.Messages = "Appointment list shown successfully.";
+                return Ok(_response);
+            }
+            catch (Exception ex)
+            {
+                _response.StatusCode = HttpStatusCode.InternalServerError;
+                _response.IsSuccess = false;
+                _response.Messages = ex.Message;
+                return Ok(_response);
+            }
+        }
+        #endregion
+
+        #region GetCustomerAppointmentDetail
+        /// <summary>
+        ///  Get order detail.
+        /// </summary>
+        [HttpGet("GetCustomerAppointmentDetail")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [Authorize]
+        public async Task<IActionResult> GetCustomerAppointmentDetail(int appointmentId)
+        {
+            try
+            {
+                string currentUserId = (HttpContext.User.Claims.First().Value);
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Token expired.";
+                    return Ok(_response);
+                }
+
+                var orderDetail = await _context.Appointment.Where(u => u.AppointmentId == appointmentId).FirstOrDefaultAsync();
+
+                var response = _mapper.Map<AppointmentDetailDTO>(orderDetail);
+                // convert datetime into india time zone
+                var ctz = TZConvert.GetTimeZoneInfo("India Standard Time");
+                var convrtedZoneDate = TimeZoneInfo.ConvertTimeFromUtc(Convert.ToDateTime(orderDetail.CreateDate), ctz);
+                response.createDate = Convert.ToDateTime(convrtedZoneDate).ToString(@"hh:mm tt");
+                response.createDate = Convert.ToDateTime(convrtedZoneDate).ToString(@"dd-MM-yyyy");
+
+                var salonList = await _context.BookedService.Where(u => u.AppointmentId == response.appointmentId).ToListAsync();
+                salonList = salonList.OrderByDescending(u => u.CreateDate).DistinctBy(u => u.SalonId).ToList();
+                var bookedServicesPerShopList = new List<BookedServicesPerSalonDTO>();
+                foreach (var item in salonList)
+                {
+                    var bookedServicePerShop = new BookedServicesPerSalonDTO();
+                    var salonDetails = await _context.SalonService.FirstOrDefaultAsync(u => u.SalonId == item.SalonId);
+                    bookedServicePerShop.serviceName = salonDetails.ServiceName;
+                    bookedServicePerShop.salonId = salonDetails.SalonId;
+                    bookedServicePerShop.serviceImage = salonDetails.ServiceImage1;
+                    bookedServicePerShop.totalDiscount = 0;                
+                    bookedServicePerShop.basePrice = 0;
+                    bookedServicePerShop.finalPrice = 0;
+
+
+                    var serviceDetail = await _context.BookedService.Where(u => u.SalonId == item.SalonId && u.AppointmentId == item.AppointmentId).ToListAsync();
+
+                    var serviceList = new List<BookedServicesDTO>();
+                    foreach (var item1 in serviceDetail)
+                    {
+                        var service = _mapper.Map<BookedServicesDTO>(item1);
+
+                        bookedServicePerShop.basePrice = bookedServicePerShop.basePrice + service.basePrice;
+                        bookedServicePerShop.finalPrice = bookedServicePerShop.finalPrice + service.finalPrice;
+                        bookedServicePerShop.serviceCountInCart = bookedServicePerShop.serviceCountInCart + 1;
+
+
+                        var favoritesStatus = await _context.FavouriteSalon.FirstOrDefaultAsync(u => u.SalonId == service.salonId && u.CustomerUserId == currentUserId);
+                        service.favoritesStatus = favoritesStatus != null ? true : false;
+
+                        serviceList.Add(service);
+                    }
+                    bookedServicePerShop.totalDiscount = bookedServicePerShop.basePrice - bookedServicePerShop.finalPrice;
+                    bookedServicePerShop.AppointmentedServices = serviceList;
+                    bookedServicesPerShopList.Add(bookedServicePerShop);
+                }
+
+                response.appointmentFromSalon = bookedServicesPerShopList;
+
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = true;
+                _response.Data = response;
+                _response.Messages = "Appointment detail shown successfully.";
                 return Ok(_response);
             }
             catch (Exception ex)
