@@ -1521,11 +1521,11 @@ namespace BeautyHubAPI.Controllers
         /// <summary>
         ///  Get appointment list for vendor {date format : yyyy-MM-dd}.
         /// </summary>
-        [HttpGet("GetVendorOrderList")]
+        [HttpGet("GetVendorAppointmentList")]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [Authorize]
-        public async Task<IActionResult> GetVendorOrderList([FromQuery] OrderFilterationListDTO model)
+        public async Task<IActionResult> GetVendorAppointmentList([FromQuery] OrderFilterationListDTO model)
         {
             try
             {
@@ -1537,6 +1537,16 @@ namespace BeautyHubAPI.Controllers
                     _response.Messages = "Token expired.";
                     return Ok(_response);
                 }
+                if (!CommonMethod.IsValidDateFormat_ddmmyyyy(model.fromDate) || !CommonMethod.IsValidDateFormat_ddmmyyyy(model.toDate))
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Please enter date in dd-MM-yyyy format.";
+                    return Ok(_response);
+                }
+
+                DateTime fromDate = Convert.ToDateTime(model.fromDate);
+                DateTime toDate = Convert.ToDateTime(model.toDate);
 
                 List<BookedService>? bookedService;
                 double? finalPrice = 0;
@@ -1545,10 +1555,7 @@ namespace BeautyHubAPI.Controllers
                 if (model.salonId > 0)
                 {
                     bookedService = await _context.BookedService.Where(u => u.SalonId == model.salonId).ToListAsync();
-                    foreach (var item in bookedService)
-                    {
-                        finalPrice = finalPrice + item.FinalPrice;
-                    }
+
                     if (bookedService == null)
                     {
                         _response.StatusCode = HttpStatusCode.OK;
@@ -1560,10 +1567,6 @@ namespace BeautyHubAPI.Controllers
                 else if (!string.IsNullOrEmpty(model.vendorId))
                 {
                     bookedService = await _context.BookedService.Where(u => u.VendorId == model.vendorId).ToListAsync();
-                    foreach (var item in bookedService)
-                    {
-                        finalPrice = finalPrice + item.FinalPrice;
-                    }
                     if (bookedService == null)
                     {
                         _response.StatusCode = HttpStatusCode.OK;
@@ -1577,48 +1580,83 @@ namespace BeautyHubAPI.Controllers
                     bookedService = await _context.BookedService.ToListAsync();
                 }
 
-                bookedService = bookedService.DistinctBy(u => u.AppointmentId).OrderByDescending(u => u.CreateDate).ToList();
-
-                foreach (var item in bookedService)
+                if (model.fromDate != null && model.toDate != null)
                 {
-                    Appointment? appointmentDetail;
-                    // orderDetail = await _OrderDetailRepository.GetAsync(u => u.OrderDetailId == item.OrderDetailId);
-                    appointmentDetail = await _context.Appointment.Where(u => u.AppointmentId == item.AppointmentId).FirstOrDefaultAsync();
-
-                    var mappedData = _mapper.Map<AppointmentedListDTO>(appointmentDetail);
-                    _mapper.Map(item, mappedData);
-
-                    if (model.fromDate != null && model.toDate != null)
+                    bookedService = bookedService.Where(x => (x.CreateDate.Date >= fromDate) && (x.CreateDate.Date <= toDate)).ToList();
+                    if (model.sortDateBy == 2)
                     {
-                        if (appointmentDetail.CreateDate.Date >= model.fromDate && appointmentDetail.CreateDate.Date <= model.toDate)
-                        {
-                            mappedData.appointmentDate = appointmentDetail.CreateDate.ToString(@"dd-MM-yyyy");
-                            orderList.Add(mappedData);
-                        }
-                    }
-                    else
-                    {
-                        mappedData.appointmentDate = appointmentDetail.CreateDate.ToString(@"dd-MM-yyyy");
-                        orderList.Add(mappedData);
+                        bookedService = bookedService.Where(x => (x.AppointmentDate.Date >= fromDate) && (x.AppointmentDate.Date <= toDate)).ToList();
                     }
                 }
 
-                // if (!string.IsNullOrEmpty(model.paymentStatus))
-                // {
-                //     orderList = orderList.Where(x => (x.PaymentStatus?.IndexOf(model.paymentStatus, StringComparison.OrdinalIgnoreCase) >= 0)
-                //     ).ToList();
-                // }
-                // if (!string.IsNullOrEmpty(model.orderStatus))
-                // {
-                //     orderList = orderList.Where(x => (x.OrderStatus?.IndexOf(model.orderStatus, StringComparison.OrdinalIgnoreCase) >= 0)
-                //     ).ToList();
-                // }
+                var distinctAppointments = bookedService.DistinctBy(u => u.AppointmentId).OrderByDescending(u => u.CreateDate).ToList();
 
-                // if (!string.IsNullOrEmpty(model.searchQuery))
-                // {
-                //     orderList = orderList.Where(x => (x.CustomerFirstName?.IndexOf(model.searchQuery, StringComparison.OrdinalIgnoreCase) >= 0)
-                //     ).ToList();
-                // }         
+                foreach (var item in distinctAppointments)
+                {
+                    var appointmentDetail = await _context.Appointment
+                        .Where(u => u.AppointmentId == item.AppointmentId)
+                        .FirstOrDefaultAsync();
+
+                    var mappedData = _mapper.Map<AppointmentedListDTO>(appointmentDetail);
+
+                    var bookedServices = await _context.BookedService
+                        .Where(u => u.AppointmentId == item.AppointmentId)
+                        .ToListAsync();
+
+                    string appointmentStatus = string.Empty;
+
+                    var scheduledServices = bookedServices
+                        .Where(a => a.BookingStatus == AppointmentStatus.Scheduled.ToString())
+                        .ToList();
+
+                    if (scheduledServices.Any())
+                    {
+                        bookedServices = scheduledServices;
+                        appointmentStatus = AppointmentStatus.Scheduled.ToString();
+                    }
+                    else
+                    {
+                        var completedServices = bookedServices
+                            .Where(a => a.BookingStatus == AppointmentStatus.Completed.ToString())
+                            .ToList();
+
+                        if (completedServices.Any())
+                        {
+                            bookedServices = completedServices;
+                            appointmentStatus = AppointmentStatus.Completed.ToString();
+                        }
+                        else
+                        {
+                            bookedServices = bookedServices
+                                .Where(a => a.BookingStatus == AppointmentStatus.Cancelled.ToString())
+                                .ToList();
+
+                            appointmentStatus = AppointmentStatus.Cancelled.ToString();
+                        }
+                    }
+
+                    mappedData.appointmentStatus = appointmentStatus;
+                    mappedData.appointmentDate = bookedServices.FirstOrDefault()?.AppointmentDate.ToString(@"dd-MM-yyyy");
+                    mappedData.createDate = appointmentDetail.CreateDate.ToString(@"dd-MM-yyyy");
+                    orderList.Add(mappedData);
+                }
+
+                if (!string.IsNullOrEmpty(model.paymentStatus))
+                {
+                    orderList = orderList.Where(x => (x.paymentStatus?.IndexOf(model.paymentStatus, StringComparison.OrdinalIgnoreCase) >= 0)
+                    ).ToList();
+                }
+                if (!string.IsNullOrEmpty(model.appointmentStatus))
+                {
+                    orderList = orderList.Where(x => (x.appointmentStatus?.IndexOf(model.appointmentStatus, StringComparison.OrdinalIgnoreCase) >= 0)
+                    ).ToList();
+                }
+
+                if (!string.IsNullOrEmpty(model.searchQuery))
+                {
+                    orderList = orderList.Where(x => (x.customerFirstName?.IndexOf(model.searchQuery, StringComparison.OrdinalIgnoreCase) >= 0)
+                    ).ToList();
+                }
 
                 // Get's No of Rows Count   
                 int count = orderList.Count();
@@ -1666,7 +1704,71 @@ namespace BeautyHubAPI.Controllers
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
                 _response.Data = orderList;
-                _response.Messages = "order list shown successfully.";
+                _response.Messages = "Appointment list shown successfully.";
+                return Ok(_response);
+            }
+            catch (Exception ex)
+            {
+                _response.StatusCode = HttpStatusCode.InternalServerError;
+                _response.IsSuccess = false;
+                _response.Messages = ex.Message;
+                return Ok(_response);
+            }
+        }
+        #endregion
+
+        #region GetVendorAppointmentDetail
+        /// <summary>
+        ///  Get Vendor Appointment Detail
+        /// </summary>
+        [HttpGet("GetVendorAppointmentDetail")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [Authorize(Roles = "Vendor")]
+        public async Task<IActionResult> GetVendorAppointmentDetail(int appointmentId)
+        {
+            try
+            {
+                string currentUserId = (HttpContext.User.Claims.First().Value);
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Token expired.";
+                    return Ok(_response);
+                }
+
+                var appointmentDetail = await _context.Appointment.FirstOrDefaultAsync(u => (u.AppointmentId == appointmentId));
+
+                var response = _mapper.Map<VendorAppointmentDetailDTO>(appointmentDetail);
+                // convert datetime into india time zone
+                var ctz = TZConvert.GetTimeZoneInfo("India Standard Time");
+                var convrtedZoneDate = TimeZoneInfo.ConvertTimeFromUtc(Convert.ToDateTime(appointmentDetail.CreateDate), ctz);
+                response.createDate = Convert.ToDateTime(convrtedZoneDate).ToString(@"hh:mm tt");
+                response.createDate = Convert.ToDateTime(convrtedZoneDate).ToString(@"dd-MM-yyyy");
+
+                var appointmentList = await _context.BookedService.Where(u => u.AppointmentId == response.appointmentId && u.VendorId == currentUserId).ToListAsync();
+                appointmentList = appointmentList.OrderByDescending(u => u.CreateDate).ToList();
+                var bookedServices = _mapper.Map<List<BookedServicesDTO>>(appointmentList);
+                response.basePrice = 0;
+                response.finalPrice = 0;
+                response.discount= 0;
+                response.totalDiscount = 0;
+                response.totalServices = 0;
+                foreach (var item in bookedServices)
+                {
+                    response.basePrice = response.basePrice + item.basePrice;
+                    response.finalPrice = response.finalPrice + item.finalPrice;
+                    response.totalServices = response.totalServices + 1;
+                }
+                response.totalDiscount = response.basePrice - response.finalPrice;
+
+                response.bookedServices = bookedServices;
+
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = true;
+                _response.Data = response;
+                _response.Messages = "Vendor Appointment detail shown successfully.";
                 return Ok(_response);
             }
             catch (Exception ex)

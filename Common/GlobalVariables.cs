@@ -122,13 +122,6 @@
             Completed
         }
 
-        public enum SubscriptionStatus
-        {
-            Pending = 0,
-            Active,
-            Paused
-        }
-
         public enum CancelledBy
         {
             Customer = 0,
