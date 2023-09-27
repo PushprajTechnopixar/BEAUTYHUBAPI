@@ -2043,7 +2043,7 @@ namespace BeautyHubAPI.Controllers
                     _response.Messages = "Token expired.";
                     return Ok(_response);
                 }
-
+                string serviceDescription = "";
                 var orderDetail = await _context.Appointment.Where(u => u.AppointmentId == appointmentId).FirstOrDefaultAsync();
 
                 var response = _mapper.Map<AppointmentDetailDTO>(orderDetail);
@@ -2059,10 +2059,15 @@ namespace BeautyHubAPI.Controllers
                 foreach (var item in salonList)
                 {
                     var bookedServicePerShop = new BookedServicesPerSalonDTO();
-                    var salonDetails = await _context.SalonService.FirstOrDefaultAsync(u => u.SalonId == item.SalonId);
-                    bookedServicePerShop.serviceName = salonDetails.ServiceName;
+                    var salonDetails = await _context.SalonDetail.FirstOrDefaultAsync(u => u.SalonId == item.SalonId);
+                    var vendorDetail = await _context.Users.Where(u => u.Id == salonDetails.VendorId).FirstOrDefaultAsync();
+                    bookedServicePerShop.salonName = salonDetails.SalonName;
                     bookedServicePerShop.salonId = salonDetails.SalonId;
-                    bookedServicePerShop.serviceImage = salonDetails.ServiceImage1;
+                    bookedServicePerShop.salonImage = salonDetails.SalonImage;
+                    bookedServicePerShop.salonPhoneNumber = vendorDetail.PhoneNumber;
+                    bookedServicePerShop.salonLatitude = salonDetails.AddressLatitude;
+                    bookedServicePerShop.salonLongitude = salonDetails.AddressLongitude;
+                    bookedServicePerShop.salonAddress = salonDetails.SalonAddress;
                     bookedServicePerShop.totalDiscount = 0;                
                     bookedServicePerShop.basePrice = 0;
                     bookedServicePerShop.finalPrice = 0;
@@ -2077,8 +2082,7 @@ namespace BeautyHubAPI.Controllers
 
                         bookedServicePerShop.basePrice = bookedServicePerShop.basePrice + service.basePrice;
                         bookedServicePerShop.finalPrice = bookedServicePerShop.finalPrice + service.finalPrice;
-                        bookedServicePerShop.serviceCountInCart = bookedServicePerShop.serviceCountInCart + 1;
-
+                        bookedServicePerShop.serviceCountInCart = bookedServicePerShop.serviceCountInCart + service.serviceCountInCart;
 
                         var favoritesStatus = await _context.FavouriteSalon.FirstOrDefaultAsync(u => u.SalonId == service.salonId && u.CustomerUserId == currentUserId);
                         service.favoritesStatus = favoritesStatus != null ? true : false;

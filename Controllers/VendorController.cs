@@ -1659,7 +1659,7 @@ namespace BeautyHubAPI.Controllers
                 }
 
                 // Get's No of Rows Count   
-                int count = orderList.Count();
+                int count = orderList.Count();  
 
                 // Parameter is passed from Query string if it is null then it default Value will be pageNumber:1  
                 int CurrentPage = model.pageNumber;

@@ -77,8 +77,12 @@ namespace BeautyHubAPI.Models.Dtos
     public class BookedServicesPerSalonDTO
     {
         public int salonId { get; set; }
-        public string serviceName { get; set; }
-        public string? serviceImage { get; set; }
+        public string salonName { get; set; }
+        public string salonPhoneNumber { get; set; }
+        public string? salonImage { get; set; }
+        public string salonAddress { get; set; }
+        public string salonLatitude { get; set; }
+        public string salonLongitude { get; set; }
         public double? cgst { get; set; }
         public double? igst { get; set; }
         public double? sgst { get; set; }
@@ -110,6 +114,8 @@ namespace BeautyHubAPI.Models.Dtos
         public int? durationInMinutes { get; set; }
         public bool favoritesStatus { get; set; }
         public string createDate { get; set; }
+        public int serviceCountInCart { get; set; }
+
     }
     public class AppointmentedListDTO
     {
