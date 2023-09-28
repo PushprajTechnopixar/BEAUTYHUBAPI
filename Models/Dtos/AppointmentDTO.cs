@@ -83,6 +83,8 @@ namespace BeautyHubAPI.Models.Dtos
         public string salonAddress { get; set; }
         public string salonLatitude { get; set; }
         public string salonLongitude { get; set; }
+        public string distance { get; set; }
+        public string duration { get; set; }
         public double? cgst { get; set; }
         public double? igst { get; set; }
         public double? sgst { get; set; }
@@ -102,7 +104,7 @@ namespace BeautyHubAPI.Models.Dtos
         public string? serviceImage { get; set; }
         public double? basePrice { get; set; }
         public double? listingPrice { get; set; }
-        public double? discount { get; set; }   
+        public double? discount { get; set; }
         public double? finalPrice { get; set; }
         public string? vendorId { get; set; }
         public int? salonId { get; set; }
@@ -157,6 +159,8 @@ namespace BeautyHubAPI.Models.Dtos
         public string salonPhoneNumber { get; set; }
         public string salonAddress { get; set; }
         public string salonName { get; set; }
+        public string? distance { get; set; }
+        public string? duration { get; set; }
     }
 
 }

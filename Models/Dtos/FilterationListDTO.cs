@@ -79,6 +79,7 @@
         public int? sortDateBy { get; set; }
         public string? appointmentStatus { get; set; }
         public string? searchQuery { get; set; }
+        public int? liveLocation { get; set; }
     }
 
     public class DistributorEarning

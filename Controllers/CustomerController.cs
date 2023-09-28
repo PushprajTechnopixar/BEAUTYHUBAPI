@@ -1054,7 +1054,7 @@ namespace BeautyHubAPI.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         // [Authorize(Roles = "Customer")]
-        public async Task<IActionResult> GetServiceListFromCart(string? availableService)
+        public async Task<IActionResult> GetServiceListFromCart(string? availableService, int? liveLocation)
         {
             try
             {
@@ -1067,7 +1067,7 @@ namespace BeautyHubAPI.Controllers
                     _response.Messages = "Token expired.";
                     return Ok(_response);
                 }
-
+                liveLocation = liveLocation != null ? liveLocation : 0;
                 var userProfileDetail = await _context.UserDetail.Where(u => u.UserId == currentUserId).FirstOrDefaultAsync();
                 if (userProfileDetail == null)
                 {
@@ -1169,6 +1169,11 @@ namespace BeautyHubAPI.Controllers
                     {
                         startLat = Convert.ToDouble(customerAdress.AddressLatitude != null ? customerAdress.AddressLatitude : "0");
                         startLong = Convert.ToDouble(customerAdress.AddressLongitude != null ? customerAdress.AddressLongitude : "0");
+                    }
+                    if (liveLocation == 1)
+                    {
+                        startLat = Convert.ToDouble(userProfileDetail.AddressLatitude != null ? userProfileDetail.AddressLatitude : "0");
+                        startLong = Convert.ToDouble(userProfileDetail.AddressLongitude != null ? userProfileDetail.AddressLongitude : "0");
                     }
                     double endLat = Convert.ToDouble(SalonDetail.AddressLatitude != null ? SalonDetail.AddressLatitude : "0");
                     double endLong = Convert.ToDouble(SalonDetail.AddressLongitude != null ? SalonDetail.AddressLongitude : "0");
@@ -1388,7 +1393,7 @@ namespace BeautyHubAPI.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [Authorize(Roles = "Customer")]
-        public async Task<IActionResult> GetUnavailableServices()
+        public async Task<IActionResult> GetUnavailableServices(int? liveLocation)
         {
             try
             {
@@ -1400,7 +1405,7 @@ namespace BeautyHubAPI.Controllers
                     _response.Messages = "Token expired.";
                     return Ok(_response);
                 }
-
+                liveLocation = liveLocation != null ? liveLocation : 0;
                 var userProfileDetail = await _context.UserDetail.Where(u => u.UserId == currentUserId).FirstOrDefaultAsync();
                 if (userProfileDetail == null)
                 {
@@ -1453,6 +1458,29 @@ namespace BeautyHubAPI.Controllers
                         var SalonDetail = await _context.SalonDetail.Where(u => u.SalonId == item.Value).FirstOrDefaultAsync();
                         CartDetailPerSalon.salonId = SalonDetail.SalonId;
                         CartDetailPerSalon.salonName = SalonDetail.SalonName;
+
+                        var customerAdress = await _context.CustomerAddress.Where(u => u.CustomerUserId == currentUserId && u.Status == true).FirstOrDefaultAsync();
+                        double startLong = 0;
+                        double startLat = 0;
+                        if (customerAdress != null)
+                        {
+                            startLat = Convert.ToDouble(customerAdress.AddressLatitude != null ? customerAdress.AddressLatitude : "0");
+                            startLong = Convert.ToDouble(customerAdress.AddressLongitude != null ? customerAdress.AddressLongitude : "0");
+                        }
+                        if (liveLocation == 1)
+                        {
+                            startLat = Convert.ToDouble(userProfileDetail.AddressLatitude != null ? userProfileDetail.AddressLatitude : "0");
+                            startLong = Convert.ToDouble(userProfileDetail.AddressLongitude != null ? userProfileDetail.AddressLongitude : "0");
+                        }
+                        double endLat = Convert.ToDouble(SalonDetail.AddressLatitude != null ? SalonDetail.AddressLatitude : "0");
+                        double endLong = Convert.ToDouble(SalonDetail.AddressLongitude != null ? SalonDetail.AddressLongitude : "0");
+
+                        if (startLat != 0 && startLong != 0 && endLat != 0 && endLong != 0)
+                        {
+                            var APIResponse = CommonMethod.GoogleDistanceMatrixAPILatLonAsync(startLat, startLong, endLat, endLong).GetAwaiter().GetResult();
+                            CartDetailPerSalon.distance = APIResponse.distance;
+                            CartDetailPerSalon.duration = APIResponse.duration;
+                        }
                         CartDetailPerSalonList.Add(CartDetailPerSalon);
                     }
                 }
@@ -1840,7 +1868,7 @@ namespace BeautyHubAPI.Controllers
 
         #region GetCustomerAppointmentList
         /// <summary>
-        ///  Get appointment list for customer {date format : yyyy-MM-dd}.
+        ///  Get appointment list for customer {date format : dd-MM-yyyy}.
         /// </summary>
         [HttpGet("GetCustomerAppointmentList")]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -1858,17 +1886,11 @@ namespace BeautyHubAPI.Controllers
                     _response.Messages = "Token expired.";
                     return Ok(_response);
                 }
+                model.liveLocation = model.liveLocation != null ? model.liveLocation : 0;
+                var userProfileDetail = await _context.UserDetail.Where(u => u.UserId == currentUserId).FirstOrDefaultAsync();
 
-                if (!CommonMethod.IsValidDateFormat_ddmmyyyy(model.fromDate) || !CommonMethod.IsValidDateFormat_ddmmyyyy(model.toDate))
-                {
-                    _response.StatusCode = HttpStatusCode.OK;
-                    _response.IsSuccess = false;
-                    _response.Messages = "Please enter date in dd-MM-yyyy format.";
-                    return Ok(_response);
-                }
-
-                DateTime fromDate = Convert.ToDateTime(model.fromDate);
-                DateTime toDate = Convert.ToDateTime(model.toDate);
+                DateTime fromDate = DateTime.Now;
+                DateTime toDate = DateTime.Now;
 
                 List<Appointment>? appointmentList;
                 string appointmentTitle = "";
@@ -1878,11 +1900,19 @@ namespace BeautyHubAPI.Controllers
 
                 if (model.fromDate != null && model.toDate != null)
                 {
+                    if (!CommonMethod.IsValidDateFormat_ddmmyyyy(model.fromDate) || !CommonMethod.IsValidDateFormat_ddmmyyyy(model.toDate))
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Messages = "Please enter date in dd-MM-yyyy format.";
+                        return Ok(_response);
+                    }
+                    fromDate = DateTime.ParseExact(model.fromDate, "dd-MM-yyyy", null);
+                    toDate = DateTime.ParseExact(model.toDate, "dd-MM-yyyy", null);
                     appointmentList = appointmentList.Where(x => (x.CreateDate.Date >= fromDate) && (x.CreateDate.Date <= toDate)).ToList();
                 }
 
                 var response = _mapper.Map<List<CustomerAppointmentedListDTO>>(appointmentList);
-
                 foreach (var item in response)
                 {
                     List<BookedService>? bookedServices;
@@ -1924,12 +1954,35 @@ namespace BeautyHubAPI.Controllers
                         item.salonName = salonDetail.SalonName;
                         item.salonLatitude = salonDetail.AddressLatitude;
                         item.salonLongitude = salonDetail.AddressLongitude;
+
+                        var customerAdress = await _context.CustomerAddress.Where(u => u.CustomerUserId == currentUserId && u.Status == true).FirstOrDefaultAsync();
+                        double startLong = 0;
+                        double startLat = 0;
+                        if (customerAdress != null)
+                        {
+                            startLat = Convert.ToDouble(customerAdress.AddressLatitude != null ? customerAdress.AddressLatitude : "0");
+                            startLong = Convert.ToDouble(customerAdress.AddressLongitude != null ? customerAdress.AddressLongitude : "0");
+                        }
+                        if (model.liveLocation == 1)
+                        {
+                            startLat = Convert.ToDouble(userProfileDetail.AddressLatitude != null ? userProfileDetail.AddressLatitude : "0");
+                            startLong = Convert.ToDouble(userProfileDetail.AddressLongitude != null ? userProfileDetail.AddressLongitude : "0");
+                        }
+                        double endLat = Convert.ToDouble(salonDetail.AddressLatitude != null ? salonDetail.AddressLatitude : "0");
+                        double endLong = Convert.ToDouble(salonDetail.AddressLongitude != null ? salonDetail.AddressLongitude : "0");
+
+                        if (startLat != 0 && startLong != 0 && endLat != 0 && endLong != 0)
+                        {
+                            var APIResponse = CommonMethod.GoogleDistanceMatrixAPILatLonAsync(startLat, startLong, endLat, endLong).GetAwaiter().GetResult();
+                            item.distance = APIResponse.distance;
+                            item.duration = APIResponse.duration;
+                        }
                         item.salonAddress = salonDetail.SalonAddress;
                         item.appointmentTitle = salonDetail.SalonName;
                         item.salonPhoneNumber = vendorDetail.PhoneNumber;
                         item.appointmentDescription = appointmentDescription;
                         // item.totalServices = totalServices;
-                        item.serviceImage = bookedServices.FirstOrDefault().ServiceImage; 
+                        item.serviceImage = bookedServices.FirstOrDefault().ServiceImage;
                         item.appointmentFromTime = bookedServices.FirstOrDefault().FromTime;
                         item.appointmentToTime = bookedServices.FirstOrDefault().ToTime;
                         item.appointmentDate = bookedServices.FirstOrDefault().AppointmentDate.ToString(@"dd-MM-yyyy");
@@ -2025,13 +2078,13 @@ namespace BeautyHubAPI.Controllers
 
         #region GetCustomerAppointmentDetail
         /// <summary>
-        ///  Get order detail.
+        ///  Get appointment detail.
         /// </summary>
         [HttpGet("GetCustomerAppointmentDetail")]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [Authorize]
-        public async Task<IActionResult> GetCustomerAppointmentDetail(int appointmentId)
+        public async Task<IActionResult> GetCustomerAppointmentDetail(int appointmentId, int? liveLocation)
         {
             try
             {
@@ -2043,6 +2096,9 @@ namespace BeautyHubAPI.Controllers
                     _response.Messages = "Token expired.";
                     return Ok(_response);
                 }
+                liveLocation = liveLocation != null ? liveLocation : 0;
+                var userProfileDetail = await _context.UserDetail.Where(u => u.UserId == currentUserId).FirstOrDefaultAsync();
+
                 string serviceDescription = "";
                 var orderDetail = await _context.Appointment.Where(u => u.AppointmentId == appointmentId).FirstOrDefaultAsync();
 
@@ -2068,10 +2124,9 @@ namespace BeautyHubAPI.Controllers
                     bookedServicePerShop.salonLatitude = salonDetails.AddressLatitude;
                     bookedServicePerShop.salonLongitude = salonDetails.AddressLongitude;
                     bookedServicePerShop.salonAddress = salonDetails.SalonAddress;
-                    bookedServicePerShop.totalDiscount = 0;                
+                    bookedServicePerShop.totalDiscount = 0;
                     bookedServicePerShop.basePrice = 0;
                     bookedServicePerShop.finalPrice = 0;
-
 
                     var serviceDetail = await _context.BookedService.Where(u => u.SalonId == item.SalonId && u.AppointmentId == item.AppointmentId).ToListAsync();
 
@@ -2079,11 +2134,35 @@ namespace BeautyHubAPI.Controllers
                     foreach (var item1 in serviceDetail)
                     {
                         var service = _mapper.Map<BookedServicesDTO>(item1);
-
+                        service.salonName = salonDetails.SalonName;
+                        service.appointmentDate = item1.AppointmentDate.ToString(@"dd-MM-yyyy");
+                        service.createDate = item1.AppointmentDate.ToString(@"dd-MM-yyyy");
+                        bookedServicePerShop.salonName = salonDetails.SalonName;
                         bookedServicePerShop.basePrice = bookedServicePerShop.basePrice + service.basePrice;
                         bookedServicePerShop.finalPrice = bookedServicePerShop.finalPrice + service.finalPrice;
                         bookedServicePerShop.serviceCountInCart = bookedServicePerShop.serviceCountInCart + service.serviceCountInCart;
+                        var customerAdress = await _context.CustomerAddress.Where(u => u.CustomerUserId == currentUserId && u.Status == true).FirstOrDefaultAsync();
+                        double startLong = 0;
+                        double startLat = 0;
+                        if (customerAdress != null)
+                        {
+                            startLat = Convert.ToDouble(customerAdress.AddressLatitude != null ? customerAdress.AddressLatitude : "0");
+                            startLong = Convert.ToDouble(customerAdress.AddressLongitude != null ? customerAdress.AddressLongitude : "0");
+                        }
+                        if (liveLocation == 1)
+                        {
+                            startLat = Convert.ToDouble(userProfileDetail.AddressLatitude != null ? userProfileDetail.AddressLatitude : "0");
+                            startLong = Convert.ToDouble(userProfileDetail.AddressLongitude != null ? userProfileDetail.AddressLongitude : "0");
+                        }
+                        double endLat = Convert.ToDouble(salonDetails.AddressLatitude != null ? salonDetails.AddressLatitude : "0");
+                        double endLong = Convert.ToDouble(salonDetails.AddressLongitude != null ? salonDetails.AddressLongitude : "0");
 
+                        if (startLat != 0 && startLong != 0 && endLat != 0 && endLong != 0)
+                        {
+                            var APIResponse = CommonMethod.GoogleDistanceMatrixAPILatLonAsync(startLat, startLong, endLat, endLong).GetAwaiter().GetResult();
+                            bookedServicePerShop.distance = APIResponse.distance;
+                            bookedServicePerShop.duration = APIResponse.duration;
+                        }
                         var favoritesStatus = await _context.FavouriteSalon.FirstOrDefaultAsync(u => u.SalonId == service.salonId && u.CustomerUserId == currentUserId);
                         service.favoritesStatus = favoritesStatus != null ? true : false;
 
