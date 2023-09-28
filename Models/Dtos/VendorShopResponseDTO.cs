@@ -61,6 +61,8 @@ namespace BeautyHubAPI.Models.Dtos
         public string? landmark { get; set; }
         public string? addressLatitude { get; set; }
         public string? addressLongitude { get; set; }
+        public string? distance { get; set; }
+        public string? duration { get; set; }
         public string? city { get; set; }
         public string? zip { get; set; }
         public int status { get; set; }
