@@ -5,6 +5,7 @@ using System;
 using Microsoft.AspNetCore.Identity;
 using Newtonsoft.Json.Linq;
 using BeautyHubAPI.Common;
+using System.Globalization;
 
 namespace BeautyHubAPI.Models.Helper
 {
@@ -196,7 +197,12 @@ namespace BeautyHubAPI.Models.Helper
         public static bool IsValidDateFormat_ddmmyyyy(string timeString)
         {
             DateTime dummyOutput;
-            return DateTime.TryParseExact(timeString, "dd-MM-yyyy", null, System.Globalization.DateTimeStyles.None, out dummyOutput);
+            return DateTime.TryParseExact(timeString, "dd-MM-yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out dummyOutput);
+        }
+        public static DateTime ddMMyyyToDateTime(string timeString)
+        {
+            DateTime dummyOutput;
+            return DateTime.ParseExact(timeString, "dd-MM-yyyy", null);
         }
         public static async Task<DistanceMatrixAPIResponse> GoogleDistanceMatrixAPILatLonAsync(double startLat, double startLong, double endLat, double endLong)
         {

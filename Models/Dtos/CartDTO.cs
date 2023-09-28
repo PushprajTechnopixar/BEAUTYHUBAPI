@@ -39,6 +39,8 @@ namespace BeautyHubAPI.Models.Dtos
     {
         public string salonName { get; set; }
         public int salonId { get; set; }
+        public string distance { get; set; }
+        public string duration { get; set; }
         public List<CartServicesDTO> cartServices { get; set; }
     }
     public partial class CartServicesDTO
@@ -57,7 +59,7 @@ namespace BeautyHubAPI.Models.Dtos
         public string ageRestrictions { get; set; }
         public int slotId { get; set; }
         public string slotDate { get; set; }
-        public string fromTime { get; set; } 
+        public string fromTime { get; set; }
         public string toTime { get; set; }
         public string? statusDisplay { get; set; }
         public bool favoritesStatus { get; set; }

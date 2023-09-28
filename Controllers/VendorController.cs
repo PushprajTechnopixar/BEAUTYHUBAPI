@@ -1516,7 +1516,7 @@ namespace BeautyHubAPI.Controllers
 
         #region GetVendorAppointmentList
         /// <summary>
-        ///  Get appointment list for vendor {date format : yyyy-MM-dd}.
+        ///  Get appointment list for vendor {date format : dd-MM-yyyy}.
         /// </summary>
         [HttpGet("GetVendorAppointmentList")]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -1534,20 +1534,12 @@ namespace BeautyHubAPI.Controllers
                     _response.Messages = "Token expired.";
                     return Ok(_response);
                 }
-                if (!CommonMethod.IsValidDateFormat_ddmmyyyy(model.fromDate) || !CommonMethod.IsValidDateFormat_ddmmyyyy(model.toDate))
-                {
-                    _response.StatusCode = HttpStatusCode.OK;
-                    _response.IsSuccess = false;
-                    _response.Messages = "Please enter date in dd-MM-yyyy format.";
-                    return Ok(_response);
-                }
-
-                DateTime fromDate = Convert.ToDateTime(model.fromDate);
-                DateTime toDate = Convert.ToDateTime(model.toDate);
 
                 List<BookedService>? bookedService;
                 double? finalPrice = 0;
                 var orderList = new List<AppointmentedListDTO>();
+                DateTime fromDate = DateTime.Now;
+                DateTime toDate = DateTime.Now;
 
                 if (model.salonId > 0)
                 {
@@ -1579,6 +1571,17 @@ namespace BeautyHubAPI.Controllers
 
                 if (model.fromDate != null && model.toDate != null)
                 {
+                    if (!CommonMethod.IsValidDateFormat_ddmmyyyy(model.fromDate) || !CommonMethod.IsValidDateFormat_ddmmyyyy(model.toDate))
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Messages = "Please enter date in dd-MM-yyyy format.";
+                        return Ok(_response);
+                    }
+
+                    fromDate = DateTime.ParseExact(model.fromDate, "dd-MM-yyyy", null);
+                    toDate = DateTime.ParseExact(model.toDate, "dd-MM-yyyy", null);
+
                     bookedService = bookedService.Where(x => (x.CreateDate.Date >= fromDate) && (x.CreateDate.Date <= toDate)).ToList();
                     if (model.sortDateBy == 2)
                     {
@@ -1749,7 +1752,7 @@ namespace BeautyHubAPI.Controllers
                 var bookedServices = _mapper.Map<List<BookedServicesDTO>>(appointmentList);
                 response.basePrice = 0;
                 response.finalPrice = 0;
-                response.discount= 0;
+                response.discount = 0;
                 response.totalDiscount = 0;
                 response.totalServices = 0;
                 foreach (var item in bookedServices)
@@ -1759,13 +1762,14 @@ namespace BeautyHubAPI.Controllers
                     response.totalServices = response.totalServices + 1;
                 }
                 response.totalDiscount = response.basePrice - response.finalPrice;
+                response.discount = response.basePrice - response.finalPrice;
 
                 response.bookedServices = bookedServices;
 
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
                 _response.Data = response;
-                _response.Messages = "Vendor Appointment detail shown successfully.";
+                _response.Messages = "Vendor appointment detail shown successfully.";
                 return Ok(_response);
             }
             catch (Exception ex)
