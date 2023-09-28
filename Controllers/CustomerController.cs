@@ -28,6 +28,7 @@ using System.Data.Common;
 using System.Timers;
 using Twilio.Http;
 using Amazon.S3.Model;
+using ExpressionEvaluator.Parser.Expressions;
 
 namespace BeautyHubAPI.Controllers
 {
@@ -1577,12 +1578,12 @@ namespace BeautyHubAPI.Controllers
 
         #region CancelAppointment
         /// <summary>
-        ///  Remove Service from cart.
+        ///  Cancel Appointment.
         /// </summary>
-        [HttpDelete("CancelAppointment")]
+        [HttpPost("CancelAppointment")]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [Authorize(Roles = "Customer")]
+        [Authorize(Roles = "Customer,Vendor")]
         public async Task<IActionResult> CancelAppointment(CancelAppointmentDTO model)
         {
             try
@@ -1605,58 +1606,90 @@ namespace BeautyHubAPI.Controllers
                     return Ok(_response);
                 }
 
+                var appointmentDetail = await _context.Appointment.Where(u => u.AppointmentId == model.appointmentId).FirstOrDefaultAsync();
+                if (appointmentDetail == null)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Appointment not found.";
+                    return Ok(_response);
+                }
+
+                if (appointmentDetail.AppointmentStatus == AppointmentStatus.Cancelled.ToString())
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Appointment already cancelled.";
+                    return Ok(_response);
+                }
+
                 model.slotId = model.slotId == null ? 0 : model.slotId;
-                var bookedServices = await (from A in _context.Appointment
-                                       join BS in _context.BookedService on A.AppointmentId equals BS.AppointmentId into joinedTable
-                                       from PC in joinedTable.DefaultIfEmpty()
-                                       where A.AppointmentId == model.appointmentId && A.CustomerUserId == currentUserId
-                                       && PC.AppointmentId == model.appointmentId
-                                       select PC).Distinct().ToListAsync();          
+                var bookedServices = await _context.BookedService.Where(u => u.AppointmentId == model.appointmentId).ToListAsync();//&& u.BookingStatus != AppointmentStatus.Cancelled.ToString()
                 if (bookedServices.Count > 0)
                 {
                     if (model.slotId > 0 || bookedServices.Count == 1)
                     {
-                        BookedService? boockedDerice;
+                        BookedService? bookedService;
                         if (model.slotId > 0)
                         {
-                            boockedDerice = bookedServices.FirstOrDefault(x => x.AppointmentId == model.appointmentId && x.SlotId == model.slotId);
+                            bookedService = bookedServices.FirstOrDefault(x => x.AppointmentId == model.appointmentId && x.SlotId == model.slotId);
                         }
                         else
                         {
-                            boockedDerice = bookedServices.FirstOrDefault();
-                        }                     
-                        if (boockedDerice != null)
-                        {
-                            if (boockedDerice.ServiceCountInCart == 1)
-                            {
-                                _context.BookedService.Remove(boockedDerice);
-                                await _context.SaveChangesAsync();
-                            }
-                            else
-                            {
-                                boockedDerice.ServiceCountInCart = boockedDerice.ServiceCountInCart - 1;
-                                _context.Update(boockedDerice);
-                                await _context.SaveChangesAsync();
-                            }                        
+                            bookedService = bookedServices.FirstOrDefault();
                         }
+
+                        if (bookedService != null)
+                        {
+                            if (bookedService.BookingStatus == AppointmentStatus.Cancelled.ToString())
+                            {
+                                _response.StatusCode = HttpStatusCode.OK;
+                                _response.IsSuccess = false;
+                                _response.Messages = "Appointment already cancelled.";
+                                return Ok(_response);
+                            }
+
+
+
+                            var timeSlot = await _context.TimeSlot.Where(u => u.SlotId == bookedService.SlotId).FirstOrDefaultAsync();
+                            if (timeSlot.SlotCount == 0 && timeSlot.Status == false)
+                            {
+                                timeSlot.Status = true;
+                            }
+                            timeSlot.SlotCount = (int)(timeSlot.SlotCount + bookedService.ServiceCountInCart);
+                            _context.Update(timeSlot);
+                            await _context.SaveChangesAsync();
+                        }
+
+                        bookedService.BookingStatus = AppointmentStatus.Cancelled.ToString();
+                        _context.Update(bookedService);
+                        await _context.SaveChangesAsync();
+
+                        var bookingServiceStatus = bookedServices.Where(u => u.BookingStatus == AppointmentStatus.Scheduled.ToString() || u.BookingStatus == AppointmentStatus.Completed.ToString());
+                        if (bookingServiceStatus == null)
+                        {
+                            appointmentDetail.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
+                            _context.Update(appointmentDetail);
+                            await _context.SaveChangesAsync();
+                        }
+
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = true;
-                        _response.Messages = "Service removed from cart.";
+                        _response.Messages = "Appointment cancelled successfully.";
                         return Ok(_response);
-                    }                     
+                    }
                     else
                     {
                         List<BookedServicesDTO>? bookedServiceList = new List<BookedServicesDTO>();
                         foreach (var booked in bookedServices)
                         {
-                            var serviceDetail = await _context.SalonService.Where(u => u.ServiceId == booked.ServiceId).FirstOrDefaultAsync();
+                            var salonDetail = await _context.SalonDetail.Where(u => u.SalonId == booked.SalonId).FirstOrDefaultAsync();
                             var mappedData = _mapper.Map<BookedServicesDTO>(booked);
-                            _mapper.Map(serviceDetail, mappedData);
-                            var timeSlot = await _context.TimeSlot.Where(u => u.SlotId == booked.SlotId).FirstOrDefaultAsync();
-                            mappedData.slotDate = timeSlot.SlotDate.ToString(@"dd-MM-yyyy");
-                            mappedData.fromTime = timeSlot.FromTime;
-                            mappedData.toTime = timeSlot.ToTime;
-                          //  mappedData.slotStatus = timeSlot.Status;
+                            // _mapper.Map(app, mappedData);
+                            // var timeSlot = await _context.TimeSlot.Where(u => u.SlotId == booked.SlotId).FirstOrDefaultAsync();
+                            mappedData.appointmentDate = booked.AppointmentDate.ToString(@"dd-MM-yyyy");
+                            mappedData.createDate = booked.CreateDate.ToString(@"dd-MM-yyyy");
+                            mappedData.serviceName = salonDetail.SalonName;
                             var favoritesStatus = await _context.FavouriteService.Where(u => u.ServiceId == booked.ServiceId && u.CustomerUserId == currentUserId).FirstOrDefaultAsync();
                             mappedData.favoritesStatus = favoritesStatus != null ? true : false;
                             bookedServiceList.Add(mappedData);
@@ -1668,9 +1701,6 @@ namespace BeautyHubAPI.Controllers
                         _response.Data = bookedServiceList;
                         return Ok(_response);
                     }
-
-                
-                
                 }
                 else
                 {
@@ -1724,6 +1754,7 @@ namespace BeautyHubAPI.Controllers
                 }
 
                 int serviceCount;
+                double finalPrice = 0;
 
                 var getCartItems = await _context.Cart.Where(u => (u.CustomerUserId == currentUserId)).ToListAsync();
                 serviceCount = getCartItems.Count;
@@ -1733,14 +1764,17 @@ namespace BeautyHubAPI.Controllers
                     {
                         serviceCount = (int)(serviceCount + item.ServiceCountInCart - 1);
                     }
+                    var serviceDetail = await _context.SalonService.Where(u => (u.ServiceId == item.ServiceId)).FirstOrDefaultAsync();
+
+                    finalPrice = finalPrice + (double)(serviceDetail.ListingPrice * item.ServiceCountInCart);
                 }
 
                 return Ok(new
                 {
                     StatusCode = HttpStatusCode.OK,
                     IsSuccess = true,
-                    TotalCount = serviceCount,
-                    Messages = "Services count in cart shown successfully."
+                    Data = new { totalCount = serviceCount, finalPrice = finalPrice },
+                    Messages = "Total count and price shown successfully."
                 });
             }
             catch (Exception ex)
@@ -2071,7 +2105,6 @@ namespace BeautyHubAPI.Controllers
                     {
                         appointmentDetail.PaymentMethod = PaymentMethod.InCash.ToString();
                     }
-
                 }
                 else
                 {
@@ -2118,6 +2151,12 @@ namespace BeautyHubAPI.Controllers
 
                     await _context.BookedService.AddAsync(bookedService);
                     await _context.SaveChangesAsync();
+
+                    // slotDetail.SlotCount = (int)(slotDetail.SlotCount - bookedService.ServiceCountInCart);
+                    // slotDetail.Status = slotDetail.SlotCount == 0 ? false : slotDetail.Status;
+                    // _context.Update(slotDetail);
+                    // await _context.SaveChangesAsync();
+
                 }
 
                 appointmentDetail.BasePrice = basePrice;
@@ -2134,7 +2173,7 @@ namespace BeautyHubAPI.Controllers
                 foreach (var item in inStockCartServices)
                 {
                     var updateTimeSlot = await _context.TimeSlot.Where(u => (u.ServiceId == item.ServiceId) && (u.SlotId == item.SlotId)).FirstOrDefaultAsync();
-                    updateTimeSlot.SlotCount = updateTimeSlot.SlotCount - 1;
+                    updateTimeSlot.SlotCount = (int)(updateTimeSlot.SlotCount - item.ServiceCountInCart);
                     if (updateTimeSlot.SlotCount == 0)
                     {
                         updateTimeSlot.Status = false;

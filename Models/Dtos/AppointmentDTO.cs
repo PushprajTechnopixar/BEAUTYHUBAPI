@@ -23,6 +23,7 @@ namespace BeautyHubAPI.Models.Dtos
     public class CancelAppointmentDTO
     {
         public int appointmentId { get; set; }
+        // public int serviceId { get; set; }
         public int? slotId { get; set; }
     }
     public class AppointmentDetailDTO
@@ -62,7 +63,7 @@ namespace BeautyHubAPI.Models.Dtos
         public string? appointmentStatus { get; set; }
         public string? paymentMethod { get; set; }
         public string? paymentStatus { get; set; }
-        public string? salonName { get;set; } 
+        public string? salonName { get; set; }
         public double? cgst { get; set; }
         public double? igst { get; set; }
         public double? sgst { get; set; }
@@ -100,6 +101,7 @@ namespace BeautyHubAPI.Models.Dtos
     {
         public int bookedServiceId { get; set; }
         public int? couponId { get; set; }
+        public int? slotId { get; set; }
         public int appointmentId { get; set; }
         public int? serviceId { get; set; }
         public string? serviceName { get; set; }
@@ -117,8 +119,9 @@ namespace BeautyHubAPI.Models.Dtos
         public string toTime { get; set; } = null!;
         public int? durationInMinutes { get; set; }
         public bool favoritesStatus { get; set; }
+        public string? bookingStatus { get; set; }
         public string createDate { get; set; }
-        public string slotDate { get; set; }
+        // public string slotDate { get; set; }
         public int serviceCountInCart { get; set; }
 
     }
