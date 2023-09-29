@@ -1785,5 +1785,376 @@ namespace BeautyHubAPI.Controllers
         }
         #endregion
 
+        #region SetAppointmentStatus
+        /// <summary>
+        /// Set appointment status {Pending, Completed, Scheduled, Cancelled}.
+        /// </summary>
+        [HttpPost]
+        [Route("SetAppointmentStatus")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [Authorize(Roles = "Vendor")]
+        public async Task<IActionResult> SetAppointmentStatus(SetAppointmentStatusDTO model)
+        {
+            try
+            {
+                string currentUserId = (HttpContext.User.Claims.First().Value);
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Token expired.";
+                    return Ok(_response);
+                }
+
+                var appointmentDetail = await _context.Appointment.Where(u => u.AppointmentId == model.appointmentId).FirstOrDefaultAsync();
+                if (appointmentDetail == null)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Data = new Object { };
+                    _response.Messages = "Not found any appointment.";
+                    return Ok(_response);
+                }
+
+                if (appointmentDetail.AppointmentStatus == AppointmentStatus.Cancelled.ToString())
+                {
+                    
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Data = new Object { };
+                        _response.Messages = "Can't be change after cancelled";
+                        return Ok(_response);
+                }
+                if (appointmentDetail.AppointmentStatus == AppointmentStatus.Completed.ToString())
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Data = new Object { };
+                    _response.Messages = "Can't be change after completed";
+                    return Ok(_response);
+                }
+                if (model.appointmentStatus == AppointmentStatus.Completed.ToString())
+                {
+                    if (appointmentDetail.AppointmentStatus == AppointmentStatus.Cancelled.ToString())
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Data = new Object { };
+                        _response.Messages = "Can't be change after completed";
+                        return Ok(_response);
+                    }
+
+                    var bookedServices = await _context.BookedService.Where(u => u.AppointmentId == model.appointmentId).ToListAsync();//&& u.BookingStatus != AppointmentStatus.Cancelled.ToString()
+                    if (bookedServices.Count > 0)
+                    {
+                        if (model.slotId > 0 || bookedServices.Count == 1)
+                        {
+                            BookedService? bookedService;
+                            if (model.slotId > 0)
+                            {
+                                bookedService = bookedServices.FirstOrDefault(x => x.AppointmentId == model.appointmentId && x.SlotId == model.slotId);
+                            }
+                            else
+                            {
+                                bookedService = bookedServices.FirstOrDefault();
+                            }
+
+                            if (bookedService != null)
+                            {
+                                if (bookedService.BookingStatus == AppointmentStatus.Completed.ToString())
+                                {
+                                    _response.StatusCode = HttpStatusCode.OK;
+                                    _response.IsSuccess = false;
+                                    _response.Messages = "Appointment already completed.";
+                                    return Ok(_response);
+                                }
+
+                            }
+
+                            bookedService.BookingStatus = AppointmentStatus.Completed.ToString();
+                            _context.Update(bookedService);
+                            await _context.SaveChangesAsync();
+
+                            var bookingServiceStatus = bookedServices.Where(u => u.BookingStatus == AppointmentStatus.Scheduled.ToString() || u.BookingStatus == AppointmentStatus.Cancelled.ToString());
+                            if (bookingServiceStatus == null)
+                            {
+                                appointmentDetail.AppointmentStatus = AppointmentStatus.Completed.ToString();
+                                _context.Update(appointmentDetail);
+                                await _context.SaveChangesAsync();
+                            }
+
+                            _response.StatusCode = HttpStatusCode.OK;
+                            _response.IsSuccess = true;
+                            _response.Messages = "Appointment status set to completed successfully.";
+                            return Ok(_response);
+                        }
+                        else
+                        {
+                            List<BookedServicesDTO>? bookedServiceList = new List<BookedServicesDTO>();
+                            foreach (var booked in bookedServices)
+                            {
+                                var salonDetail = await _context.SalonDetail.Where(u => u.SalonId == booked.SalonId).FirstOrDefaultAsync();
+                                var mappedData = _mapper.Map<BookedServicesDTO>(booked);
+                                // _mapper.Map(app, mappedData);
+                                // var timeSlot = await _context.TimeSlot.Where(u => u.SlotId == booked.SlotId).FirstOrDefaultAsync();
+                                mappedData.appointmentDate = booked.AppointmentDate.ToString(@"dd-MM-yyyy");
+                                mappedData.createDate = booked.CreateDate.ToString(@"dd-MM-yyyy");
+                                mappedData.serviceName = salonDetail.SalonName;
+                                var favoritesStatus = await _context.FavouriteService.Where(u => u.ServiceId == booked.ServiceId && u.CustomerUserId == currentUserId).FirstOrDefaultAsync();
+                                mappedData.favoritesStatus = favoritesStatus != null ? true : false;
+                                bookedServiceList.Add(mappedData);
+                            }
+
+                            _response.StatusCode = HttpStatusCode.OK;
+                            _response.IsSuccess = true;
+                            _response.Messages = "Service list shown successfully.";
+                            _response.Data = bookedServiceList;
+                            return Ok(_response);
+                        }
+                    }
+
+
+                }
+                if (model.appointmentStatus == AppointmentStatus.Cancelled.ToString())
+                {
+                    if (appointmentDetail.AppointmentStatus == AppointmentStatus.Completed.ToString())
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Data = new Object { };
+                        _response.Messages = "Can't be change after cancelled";
+                        return Ok(_response);
+                    }
+
+
+                    var bookedServices = await _context.BookedService.Where(u => u.AppointmentId == model.appointmentId).ToListAsync();//&& u.BookingStatus != AppointmentStatus.Cancelled.ToString()
+                    if (bookedServices.Count > 0)
+                    {
+                        if (model.slotId > 0 || bookedServices.Count == 1)
+                        {
+                            BookedService? bookedService;
+                            if (model.slotId > 0)
+                            {
+                                bookedService = bookedServices.FirstOrDefault(x => x.AppointmentId == model.appointmentId && x.SlotId == model.slotId);
+                            }
+                            else
+                            {
+                                bookedService = bookedServices.FirstOrDefault();
+                            }
+
+                            if (bookedService != null)
+                            {
+                                if (bookedService.BookingStatus == AppointmentStatus.Cancelled.ToString())
+                                {
+                                    _response.StatusCode = HttpStatusCode.OK;
+                                    _response.IsSuccess = false;
+                                    _response.Messages = "Appointment already cancelled.";
+                                    return Ok(_response);
+                                }
+
+                            }
+                            bookedService.BookingStatus = AppointmentStatus.Cancelled.ToString();
+                            _context.Update(bookedService);
+                            await _context.SaveChangesAsync();
+
+                            var bookingServiceStatus = bookedServices.Where(u => u.BookingStatus == AppointmentStatus.Scheduled.ToString() || u.BookingStatus == AppointmentStatus.Completed.ToString());
+                            if (bookingServiceStatus == null)
+                            {
+                                appointmentDetail.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
+                                _context.Update(appointmentDetail);
+                                await _context.SaveChangesAsync();
+                            }
+
+                            _response.StatusCode = HttpStatusCode.OK;
+                            _response.IsSuccess = true;
+                            _response.Messages = "Appointment cancelled successfully.";
+                            return Ok(_response);
+                        }
+                        else
+                        {
+                            List<BookedServicesDTO>? bookedServiceList = new List<BookedServicesDTO>();
+                            foreach (var booked in bookedServices)
+                            {
+                                var salonDetail = await _context.SalonDetail.Where(u => u.SalonId == booked.SalonId).FirstOrDefaultAsync();
+                                var mappedData = _mapper.Map<BookedServicesDTO>(booked);
+                                // _mapper.Map(app, mappedData);
+                                // var timeSlot = await _context.TimeSlot.Where(u => u.SlotId == booked.SlotId).FirstOrDefaultAsync();
+                                mappedData.appointmentDate = booked.AppointmentDate.ToString(@"dd-MM-yyyy");
+                                mappedData.createDate = booked.CreateDate.ToString(@"dd-MM-yyyy");
+                                mappedData.serviceName = salonDetail.SalonName;
+                                var favoritesStatus = await _context.FavouriteService.Where(u => u.ServiceId == booked.ServiceId && u.CustomerUserId == currentUserId).FirstOrDefaultAsync();
+                                mappedData.favoritesStatus = favoritesStatus != null ? true : false;
+                                bookedServiceList.Add(mappedData);
+                            }
+
+                            _response.StatusCode = HttpStatusCode.OK;
+                            _response.IsSuccess = true;
+                            _response.Messages = "Service list shown successfully.";
+                            _response.Data = bookedServiceList;
+                            return Ok(_response);
+                        }
+                    }
+                }
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = true;
+                // _response.Data = response;
+                _response.Messages = "appointment status" + ResponseMessages.msgUpdationSuccess;
+                return Ok(_response);
+            }
+            catch (Exception ex)
+            {
+                _response.StatusCode = HttpStatusCode.InternalServerError;
+                _response.IsSuccess = false;
+                _response.Messages = ex.Message;
+                return Ok(_response);
+            }
+        }
+        #endregion
+        #region SetPaymentStatus
+        /// <summary>
+        /// Set payment status {OnHold, Paid, Unpaid, Refunded}.
+        /// </summary>
+        [HttpPost]
+        [Route("SetPaymentStatus")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [Authorize(Roles = "Vendor")]
+        public async Task<IActionResult> SetPaymentStatus(SetPaymentStatusDTO model)
+        {
+            try
+            {
+                string currentUserId = (HttpContext.User.Claims.First().Value);
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Token expired.";
+                    return Ok(_response);
+                }
+
+                if (model.paymentStatus != PaymentStatus.OnHold.ToString()
+                && model.paymentStatus != PaymentStatus.Paid.ToString()
+                && model.paymentStatus != PaymentStatus.Unpaid.ToString()
+                && model.paymentStatus != PaymentStatus.Refunded.ToString())
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Please select a valid status.";
+                    return Ok(_response);
+                }
+
+                var appointmentDetails = await _context.Appointment.Where(u => u.AppointmentId == model.appointmentId).FirstOrDefaultAsync();
+                if (appointmentDetails == null)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Data = new Object { };
+                    _response.Messages = "Not found any order.";
+                    return Ok(_response);
+                }
+
+                if (appointmentDetails.AppointmentStatus == AppointmentStatus.Cancelled.ToString())
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Data = new Object { };
+                    _response.Messages = "Can't be change after cancelled.";
+                    return Ok(_response);
+                }
+
+                if (appointmentDetails.PaymentStatus == PaymentStatus.Paid.ToString())
+                {
+                    if (model.paymentStatus == PaymentStatus.OnHold.ToString()
+                    || model.paymentStatus == PaymentStatus.Unpaid.ToString())
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Data = new Object { };
+                        _response.Messages = "Please enter valid payment status.";
+                        return Ok(_response);
+                    }
+                }
+
+                if (appointmentDetails.PaymentStatus == PaymentStatus.Refunded.ToString())
+                {
+                    if (model.paymentStatus == PaymentStatus.OnHold.ToString()
+                    || model.paymentStatus == PaymentStatus.Paid.ToString()
+                    || model.paymentStatus == PaymentStatus.Unpaid.ToString())
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Data = new Object { };
+                        _response.Messages = "Please enter valid payment status.";
+                        return Ok(_response);
+                    }
+                }
+
+                appointmentDetails.PaymentStatus = model.paymentStatus;
+                _context.Appointment.Update(appointmentDetails);
+                await _context.SaveChangesAsync();
+                // send Notification
+
+                string notificationMessage = "";
+
+                if (appointmentDetails.PaymentStatus == PaymentStatus.Unpaid.ToString())
+                {
+                    notificationMessage = "Payment remain unpaid.";
+                }
+                else if (appointmentDetails.PaymentStatus == PaymentStatus.Paid.ToString())
+                {
+                    notificationMessage = "Paid successfully.";
+                }
+                else if (appointmentDetails.PaymentStatus == PaymentStatus.OnHold.ToString())
+                {
+                    notificationMessage = "Your payment is on hold.";
+                }
+                else
+                {
+                    notificationMessage = "Your payment has been refunded.";
+                }
+
+                var user = await _context.UserDetail.Where(a => (a.UserId == appointmentDetails.CustomerUserId) && (a.IsDeleted != true)).FirstOrDefaultAsync();
+                var userprofileDetail = _userManager.FindByIdAsync(user.UserId).GetAwaiter().GetResult();
+                var token = user.Fcmtoken;
+                var title = "Payment Status";
+                var description = String.Format("Hi {0},\n{1}", userprofileDetail.FirstName, notificationMessage);
+                if (!string.IsNullOrEmpty(token))
+                {
+                    // if (user.IsNotificationEnabled == true)
+                    // {
+                    var resp = await _mobileMessagingClient.SendNotificationAsync(token, title, description);
+                    // if (!string.IsNullOrEmpty(resp))
+                    // {
+                    // update notification sent
+                    var notificationSent = new NotificationSent();
+                    notificationSent.Title = title;
+                    notificationSent.Description = description;
+                    notificationSent.NotificationType = NotificationType.Appointment.ToString();
+                    notificationSent.UserId = user.UserId;
+
+                    await _context.AddAsync(notificationSent);
+                    await _context.SaveChangesAsync();
+                    // }
+                    // }
+                }
+
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = true;
+                // _response.Data = response;
+                _response.Messages = "Payment status" + ResponseMessages.msgUpdationSuccess;
+                return Ok(_response);
+
+            }
+            catch (Exception ex)
+            {
+                _response.StatusCode = HttpStatusCode.InternalServerError;
+                _response.IsSuccess = false;
+                _response.Data = new { };
+                _response.Messages = ResponseMessages.msgSomethingWentWrong + ex.Message;
+                return Ok(_response);
+            }
+        }
+        #endregion
     }
 }
