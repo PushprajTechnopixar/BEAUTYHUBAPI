@@ -754,24 +754,32 @@ namespace BeautyHubAPI.Controllers
                 }
 
                 // // set status false when expire
+                List<MembershipRecord>? updateMembership = new List<MembershipRecord>();
                 var updateMembershipRecord = await _membershipRecordRepository.GetAllAsync(a => a.PlanStatus != true);
+                var shopUpdates = new List<SalonDetail>(); // Collect shop updates
+
                 foreach (var item in updateMembershipRecord)
                 {
-                    if (DateTime.UtcNow > (item.ExpiryDate))
+                    if (DateTime.UtcNow > item.ExpiryDate)
                     {
                         item.PlanStatus = false;
-                        await _membershipRecordRepository.UpdateMembershipRecord(item);
+                        updateMembership.Add(item);
 
-                        var shop = await _context.SalonDetail.Where(u => u.SalonId == item.SalonId).FirstOrDefaultAsync();
+                        var shop = _context.SalonDetail.FirstOrDefault(u => u.SalonId == item.SalonId);
                         if (shop != null)
                         {
-                            shop.Status = Convert.ToInt32(Status.Expired);
-                            _context.SalonDetail.Update(shop);
-
-                            _context.SaveChangesAsync();
+                            shop.Status = (int)Status.Expired;
+                            shopUpdates.Add(shop); // Collect shop updates
                         }
                     }
                 }
+
+                // Outside the loop, save all changes to the context
+                _context.UpdateRange(updateMembership);
+                _context.UpdateRange(shopUpdates);
+                await _context.SaveChangesAsync();
+
+                await _membershipRecordRepository.UpdateMembershipRecord(updateMembership);
 
                 var membershipPlans = _context.MembershipPlan.Where(a => (a.IsDeleted != true)).OrderByDescending(a => a.IsPopular).ToList();
 
@@ -1077,7 +1085,8 @@ namespace BeautyHubAPI.Controllers
                     membershipRecord.VendorId = vendorDetail.vendorId;
                     membershipRecord.CreatedBy = vendorDetail.createdBy;
                     membershipRecord.SalonId = salonDetailMapped.SalonId;
-                    await _membershipRecordRepository.UpdateMembershipRecord(membershipRecord);
+                    _context.Update(membershipRecord);
+                    await _context.SaveChangesAsync();
                 }
             }
             var salons = await _context.SalonDetail.Where(u => u.VendorId == vendorDetail.vendorId).ToListAsync();

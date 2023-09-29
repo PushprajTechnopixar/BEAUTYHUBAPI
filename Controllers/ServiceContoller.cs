@@ -409,7 +409,7 @@ namespace BeautyHubAPI.Controllers
 
                 _backgroundService.StartService();
 
-                var scheduledDays = new ScheduleDayDTO();
+                var scheduledDays = new ScheduleDayResonceDTO();
                 scheduledDays.monday = SalonSchedule.Monday;
                 scheduledDays.tuesday = SalonSchedule.Tuesday;
                 scheduledDays.wednesday = SalonSchedule.Wednesday;
@@ -419,7 +419,7 @@ namespace BeautyHubAPI.Controllers
                 scheduledDays.sunday = SalonSchedule.Sunday;
                 scheduledDays.fromTime = SalonSchedule.FromTime;
                 scheduledDays.toTime = SalonSchedule.ToTime;
-                scheduledDays.UpdateStatus = SalonSchedule.UpdateStatus;
+                scheduledDays.updateStatus = SalonSchedule.UpdateStatus;
 
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
@@ -883,7 +883,7 @@ namespace BeautyHubAPI.Controllers
                     return Ok(_response);
                 }
 
-                var scheduleDayViewModel = new ScheduleDayDTO();
+                var scheduleDayViewModel = new ScheduleDayResonceDTO();
                 scheduleDayViewModel.monday = SalonSchedule.Monday;
                 scheduleDayViewModel.tuesday = SalonSchedule.Tuesday;
                 scheduleDayViewModel.wednesday = SalonSchedule.Wednesday;
@@ -896,7 +896,7 @@ namespace BeautyHubAPI.Controllers
                 // scheduleDayViewModel.fromTime = SalonSchedule.FromTime;
                 // scheduleDayViewModel.toTime = SalonSchedule.ToTime;
                 scheduleDayViewModel.salonId = SalonSchedule.SalonId;
-                scheduleDayViewModel.UpdateStatus = SalonSchedule.UpdateStatus;
+                scheduleDayViewModel.updateStatus = SalonSchedule.UpdateStatus;
 
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;

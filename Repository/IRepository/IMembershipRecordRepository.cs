@@ -5,6 +5,6 @@ namespace BeautyHubAPI.Repository.IRepository
 {
     public interface IMembershipRecordRepository : IRepository<MembershipRecord>
     {
-        Task<MembershipRecord> UpdateMembershipRecord(MembershipRecord entity);
+        Task<List<MembershipRecord>> UpdateMembershipRecord(List<MembershipRecord> entity);
     }
 }

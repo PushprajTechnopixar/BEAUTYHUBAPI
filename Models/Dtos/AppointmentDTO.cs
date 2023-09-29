@@ -13,7 +13,7 @@ namespace BeautyHubAPI.Models.Dtos
     public class SetAppointmentStatusDTO
     {
         public int appointmentId { get; set; }
-        public int? slotId { get; set; }
+        public string? slotIds { get; set; }
         public string appointmentStatus { get; set; }
         public bool setToAll { get; set; }
     }
@@ -25,8 +25,7 @@ namespace BeautyHubAPI.Models.Dtos
     public class CancelAppointmentDTO
     {
         public int appointmentId { get; set; }
-        // public int serviceId { get; set; }
-        public int? slotId { get; set; }
+        public string? slotIds { get; set; }
         public bool cancelAllAppointments { get; set; }
     }
     public class AppointmentDetailDTO
@@ -170,6 +169,9 @@ namespace BeautyHubAPI.Models.Dtos
         public string salonName { get; set; }
         public string? distance { get; set; }
         public string? duration { get; set; }
+        public int scheduleCount { get; set; }
+        public int cancelledCount { get; set; }
+        public int completedCount { get; set; }
     }
 
 }

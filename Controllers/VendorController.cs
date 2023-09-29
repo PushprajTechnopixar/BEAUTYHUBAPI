@@ -242,7 +242,8 @@ namespace BeautyHubAPI.Controllers
                     membershipRecord.ExpiryDate = membershipRecord.CreateDate;
                 }
 
-                await _membershipRecordRepository.UpdateMembershipRecord(membershipRecord);
+                _context.Update(membershipRecord);
+                await _context.SaveChangesAsync();
 
                 var responseData = _mapper.Map<GetMembershipRecordDTO>(membershipRecord);
 
@@ -256,11 +257,13 @@ namespace BeautyHubAPI.Controllers
                 responseData.expiryDate = membershipRecord.ExpiryDate.ToString(@"dd-MM-yyyy");
 
                 var oldMembershipRecord = await _membershipRecordRepository.GetAllAsync(a => (a.VendorId == membershipRecord.VendorId) && (a.MembershipRecordId != membershipRecord.MembershipRecordId) && (a.PlanStatus == true));
+                List<MembershipRecord>? updateMembership = new List<MembershipRecord>();
                 foreach (var item in oldMembershipRecord)
                 {
                     item.PlanStatus = false;
-                    await _membershipRecordRepository.UpdateMembershipRecord(item);
+                    updateMembership.Add(item);
                 }
+                await _membershipRecordRepository.UpdateMembershipRecord(updateMembership);
 
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
@@ -1817,6 +1820,16 @@ namespace BeautyHubAPI.Controllers
                     return Ok(_response);
                 }
 
+                List<string> slotIds = new List<string>();
+                if (!string.IsNullOrEmpty(model.slotIds))
+                {
+                    string[] splitSlotIds = model.slotIds.Split(",");
+                    foreach (var item in splitSlotIds)
+                    {
+                        slotIds.Add(item);
+                    }
+                }
+
                 if (appointmentDetail.AppointmentStatus == AppointmentStatus.Cancelled.ToString())
                 {
 
@@ -1848,100 +1861,71 @@ namespace BeautyHubAPI.Controllers
                     var bookedServices = await _context.BookedService.Where(u => u.AppointmentId == model.appointmentId).ToListAsync();//&& u.BookingStatus != AppointmentStatus.Cancelled.ToString()
                     if (bookedServices.Count > 0)
                     {
-                        if (model.slotId > 0 || bookedServices.Count == 1 && model.setToAll == false)
+                        if (slotIds.Count > 0 || bookedServices.Count == 1 && model.setToAll == false)
                         {
-                            BookedService? bookedService;
-                            if (model.slotId > 0)
+                            foreach (var item in slotIds)
                             {
-                                bookedService = bookedServices.FirstOrDefault(x => x.AppointmentId == model.appointmentId && x.SlotId == model.slotId);
-                            }
-                            else
-                            {
-                                bookedService = bookedServices.FirstOrDefault();
-                            }
-
-                            if (bookedService != null)
-                            {
-                                if (bookedService.BookingStatus == AppointmentStatus.Completed.ToString())
+                                var slotIdInt = Convert.ToInt32(item);
+                                BookedService? bookedService;
+                                if (slotIdInt > 0)
                                 {
-                                    _response.StatusCode = HttpStatusCode.OK;
-                                    _response.IsSuccess = false;
-                                    _response.Messages = "Appointment already completed.";
-                                    return Ok(_response);
+                                    bookedService = bookedServices.FirstOrDefault(x => x.AppointmentId == model.appointmentId && x.SlotId == slotIdInt);
+                                }
+                                else
+                                {
+                                    bookedService = bookedServices.FirstOrDefault();
                                 }
 
-                            }
+                                if (bookedService != null)
+                                {
+                                    if (bookedService.BookingStatus == AppointmentStatus.Completed.ToString())
+                                    {
+                                        _response.StatusCode = HttpStatusCode.OK;
+                                        _response.IsSuccess = false;
+                                        _response.Messages = "Appointment already completed.";
+                                        return Ok(_response);
+                                    }
+                                }
 
-                            bookedService.BookingStatus = AppointmentStatus.Completed.ToString();
-                            _context.Update(bookedService);
-                            await _context.SaveChangesAsync();
-
-                            var bookingServiceStatus = bookedServices.Where(u => u.BookingStatus == AppointmentStatus.Scheduled.ToString() || u.BookingStatus == AppointmentStatus.Cancelled.ToString());
-                            if (bookingServiceStatus == null)
-                            {
-                                appointmentDetail.AppointmentStatus = AppointmentStatus.Completed.ToString();
-                                _context.Update(appointmentDetail);
+                                bookedService.BookingStatus = AppointmentStatus.Completed.ToString();
+                                _context.Update(bookedService);
                                 await _context.SaveChangesAsync();
-                            }
 
-                            _response.StatusCode = HttpStatusCode.OK;
-                            _response.IsSuccess = true;
-                            _response.Messages = "Appointment status set to completed successfully.";
-                            return Ok(_response);
+                                var bookingServiceStatus = bookedServices.Where(u => u.BookingStatus == AppointmentStatus.Scheduled.ToString() || u.BookingStatus == AppointmentStatus.Cancelled.ToString());
+                                if (bookingServiceStatus == null)
+                                {
+                                    appointmentDetail.AppointmentStatus = AppointmentStatus.Completed.ToString();
+                                    _context.Update(appointmentDetail);
+                                    await _context.SaveChangesAsync();
+                                }
+                            }
                         }
                         else
                         {
-                            if (model.cancelAllAppointments != true)
+                            foreach (var booked in bookedServices)
                             {
-                                List<BookedServicesDTO>? bookedServiceList = new List<BookedServicesDTO>();
-                                foreach (var booked in bookedServices)
+                                var timeSlot = await _context.TimeSlot.Where(u => u.SlotId == booked.SlotId).FirstOrDefaultAsync();
+                                if (timeSlot.SlotCount == 0 && timeSlot.Status == false)
                                 {
-                                    var salonDetail = await _context.SalonDetail.Where(u => u.SalonId == booked.SalonId).FirstOrDefaultAsync();
-                                    var mappedData = _mapper.Map<BookedServicesDTO>(booked);
-                                    // _mapper.Map(app, mappedData);
-                                    // var timeSlot = await _context.TimeSlot.Where(u => u.SlotId == booked.SlotId).FirstOrDefaultAsync();
-                                    mappedData.appointmentDate = booked.AppointmentDate.ToString(@"dd-MM-yyyy");
-                                    mappedData.createDate = booked.CreateDate.ToString(@"dd-MM-yyyy");
-                                    mappedData.serviceName = salonDetail.SalonName;
-                                    var favoritesStatus = await _context.FavouriteService.Where(u => u.ServiceId == booked.ServiceId && u.CustomerUserId == currentUserId).FirstOrDefaultAsync();
-                                    mappedData.favoritesStatus = favoritesStatus != null ? true : false;
-                                    bookedServiceList.Add(mappedData);
+                                    timeSlot.Status = true;
                                 }
-
-                                _response.StatusCode = HttpStatusCode.OK;
-                                _response.IsSuccess = true;
-                                _response.Messages = "Service list shown successfully.";
-                                _response.Data = bookedServiceList;
-                                return Ok(_response);
-                            }
-                            else
-                            {
-                                foreach (var booked in bookedServices)
-                                {
-                                    var timeSlot = await _context.TimeSlot.Where(u => u.SlotId == booked.SlotId).FirstOrDefaultAsync();
-                                    if (timeSlot.SlotCount == 0 && timeSlot.Status == false)
-                                    {
-                                        timeSlot.Status = true;
-                                    }
-                                    timeSlot.SlotCount = (int)(timeSlot.SlotCount + booked.ServiceCountInCart);
-                                    _context.Update(timeSlot);
-                                    await _context.SaveChangesAsync();
-
-                                    booked.BookingStatus = AppointmentStatus.Completed.ToString();
-                                    _context.Update(booked);
-                                    await _context.SaveChangesAsync();
-                                }
-
-                                appointmentDetail.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
-                                _context.Update(appointmentDetail);
+                                timeSlot.SlotCount = (int)(timeSlot.SlotCount + booked.ServiceCountInCart);
+                                _context.Update(timeSlot);
                                 await _context.SaveChangesAsync();
 
-                                _response.StatusCode = HttpStatusCode.OK;
-                                _response.IsSuccess = true;
-                                _response.Messages = "Appointment cancelled successfully.";
-                                return Ok(_response);
+                                booked.BookingStatus = AppointmentStatus.Completed.ToString();
+                                _context.Update(booked);
+                                await _context.SaveChangesAsync();
                             }
+
+                            appointmentDetail.AppointmentStatus = AppointmentStatus.Completed.ToString();
+                            _context.Update(appointmentDetail);
+                            await _context.SaveChangesAsync();
                         }
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = true;
+                        _response.Messages = "Appointment status set to completed successfully.";
+                        return Ok(_response);
                     }
                 }
                 if (model.appointmentStatus == AppointmentStatus.Cancelled.ToString())
@@ -1954,105 +1938,75 @@ namespace BeautyHubAPI.Controllers
                         _response.Messages = "Can't be change after cancelled";
                         return Ok(_response);
                     }
-
-
                     var bookedServices = await _context.BookedService.Where(u => u.AppointmentId == model.appointmentId).ToListAsync();//&& u.BookingStatus != AppointmentStatus.Cancelled.ToString()
                     if (bookedServices.Count > 0)
                     {
-                        if (model.slotId > 0 || bookedServices.Count == 1 && model.setToAll == false)
+                        if (slotIds.Count > 0 || bookedServices.Count == 1 && model.setToAll == false)
                         {
-                            BookedService? bookedService;
-                            if (model.slotId > 0)
+                            foreach (var item in slotIds)
                             {
-                                bookedService = bookedServices.FirstOrDefault(x => x.AppointmentId == model.appointmentId && x.SlotId == model.slotId);
-                            }
-                            else
-                            {
-                                bookedService = bookedServices.FirstOrDefault();
-                            }
-
-                            if (bookedService != null)
-                            {
-                                if (bookedService.BookingStatus == AppointmentStatus.Cancelled.ToString())
+                                var slotIdInt = Convert.ToInt32(item);
+                                BookedService? bookedService;
+                                if (slotIdInt > 0)
                                 {
-                                    _response.StatusCode = HttpStatusCode.OK;
-                                    _response.IsSuccess = false;
-                                    _response.Messages = "Appointment already cancelled.";
-                                    return Ok(_response);
+                                    bookedService = bookedServices.FirstOrDefault(x => x.AppointmentId == model.appointmentId && x.SlotId == slotIdInt);
+                                }
+                                else
+                                {
+                                    bookedService = bookedServices.FirstOrDefault();
                                 }
 
-                            }
-                            bookedService.BookingStatus = AppointmentStatus.Cancelled.ToString();
-                            _context.Update(bookedService);
-                            await _context.SaveChangesAsync();
+                                if (bookedService != null)
+                                {
+                                    if (bookedService.BookingStatus == AppointmentStatus.Cancelled.ToString())
+                                    {
+                                        _response.StatusCode = HttpStatusCode.OK;
+                                        _response.IsSuccess = false;
+                                        _response.Messages = "Appointment already cancelled.";
+                                        return Ok(_response);
+                                    }
 
-                            var bookingServiceStatus = bookedServices.Where(u => u.BookingStatus == AppointmentStatus.Scheduled.ToString() || u.BookingStatus == AppointmentStatus.Completed.ToString());
-                            if (bookingServiceStatus == null)
-                            {
-                                appointmentDetail.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
-                                _context.Update(appointmentDetail);
+                                }
+                                bookedService.BookingStatus = AppointmentStatus.Cancelled.ToString();
+                                _context.Update(bookedService);
                                 await _context.SaveChangesAsync();
-                            }
 
-                            _response.StatusCode = HttpStatusCode.OK;
-                            _response.IsSuccess = true;
-                            _response.Messages = "Appointment cancelled successfully.";
-                            return Ok(_response);
+                                var bookingServiceStatus = bookedServices.Where(u => u.BookingStatus == AppointmentStatus.Scheduled.ToString() || u.BookingStatus == AppointmentStatus.Completed.ToString());
+                                if (bookingServiceStatus == null)
+                                {
+                                    appointmentDetail.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
+                                    _context.Update(appointmentDetail);
+                                    await _context.SaveChangesAsync();
+                                }
+                            }
                         }
                         else
                         {
-
-                            if (model.cancelAllAppointments != true)
+                            foreach (var booked in bookedServices)
                             {
-                                List<BookedServicesDTO>? bookedServiceList = new List<BookedServicesDTO>();
-                                foreach (var booked in bookedServices)
+                                var timeSlot = await _context.TimeSlot.Where(u => u.SlotId == booked.SlotId).FirstOrDefaultAsync();
+                                if (timeSlot.SlotCount == 0 && timeSlot.Status == false)
                                 {
-                                    var salonDetail = await _context.SalonDetail.Where(u => u.SalonId == booked.SalonId).FirstOrDefaultAsync();
-                                    var mappedData = _mapper.Map<BookedServicesDTO>(booked);
-                                    // _mapper.Map(app, mappedData);
-                                    // var timeSlot = await _context.TimeSlot.Where(u => u.SlotId == booked.SlotId).FirstOrDefaultAsync();
-                                    mappedData.appointmentDate = booked.AppointmentDate.ToString(@"dd-MM-yyyy");
-                                    mappedData.createDate = booked.CreateDate.ToString(@"dd-MM-yyyy");
-                                    mappedData.serviceName = salonDetail.SalonName;
-                                    var favoritesStatus = await _context.FavouriteService.Where(u => u.ServiceId == booked.ServiceId && u.CustomerUserId == currentUserId).FirstOrDefaultAsync();
-                                    mappedData.favoritesStatus = favoritesStatus != null ? true : false;
-                                    bookedServiceList.Add(mappedData);
+                                    timeSlot.Status = true;
                                 }
-
-                                _response.StatusCode = HttpStatusCode.OK;
-                                _response.IsSuccess = true;
-                                _response.Messages = "Service list shown successfully.";
-                                _response.Data = bookedServiceList;
-                                return Ok(_response);
-                            }
-                            else
-                            {
-                                foreach (var booked in bookedServices)
-                                {
-                                    var timeSlot = await _context.TimeSlot.Where(u => u.SlotId == booked.SlotId).FirstOrDefaultAsync();
-                                    if (timeSlot.SlotCount == 0 && timeSlot.Status == false)
-                                    {
-                                        timeSlot.Status = true;
-                                    }
-                                    timeSlot.SlotCount = (int)(timeSlot.SlotCount + booked.ServiceCountInCart);
-                                    _context.Update(timeSlot);
-                                    await _context.SaveChangesAsync();
-
-                                    booked.BookingStatus = AppointmentStatus.Cancelled.ToString();
-                                    _context.Update(booked);
-                                    await _context.SaveChangesAsync();
-                                }
-
-                                appointmentDetail.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
-                                _context.Update(appointmentDetail);
+                                timeSlot.SlotCount = (int)(timeSlot.SlotCount + booked.ServiceCountInCart);
+                                _context.Update(timeSlot);
                                 await _context.SaveChangesAsync();
 
-                                _response.StatusCode = HttpStatusCode.OK;
-                                _response.IsSuccess = true;
-                                _response.Messages = "Appointment cancelled successfully.";
-                                return Ok(_response);
+                                booked.BookingStatus = AppointmentStatus.Cancelled.ToString();
+                                _context.Update(booked);
+                                await _context.SaveChangesAsync();
                             }
+
+                            appointmentDetail.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
+                            _context.Update(appointmentDetail);
+                            await _context.SaveChangesAsync();
                         }
+
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = true;
+                        _response.Messages = "Appointment cancelled successfully.";
+                        return Ok(_response);
                     }
                 }
                 _response.StatusCode = HttpStatusCode.OK;
@@ -2070,9 +2024,10 @@ namespace BeautyHubAPI.Controllers
             }
         }
         #endregion
+
         #region SetPaymentStatus
         /// <summary>
-        /// Set payment status {OnHold, Paid, Unpaid, Refunded}.
+        /// Set payment status {Paid, Unpaid, Refunded}.
         /// </summary>
         [HttpPost]
         [Route("SetPaymentStatus")]
@@ -2092,8 +2047,7 @@ namespace BeautyHubAPI.Controllers
                     return Ok(_response);
                 }
 
-                if (model.paymentStatus != PaymentStatus.OnHold.ToString()
-                && model.paymentStatus != PaymentStatus.Paid.ToString()
+                if (model.paymentStatus != PaymentStatus.Paid.ToString()
                 && model.paymentStatus != PaymentStatus.Unpaid.ToString()
                 && model.paymentStatus != PaymentStatus.Refunded.ToString())
                 {
@@ -2109,23 +2063,22 @@ namespace BeautyHubAPI.Controllers
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
                     _response.Data = new Object { };
-                    _response.Messages = "Not found any order.";
+                    _response.Messages = "Not found any appointment.";
                     return Ok(_response);
                 }
 
-                if (appointmentDetails.AppointmentStatus == AppointmentStatus.Cancelled.ToString())
+                if (appointmentDetails.PaymentStatus == model.paymentStatus)
                 {
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
                     _response.Data = new Object { };
-                    _response.Messages = "Can't be change after cancelled.";
+                    _response.Messages = "Appointment status already set to " + appointmentDetails.PaymentStatus.ToString() + ".";
                     return Ok(_response);
                 }
 
                 if (appointmentDetails.PaymentStatus == PaymentStatus.Paid.ToString())
                 {
-                    if (model.paymentStatus == PaymentStatus.OnHold.ToString()
-                    || model.paymentStatus == PaymentStatus.Unpaid.ToString())
+                    if (model.paymentStatus == PaymentStatus.Unpaid.ToString())
                     {
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = false;
@@ -2135,10 +2088,21 @@ namespace BeautyHubAPI.Controllers
                     }
                 }
 
+                if (appointmentDetails.PaymentStatus == PaymentStatus.Unpaid.ToString())
+                {
+                    if (model.paymentStatus == PaymentStatus.Refunded.ToString())
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Data = new Object { };
+                        _response.Messages = "Status can't be channge from unpaid to refunded.";
+                        return Ok(_response);
+                    }
+                }
+
                 if (appointmentDetails.PaymentStatus == PaymentStatus.Refunded.ToString())
                 {
-                    if (model.paymentStatus == PaymentStatus.OnHold.ToString()
-                    || model.paymentStatus == PaymentStatus.Paid.ToString()
+                    if (model.paymentStatus == PaymentStatus.Paid.ToString()
                     || model.paymentStatus == PaymentStatus.Unpaid.ToString())
                     {
                         _response.StatusCode = HttpStatusCode.OK;
@@ -2163,10 +2127,6 @@ namespace BeautyHubAPI.Controllers
                 else if (appointmentDetails.PaymentStatus == PaymentStatus.Paid.ToString())
                 {
                     notificationMessage = "Paid successfully.";
-                }
-                else if (appointmentDetails.PaymentStatus == PaymentStatus.OnHold.ToString())
-                {
-                    notificationMessage = "Your payment is on hold.";
                 }
                 else
                 {
@@ -2215,5 +2175,6 @@ namespace BeautyHubAPI.Controllers
             }
         }
         #endregion
+
     }
 }

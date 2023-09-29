@@ -171,49 +171,49 @@ builder.Services
             ValidateAudience = false
         };
 
-        // x.Events = new JwtBearerEvents
-        // {
-        //     OnTokenValidated = async context =>
-        //     {
-        //         var userService = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
-        //         string securityStamp = context.Principal.Claims.FirstOrDefault(claim => claim.Type == "SecurityStamp")?.Value;
-        //         var userId = context.Principal.Claims.FirstOrDefault().Value.ToString();
-        //         var user = await userService.Users.Where(u => u.Id == userId).FirstOrDefaultAsync();
-        //         if (user == null)
-        //         {
-        //             context.Fail("Unauthorized");
-        //         }
+        x.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var userService = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
+                string securityStamp = context.Principal.Claims.FirstOrDefault(claim => claim.Type == "SecurityStamp")?.Value;
+                var userId = context.Principal.Claims.FirstOrDefault().Value.ToString();
+                var user = await userService.Users.Where(u => u.Id == userId).FirstOrDefaultAsync();
+                if (user == null)
+                {
+                    context.Fail("Unauthorized");
+                }
 
 
-        //         if (user != null)
-        //         {
-        //             if (user.SecurityStamp != securityStamp)
-        //             {
-        //                 context.Fail("Unauthorized");
+                if (user != null)
+                {
+                    if (user.SecurityStamp != securityStamp)
+                    {
+                        context.Fail("Unauthorized");
 
-        //                 var response = new
-        //                 {
-        //                     isSuccess = false,
-        //                     statusCode = HttpStatusCode.Unauthorized,
-        //                     messages = "Access denied. You are not authorized to perform this action."
-        //                 };
+                        var response = new
+                        {
+                            isSuccess = false,
+                            statusCode = HttpStatusCode.Unauthorized,
+                            messages = "Access denied. You are not authorized to perform this action."
+                        };
 
-        //                 var jsonResponse = JsonConvert.SerializeObject(response);
+                        var jsonResponse = JsonConvert.SerializeObject(response);
 
-        //                 context.Response.ContentType = "application/json";
-        //                 context.Response.StatusCode = 401;
+                        context.Response.ContentType = "application/json";
+                        context.Response.StatusCode = 401;
 
-        //                 await context.Response.WriteAsync(jsonResponse);
+                        await context.Response.WriteAsync(jsonResponse);
 
-        //                 return;
-        //             }
-        //         }
-        //         else
-        //             await Task.Delay(0);
-        //         return;
-        //     }
+                        return;
+                    }
+                }
+                else
+                    await Task.Delay(0);
+                return;
+            }
 
-        // };
+        };
 
     });
 

@@ -15,9 +15,9 @@ namespace BeautyHubAPI.Repository
             _context = context;
         }
 
-        public async Task<MembershipRecord> UpdateMembershipRecord(MembershipRecord entity)
+        public async Task<List<MembershipRecord>> UpdateMembershipRecord(List<MembershipRecord> entity)
         {
-            _context.MembershipRecord.Update(entity);
+            _context.MembershipRecord.UpdateRange(entity);
             await _context.SaveChangesAsync();
             return entity;
         }
