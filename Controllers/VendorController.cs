@@ -1819,12 +1819,12 @@ namespace BeautyHubAPI.Controllers
 
                 if (appointmentDetail.AppointmentStatus == AppointmentStatus.Cancelled.ToString())
                 {
-                    
-                        _response.StatusCode = HttpStatusCode.OK;
-                        _response.IsSuccess = false;
-                        _response.Data = new Object { };
-                        _response.Messages = "Can't be change after cancelled";
-                        return Ok(_response);
+
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Data = new Object { };
+                    _response.Messages = "Can't be change after cancelled";
+                    return Ok(_response);
                 }
                 if (appointmentDetail.AppointmentStatus == AppointmentStatus.Completed.ToString())
                 {
@@ -1848,7 +1848,7 @@ namespace BeautyHubAPI.Controllers
                     var bookedServices = await _context.BookedService.Where(u => u.AppointmentId == model.appointmentId).ToListAsync();//&& u.BookingStatus != AppointmentStatus.Cancelled.ToString()
                     if (bookedServices.Count > 0)
                     {
-                        if (model.slotId > 0 || bookedServices.Count == 1)
+                        if (model.slotId > 0 || bookedServices.Count == 1 && model.setToAll == false)
                         {
                             BookedService? bookedService;
                             if (model.slotId > 0)
@@ -1931,7 +1931,7 @@ namespace BeautyHubAPI.Controllers
                     var bookedServices = await _context.BookedService.Where(u => u.AppointmentId == model.appointmentId).ToListAsync();//&& u.BookingStatus != AppointmentStatus.Cancelled.ToString()
                     if (bookedServices.Count > 0)
                     {
-                        if (model.slotId > 0 || bookedServices.Count == 1)
+                        if (model.slotId > 0 || bookedServices.Count == 1 && model.setToAll == false)
                         {
                             BookedService? bookedService;
                             if (model.slotId > 0)

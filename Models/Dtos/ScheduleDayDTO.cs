@@ -15,6 +15,7 @@ namespace BeautyHubAPI.Models.Dtos
         public bool? sunday { get; set; }
         public string fromTime { get; set; }
         public string toTime { get; set; }
+        public bool UpdateStatus { get; set; }
     }
     public class TimeList
     {

@@ -5,9 +5,9 @@ using BeautyHubAPI.Models;
 using static BeautyHubAPI.Common.GlobalVariables;
 using BeautyHubAPI.Models.Dtos;
 
-public class MyBackgroundService : BackgroundService
+public class EverydayMidnightService : BackgroundService
 {
-    private readonly ILogger<MyBackgroundService> _logger;
+    private readonly ILogger<EverydayMidnightService> _logger;
     private readonly IServiceProvider _serviceProvider;
     private readonly IMapper _mapper;
     private readonly object _lock = new object(); // Used for thread-safe access to the flag
@@ -15,7 +15,7 @@ public class MyBackgroundService : BackgroundService
     private CancellationTokenSource _cancellationTokenSource;
 
 
-    public MyBackgroundService(ILogger<MyBackgroundService> logger, IMapper mapper, IServiceProvider serviceProvider)
+    public EverydayMidnightService(ILogger<EverydayMidnightService> logger, IMapper mapper, IServiceProvider serviceProvider)
     {
         _logger = logger;
         _serviceProvider = serviceProvider;
@@ -23,9 +23,52 @@ public class MyBackgroundService : BackgroundService
         _cancellationTokenSource = new CancellationTokenSource();
     }
 
+    // protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    // {
+    //     // Calculate the time until 12:00 AM
+    //     var now = DateTimeOffset.Now;
+    //     var nextRunTime = now.Date.AddDays(1).AddHours(0); // 12:00 AM
+
+    //     // Calculate the delay until the next run
+    //     var delay = nextRunTime - now;
+
+    //     if (delay < TimeSpan.Zero)
+    //     {
+    //         // If the calculated delay is negative, schedule it for the next day
+    //         delay = TimeSpan.FromHours(24) + delay;
+    //     }
+
+    //     _logger.LogInformation($"Next run scheduled at {nextRunTime}. Waiting for {delay.TotalHours} hours.");
+
+    //     await Task.Delay(delay, stoppingToken);
+
+    //     // Service code here
+    //     using (var scope = _serviceProvider.CreateScope())
+    //     {
+    //         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+    //         await UpdateSchedule(dbContext);
+    //     }
+
+    //     _logger.LogInformation("Everyday midnight service completed.");
+    // }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Background service is running at: {time}", DateTimeOffset.Now);
+        // Calculate the time until 12:00 AM
+        var now = DateTimeOffset.Now;
+        var nextRunTime = now.Date.AddDays(1).AddHours(0); // 12:00 AM
+
+        // Calculate the delay until the next run
+        var delay = nextRunTime - now;
+
+        if (delay < TimeSpan.Zero)
+        {
+            // If the calculated delay is negative, schedule it for the next day
+            delay = TimeSpan.FromHours(24) + delay;
+        }
+
+        // delay = TimeSpan.FromSeconds(10);
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -33,12 +76,13 @@ public class MyBackgroundService : BackgroundService
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-                // await UpdateSchedule(dbContext);
+                await UpdateSchedule(dbContext);
             }
             // Delay for a certain duration before checking the flag again
-            await Task.Delay(TimeSpan.FromHours(60), stoppingToken);
+            await Task.Delay(delay, stoppingToken); // Polling interval
+            // await Task.Delay(TimeSpan.FromHours(60), stoppingToken);
+            _logger.LogInformation("Everyday midnight service completed.");
         }
-        _logger.LogInformation("Background service completed.");
     }
 
     public void StopService()

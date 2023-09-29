@@ -21,6 +21,7 @@ namespace BeautyHubAPI.Models
         public DateTime DeletedDate { get; set; }
         public bool IsDeleted { get; set; }
         public bool Status { get; set; }
+        public bool UpdateStatus { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime? ModifyDate { get; set; }
 

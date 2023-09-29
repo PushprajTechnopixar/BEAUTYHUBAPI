@@ -1511,7 +1511,7 @@ namespace BeautyHubAPI.Controllers
                 var bookedServices = await _context.BookedService.Where(u => u.AppointmentId == model.appointmentId).ToListAsync();//&& u.BookingStatus != AppointmentStatus.Cancelled.ToString()
                 if (bookedServices.Count > 0)
                 {
-                    if (model.slotId > 0 || bookedServices.Count == 1)
+                    if (model.slotId > 0 || bookedServices.Count == 1 && model.cancelAllAppointments == false && model.cancelAllAppointments == false)
                     {
                         BookedService? bookedService;
                         if (model.slotId > 0)

@@ -15,6 +15,7 @@ namespace BeautyHubAPI.Models.Dtos
         public int appointmentId { get; set; }
         public int? slotId { get; set; }
         public string appointmentStatus { get; set; }
+        public bool setToAll { get; set; }
     }
     public class SetPaymentStatusDTO
     {

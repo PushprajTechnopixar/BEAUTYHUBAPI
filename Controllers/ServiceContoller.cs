@@ -219,6 +219,7 @@ namespace BeautyHubAPI.Controllers
                         SalonScheduleDays.ToTime = model.toTime;
 
                         SalonScheduleDays.Status = false;
+                        SalonScheduleDays.UpdateStatus = false;
                         _context.Update(SalonScheduleDays);
                         await _context.SaveChangesAsync();
 
@@ -401,6 +402,7 @@ namespace BeautyHubAPI.Controllers
                 SalonSchedule.FromTime = model.fromTime;
                 SalonSchedule.ToTime = model.toTime;
                 SalonSchedule.Status = false;
+                SalonScheduleDays.UpdateStatus = false;
 
                 _context.SalonSchedule.Add(SalonSchedule);
                 _context.SaveChanges();
@@ -417,6 +419,7 @@ namespace BeautyHubAPI.Controllers
                 scheduledDays.sunday = SalonSchedule.Sunday;
                 scheduledDays.fromTime = SalonSchedule.FromTime;
                 scheduledDays.toTime = SalonSchedule.ToTime;
+                scheduledDays.UpdateStatus = SalonSchedule.UpdateStatus;
 
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
@@ -893,6 +896,7 @@ namespace BeautyHubAPI.Controllers
                 // scheduleDayViewModel.fromTime = SalonSchedule.FromTime;
                 // scheduleDayViewModel.toTime = SalonSchedule.ToTime;
                 scheduleDayViewModel.salonId = SalonSchedule.SalonId;
+                scheduleDayViewModel.UpdateStatus = SalonSchedule.UpdateStatus;
 
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
