@@ -1891,30 +1891,58 @@ namespace BeautyHubAPI.Controllers
                         }
                         else
                         {
-                            List<BookedServicesDTO>? bookedServiceList = new List<BookedServicesDTO>();
-                            foreach (var booked in bookedServices)
+                            if (model.cancelAllAppointments != true)
                             {
-                                var salonDetail = await _context.SalonDetail.Where(u => u.SalonId == booked.SalonId).FirstOrDefaultAsync();
-                                var mappedData = _mapper.Map<BookedServicesDTO>(booked);
-                                // _mapper.Map(app, mappedData);
-                                // var timeSlot = await _context.TimeSlot.Where(u => u.SlotId == booked.SlotId).FirstOrDefaultAsync();
-                                mappedData.appointmentDate = booked.AppointmentDate.ToString(@"dd-MM-yyyy");
-                                mappedData.createDate = booked.CreateDate.ToString(@"dd-MM-yyyy");
-                                mappedData.serviceName = salonDetail.SalonName;
-                                var favoritesStatus = await _context.FavouriteService.Where(u => u.ServiceId == booked.ServiceId && u.CustomerUserId == currentUserId).FirstOrDefaultAsync();
-                                mappedData.favoritesStatus = favoritesStatus != null ? true : false;
-                                bookedServiceList.Add(mappedData);
-                            }
+                                List<BookedServicesDTO>? bookedServiceList = new List<BookedServicesDTO>();
+                                foreach (var booked in bookedServices)
+                                {
+                                    var salonDetail = await _context.SalonDetail.Where(u => u.SalonId == booked.SalonId).FirstOrDefaultAsync();
+                                    var mappedData = _mapper.Map<BookedServicesDTO>(booked);
+                                    // _mapper.Map(app, mappedData);
+                                    // var timeSlot = await _context.TimeSlot.Where(u => u.SlotId == booked.SlotId).FirstOrDefaultAsync();
+                                    mappedData.appointmentDate = booked.AppointmentDate.ToString(@"dd-MM-yyyy");
+                                    mappedData.createDate = booked.CreateDate.ToString(@"dd-MM-yyyy");
+                                    mappedData.serviceName = salonDetail.SalonName;
+                                    var favoritesStatus = await _context.FavouriteService.Where(u => u.ServiceId == booked.ServiceId && u.CustomerUserId == currentUserId).FirstOrDefaultAsync();
+                                    mappedData.favoritesStatus = favoritesStatus != null ? true : false;
+                                    bookedServiceList.Add(mappedData);
+                                }
 
-                            _response.StatusCode = HttpStatusCode.OK;
-                            _response.IsSuccess = true;
-                            _response.Messages = "Service list shown successfully.";
-                            _response.Data = bookedServiceList;
-                            return Ok(_response);
+                                _response.StatusCode = HttpStatusCode.OK;
+                                _response.IsSuccess = true;
+                                _response.Messages = "Service list shown successfully.";
+                                _response.Data = bookedServiceList;
+                                return Ok(_response);
+                            }
+                            else
+                            {
+                                foreach (var booked in bookedServices)
+                                {
+                                    var timeSlot = await _context.TimeSlot.Where(u => u.SlotId == booked.SlotId).FirstOrDefaultAsync();
+                                    if (timeSlot.SlotCount == 0 && timeSlot.Status == false)
+                                    {
+                                        timeSlot.Status = true;
+                                    }
+                                    timeSlot.SlotCount = (int)(timeSlot.SlotCount + booked.ServiceCountInCart);
+                                    _context.Update(timeSlot);
+                                    await _context.SaveChangesAsync();
+
+                                    booked.BookingStatus = AppointmentStatus.Completed.ToString();
+                                    _context.Update(booked);
+                                    await _context.SaveChangesAsync();
+                                }
+
+                                appointmentDetail.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
+                                _context.Update(appointmentDetail);
+                                await _context.SaveChangesAsync();
+
+                                _response.StatusCode = HttpStatusCode.OK;
+                                _response.IsSuccess = true;
+                                _response.Messages = "Appointment cancelled successfully.";
+                                return Ok(_response);
+                            }
                         }
                     }
-
-
                 }
                 if (model.appointmentStatus == AppointmentStatus.Cancelled.ToString())
                 {
@@ -1973,26 +2001,57 @@ namespace BeautyHubAPI.Controllers
                         }
                         else
                         {
-                            List<BookedServicesDTO>? bookedServiceList = new List<BookedServicesDTO>();
-                            foreach (var booked in bookedServices)
-                            {
-                                var salonDetail = await _context.SalonDetail.Where(u => u.SalonId == booked.SalonId).FirstOrDefaultAsync();
-                                var mappedData = _mapper.Map<BookedServicesDTO>(booked);
-                                // _mapper.Map(app, mappedData);
-                                // var timeSlot = await _context.TimeSlot.Where(u => u.SlotId == booked.SlotId).FirstOrDefaultAsync();
-                                mappedData.appointmentDate = booked.AppointmentDate.ToString(@"dd-MM-yyyy");
-                                mappedData.createDate = booked.CreateDate.ToString(@"dd-MM-yyyy");
-                                mappedData.serviceName = salonDetail.SalonName;
-                                var favoritesStatus = await _context.FavouriteService.Where(u => u.ServiceId == booked.ServiceId && u.CustomerUserId == currentUserId).FirstOrDefaultAsync();
-                                mappedData.favoritesStatus = favoritesStatus != null ? true : false;
-                                bookedServiceList.Add(mappedData);
-                            }
 
-                            _response.StatusCode = HttpStatusCode.OK;
-                            _response.IsSuccess = true;
-                            _response.Messages = "Service list shown successfully.";
-                            _response.Data = bookedServiceList;
-                            return Ok(_response);
+                            if (model.cancelAllAppointments != true)
+                            {
+                                List<BookedServicesDTO>? bookedServiceList = new List<BookedServicesDTO>();
+                                foreach (var booked in bookedServices)
+                                {
+                                    var salonDetail = await _context.SalonDetail.Where(u => u.SalonId == booked.SalonId).FirstOrDefaultAsync();
+                                    var mappedData = _mapper.Map<BookedServicesDTO>(booked);
+                                    // _mapper.Map(app, mappedData);
+                                    // var timeSlot = await _context.TimeSlot.Where(u => u.SlotId == booked.SlotId).FirstOrDefaultAsync();
+                                    mappedData.appointmentDate = booked.AppointmentDate.ToString(@"dd-MM-yyyy");
+                                    mappedData.createDate = booked.CreateDate.ToString(@"dd-MM-yyyy");
+                                    mappedData.serviceName = salonDetail.SalonName;
+                                    var favoritesStatus = await _context.FavouriteService.Where(u => u.ServiceId == booked.ServiceId && u.CustomerUserId == currentUserId).FirstOrDefaultAsync();
+                                    mappedData.favoritesStatus = favoritesStatus != null ? true : false;
+                                    bookedServiceList.Add(mappedData);
+                                }
+
+                                _response.StatusCode = HttpStatusCode.OK;
+                                _response.IsSuccess = true;
+                                _response.Messages = "Service list shown successfully.";
+                                _response.Data = bookedServiceList;
+                                return Ok(_response);
+                            }
+                            else
+                            {
+                                foreach (var booked in bookedServices)
+                                {
+                                    var timeSlot = await _context.TimeSlot.Where(u => u.SlotId == booked.SlotId).FirstOrDefaultAsync();
+                                    if (timeSlot.SlotCount == 0 && timeSlot.Status == false)
+                                    {
+                                        timeSlot.Status = true;
+                                    }
+                                    timeSlot.SlotCount = (int)(timeSlot.SlotCount + booked.ServiceCountInCart);
+                                    _context.Update(timeSlot);
+                                    await _context.SaveChangesAsync();
+
+                                    booked.BookingStatus = AppointmentStatus.Cancelled.ToString();
+                                    _context.Update(booked);
+                                    await _context.SaveChangesAsync();
+                                }
+
+                                appointmentDetail.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
+                                _context.Update(appointmentDetail);
+                                await _context.SaveChangesAsync();
+
+                                _response.StatusCode = HttpStatusCode.OK;
+                                _response.IsSuccess = true;
+                                _response.Messages = "Appointment cancelled successfully.";
+                                return Ok(_response);
+                            }
                         }
                     }
                 }
