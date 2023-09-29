@@ -399,7 +399,7 @@ namespace BeautyHubAPI.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [Authorize(Roles = "Customer")]
-        public async Task<IActionResult> GetFavouriteSalonList(string? salonQuery, string? salonType, string? searchBy, int? liveLocation)
+        public async Task<IActionResult> GetFavouriteSalonList(string? salonType, string? searchBy, int? liveLocation)
         {
             try
             {
@@ -450,185 +450,69 @@ namespace BeautyHubAPI.Controllers
                     }
                 }
 
-                if (!string.IsNullOrEmpty(salonQuery))
+                salonList = salonList.OrderByDescending(u => u.CreateDate).ToList();
+                var customerAdress = await _context.CustomerAddress.Where(u => u.CustomerUserId == currentUserId && u.Status == true).FirstOrDefaultAsync();
+
+                if (customerAdress != null && liveLocation != 1)
                 {
-                    salonList = salonList.OrderByDescending(u => u.CreateDate).ToList();
-                    var customerAdress = await _context.CustomerAddress.Where(u => u.CustomerUserId == currentUserId && u.Status == true).FirstOrDefaultAsync();
-                    if (customerAdress != null && liveLocation != 1)
+                    startLat = Convert.ToDouble(customerAdress.AddressLatitude != null ? customerAdress.AddressLatitude : "0");
+                    startLong = Convert.ToDouble(customerAdress.AddressLongitude != null ? customerAdress.AddressLongitude : "0");
+                }
+                var salonResponse = new List<CustomerSalonListDTO>();
+                foreach (var item in salonList)
+                {
+                    // var salonDetail = await _context.SalonDetail.Where(u => (u.SalonId == item.SalonId) && (u.IsDeleted != true)).FirstOrDefaultAsync();
+                    SalonDetail? salonDetail = new SalonDetail();
+                    if (string.IsNullOrEmpty(salonType))
                     {
-                        startLat = Convert.ToDouble(customerAdress.AddressLatitude != null ? customerAdress.AddressLatitude : "0");
-                        startLong = Convert.ToDouble(customerAdress.AddressLongitude != null ? customerAdress.AddressLongitude : "0");
+                        salonDetail = await _context.SalonDetail.Where(u => (u.SalonId == item.SalonId) && (u.IsDeleted != true)).FirstOrDefaultAsync();
                     }
-                    var salonResponse = new List<CustomerSalonListDTO>();
-                    foreach (var item in salonList)
+                    else if (salonType == "Male" || salonType == "Female" || salonType == "Unisex")
                     {
-                        // var salonDetail = await _context.SalonDetail.Where(u => (u.SalonId == item.SalonId) && (u.IsDeleted != true)).FirstOrDefaultAsync();
-                        SalonDetail? salonDetail = new SalonDetail();
-                        if (string.IsNullOrEmpty(salonType))
-                        {
-                            salonDetail = await _context.SalonDetail.Where(u => (u.SalonId == item.SalonId) && (u.IsDeleted != true)).FirstOrDefaultAsync();
-                        }
-                        else if (salonType == "Male" || salonType == "Female" || salonType == "Unisex")
-                        {
-                            salonDetail = await _context.SalonDetail.Where(u => (u.SalonId == item.SalonId)
-                            && (u.IsDeleted != true)
-                            && (u.SalonType == salonType)
-                            ).FirstOrDefaultAsync();
-                        }
-                        else
-                        {
-                            salonDetail = await _context.SalonDetail.Where(u => (u.SalonId == item.SalonId) && (u.IsDeleted != true)).FirstOrDefaultAsync();
-                        }
-                        if (salonDetail != null)
-                        {
-                            var vendorDetail = _userManager.FindByIdAsync(salonDetail.VendorId).GetAwaiter().GetResult();
-                            var mappedData = _mapper.Map<CustomerSalonListDTO>(salonDetail);
-                            mappedData.vendorName = vendorDetail.FirstName + " " + vendorDetail.LastName;
-                            mappedData.isSalonAdded = true;
-
-                            if (startLat == 0 && startLong == 0)
-                            {
-                                startLat = 30.741482;
-                                startLong = 76.768066;
-                            }
-
-                            if (startLat != 0 && startLong != 0)
-                            {
-                                double endLat = Convert.ToDouble(salonDetail.AddressLatitude != null ? salonDetail.AddressLatitude : "0");
-                                double endLong = Convert.ToDouble(salonDetail.AddressLongitude != null ? salonDetail.AddressLongitude : "0");
-
-                                var APIResponse = CommonMethod.GoogleDistanceMatrixAPILatLonAsync(startLat, startLong, endLat, endLong).GetAwaiter().GetResult();
-                                mappedData.distance = APIResponse.distance;
-                                mappedData.duration = APIResponse.duration;
-                            }
-                            mappedData.favoritesStatus = (_context.FavouriteSalon.Where(u => u.SalonId == mappedData.salonId && u.CustomerUserId == currentUserId)).FirstOrDefault() != null ? true : false;
-                            salonResponse.Add(mappedData);
-                        }
+                        salonDetail = await _context.SalonDetail.Where(u => (u.SalonId == item.SalonId)
+                        && (u.IsDeleted != true)
+                        && (u.SalonType == salonType)
+                        ).FirstOrDefaultAsync();
                     }
-                    var salonIds = salonList.Select(a => a.SalonId);
-                    var nearBysalon = await _context.SalonDetail.Where(u => !salonIds.Contains(u.SalonId) && u.IsDeleted != true).ToListAsync();
-                    var nearBysalonResponse = new List<CustomerSalonListDTO>();
-                    foreach (var item in nearBysalon)
+                    else
                     {
-                        SalonDetail? salonDetail = new SalonDetail();
-                        if (string.IsNullOrEmpty(salonType))
-                        {
-                            salonDetail = await _context.SalonDetail.Where(u => (u.SalonId == item.SalonId) && (u.IsDeleted != true)).FirstOrDefaultAsync();
-                        }
-                        else if (salonType == "Male" || salonType == "Female" || salonType == "Unisex")
-                        {
-                            salonDetail = await _context.SalonDetail.Where(u => (u.SalonId == item.SalonId)
-                            && (u.IsDeleted != true)
-                            && (u.SalonType != salonType)
-                            ).FirstOrDefaultAsync();
-                        }
-                        else
-                        {
-                            salonDetail = await _context.SalonDetail.Where(u => (u.SalonId == item.SalonId) && (u.IsDeleted != true)).FirstOrDefaultAsync();
-                        }
+                        salonDetail = await _context.SalonDetail.Where(u => (u.SalonId == item.SalonId) && (u.IsDeleted != true)).FirstOrDefaultAsync();
+                    }
+                    if (salonDetail != null)
+                    {
+                        var vendorDetail = _userManager.FindByIdAsync(salonDetail.VendorId).GetAwaiter().GetResult();
+                        var mappedData = _mapper.Map<CustomerSalonListDTO>(salonDetail);
+                        mappedData.vendorName = vendorDetail.FirstName + " " + vendorDetail.LastName;
 
-                        if (salonDetail != null)
+                        if (startLat != 0 && startLong != 0)
                         {
-                            var vendorDetail = _userManager.FindByIdAsync(salonDetail.VendorId).GetAwaiter().GetResult();
-                            var mappedData = _mapper.Map<CustomerSalonListDTO>(salonDetail);
-                            mappedData.vendorName = vendorDetail.FirstName + " " + vendorDetail.LastName;
-
                             double endLat = Convert.ToDouble(salonDetail.AddressLatitude != null ? salonDetail.AddressLatitude : "0");
                             double endLong = Convert.ToDouble(salonDetail.AddressLongitude != null ? salonDetail.AddressLongitude : "0");
-
 
                             var APIResponse = CommonMethod.GoogleDistanceMatrixAPILatLonAsync(startLat, startLong, endLat, endLong).GetAwaiter().GetResult();
                             mappedData.distance = APIResponse.distance;
                             mappedData.duration = APIResponse.duration;
-                            mappedData.isSalonAdded = false;
-                            mappedData.favoritesStatus = (_context.FavouriteSalon.Where(u => u.SalonId == mappedData.salonId && u.CustomerUserId == currentUserId)).FirstOrDefault() != null ? true : false;
-
-                            nearBysalonResponse.Add(mappedData);
                         }
+                        mappedData.isSalonAdded = true;
+                        mappedData.favoritesStatus = (_context.FavouriteSalon.Where(u => u.SalonId == mappedData.salonId && u.CustomerUserId == currentUserId)).FirstOrDefault() != null ? true : false;
+
+                        salonResponse.Add(mappedData);
                     }
-
-                    if (!string.IsNullOrEmpty(searchBy))
-                    {
-                        nearBysalonResponse = nearBysalonResponse.Where(x => (x.salonName?.IndexOf(searchBy, StringComparison.OrdinalIgnoreCase) >= 0)).ToList();
-                        salonResponse = salonResponse.Where(x => (x.salonName?.IndexOf(searchBy, StringComparison.OrdinalIgnoreCase) >= 0)).ToList();
-                    }
-
-                    var res = new AllCustomerSalonList();
-                    res.customerSalonList = salonResponse.OrderBy(u => Convert.ToDecimal(u.distance != null ? (u.distance.IndexOf("km") != -1 ? u.distance.Replace(" km", "") : u.distance.Replace(" m", "")) : 0)).ToList();
-                    res.nearByCustomerSalonList = nearBysalonResponse.OrderBy(u => Convert.ToDecimal(u.distance != null ? (u.distance.IndexOf("km") != -1 ? u.distance.Replace(" km", "") : u.distance.Replace(" m", "")) : 0)).ToList();
-
-                    _response.StatusCode = HttpStatusCode.OK;
-                    _response.IsSuccess = true;
-                    _response.Data = res;
-                    _response.Messages = "Favourite Salon list shown successfully.";
-                    return Ok(_response);
                 }
-                else
+
+                if (!string.IsNullOrEmpty(searchBy))
                 {
-                    salonList = salonList.OrderByDescending(u => u.CreateDate).ToList();
-                    var customerAdress = await _context.CustomerAddress.Where(u => u.CustomerUserId == currentUserId && u.Status == true).FirstOrDefaultAsync();
-
-                    if (customerAdress != null && liveLocation != 1)
-                    {
-                        startLat = Convert.ToDouble(customerAdress.AddressLatitude != null ? customerAdress.AddressLatitude : "0");
-                        startLong = Convert.ToDouble(customerAdress.AddressLongitude != null ? customerAdress.AddressLongitude : "0");
-                    }
-                    var salonResponse = new List<CustomerSalonListDTO>();
-                    foreach (var item in salonList)
-                    {
-                        // var salonDetail = await _context.SalonDetail.Where(u => (u.SalonId == item.SalonId) && (u.IsDeleted != true)).FirstOrDefaultAsync();
-                        SalonDetail? salonDetail = new SalonDetail();
-                        if (string.IsNullOrEmpty(salonType))
-                        {
-                            salonDetail = await _context.SalonDetail.Where(u => (u.SalonId == item.SalonId) && (u.IsDeleted != true)).FirstOrDefaultAsync();
-                        }
-                        else if (salonType == "Male" || salonType == "Female" || salonType == "Unisex")
-                        {
-                            salonDetail = await _context.SalonDetail.Where(u => (u.SalonId == item.SalonId)
-                            && (u.IsDeleted != true)
-                            && (u.SalonType == salonType)
-                            ).FirstOrDefaultAsync();
-                        }
-                        else
-                        {
-                            salonDetail = await _context.SalonDetail.Where(u => (u.SalonId == item.SalonId) && (u.IsDeleted != true)).FirstOrDefaultAsync();
-                        }
-                        if (salonDetail != null)
-                        {
-                            var vendorDetail = _userManager.FindByIdAsync(salonDetail.VendorId).GetAwaiter().GetResult();
-                            var mappedData = _mapper.Map<CustomerSalonListDTO>(salonDetail);
-                            mappedData.vendorName = vendorDetail.FirstName + " " + vendorDetail.LastName;
-
-                            if (startLat != 0 && startLong != 0)
-                            {
-                                double endLat = Convert.ToDouble(salonDetail.AddressLatitude != null ? salonDetail.AddressLatitude : "0");
-                                double endLong = Convert.ToDouble(salonDetail.AddressLongitude != null ? salonDetail.AddressLongitude : "0");
-
-                                var APIResponse = CommonMethod.GoogleDistanceMatrixAPILatLonAsync(startLat, startLong, endLat, endLong).GetAwaiter().GetResult();
-                                mappedData.distance = APIResponse.distance;
-                                mappedData.duration = APIResponse.duration;
-                            }
-                            mappedData.isSalonAdded = true;
-                            mappedData.favoritesStatus = (_context.FavouriteSalon.Where(u => u.SalonId == mappedData.salonId && u.CustomerUserId == currentUserId)).FirstOrDefault() != null ? true : false;
-
-                            salonResponse.Add(mappedData);
-                        }
-                    }
-
-                    if (!string.IsNullOrEmpty(searchBy))
-                    {
-                        salonResponse = salonResponse.Where(x => (x.salonName?.IndexOf(searchBy, StringComparison.OrdinalIgnoreCase) >= 0)).ToList();
-                    }
-
-                    salonResponse = salonResponse.OrderBy(u => Convert.ToDecimal(u.distance != null ? (u.distance.IndexOf("km") != -1 ? u.distance.Replace(" km", "") : u.distance.Replace(" m", "")) : 0)).ToList();
-
-                    _response.StatusCode = HttpStatusCode.OK;
-                    _response.IsSuccess = true;
-                    _response.Data = salonResponse;
-                    _response.Messages = "Favourite Salon list shown successfully.";
-                    return Ok(_response);
-
+                    salonResponse = salonResponse.Where(x => (x.salonName?.IndexOf(searchBy, StringComparison.OrdinalIgnoreCase) >= 0)).ToList();
                 }
+
+                salonResponse = salonResponse.OrderBy(u => Convert.ToDecimal(u.distance != null ? (u.distance.IndexOf("km") != -1 ? u.distance.Replace(" km", "") : u.distance.Replace(" m", "")) : 0)).ToList();
+
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = true;
+                _response.Data = salonResponse;
+                _response.Messages = "Favourite Salon list shown successfully.";
+                return Ok(_response);
+
             }
             catch (Exception ex)
             {
@@ -1903,16 +1787,16 @@ namespace BeautyHubAPI.Controllers
         }
         #endregion
 
-        #region setFavouriteSalon
+        #region setFavouriteSalonStatus
         /// <summary>
-        ///set Favourite Salon
+        ///set favourite salon status
         /// </summary>
         [HttpPost]
-        [Route("setFavouriteSalon")]
+        [Route("setFavouriteSalonStatus")]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [Authorize(Roles = "Customer")]
-        public async Task<IActionResult> SetFavouriteSalon(SetFavouriteSalon model)
+        public async Task<IActionResult> setFavouriteSalonStatus(SetFavouriteSalon model)
         {
             try
             {
