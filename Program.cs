@@ -84,6 +84,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     // options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
 });
 builder.Services.AddSingleton<IMobileMessagingClient, MobileMessagingClient>();
+builder.Services.AddHostedService<MyBackgroundService>();
+builder.Services.AddScoped<MyBackgroundService>();
 // builder.Services.AddHostedService<MyBackgroundService>();
 // builder.Services.AddScoped<MyBackgroundService>();
 // builder.Services.AddHostedService<SubscriptionToOrderService>();

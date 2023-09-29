@@ -25,6 +25,7 @@ namespace BeautyHubAPI.Models.Dtos
         public int appointmentId { get; set; }
         // public int serviceId { get; set; }
         public int? slotId { get; set; }
+        public bool cancelAllAppointments { get; set; }
     }
     public class AppointmentDetailDTO
     {

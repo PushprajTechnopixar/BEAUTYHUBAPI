@@ -46,6 +46,7 @@ namespace BeautyHubAPI.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IMembershipRecordRepository _membershipRecordRepository;
         private readonly IWebHostEnvironment _hostingEnvironment;
+        private readonly MyBackgroundService _backgroundService;
 
         public ServiceController(IMapper mapper,
         IUploadRepository uploadRepository,
@@ -53,7 +54,8 @@ namespace BeautyHubAPI.Controllers
         UserManager<ApplicationUser> userManager,
         IMembershipRecordRepository membershipRecordRepository,
 
-        IWebHostEnvironment hostingEnvironment
+        IWebHostEnvironment hostingEnvironment,
+        MyBackgroundService backgroundService
         )
         {
             _mapper = mapper;
@@ -63,6 +65,7 @@ namespace BeautyHubAPI.Controllers
             _userManager = userManager;
             _membershipRecordRepository = membershipRecordRepository;
             httpClient = new HttpClient();
+            _backgroundService = backgroundService;
         }
 
         #region addUpdateSalonSchedule
@@ -215,157 +218,159 @@ namespace BeautyHubAPI.Controllers
                         SalonScheduleDays.FromTime = model.fromTime;
                         SalonScheduleDays.ToTime = model.toTime;
 
+                        SalonScheduleDays.Status = false;
                         _context.Update(SalonScheduleDays);
                         await _context.SaveChangesAsync();
 
-                        scheduledDaysList = new List<string>();
-                        if (SalonScheduleDays.Monday == true)
-                        {
-                            scheduledDaysList.Add("Monday");
-                        }
-                        if (SalonScheduleDays.Tuesday == true)
-                        {
-                            scheduledDaysList.Add("Tuesday");
-                        }
-                        if (SalonScheduleDays.Wednesday == true)
-                        {
-                            scheduledDaysList.Add("Wednesday");
-                        }
-                        if (SalonScheduleDays.Thursday == true)
-                        {
-                            scheduledDaysList.Add("Thursday");
-                        }
-                        if (SalonScheduleDays.Friday == true)
-                        {
-                            scheduledDaysList.Add("Friday");
-                        }
-                        if (SalonScheduleDays.Saturday == true)
-                        {
-                            scheduledDaysList.Add("Saturday");
-                        }
-                        if (SalonScheduleDays.Sunday == true)
-                        {
-                            scheduledDaysList.Add("Sunday");
-                        }
+                        // scheduledDaysList = new List<string>();
+                        // if (SalonScheduleDays.Monday == true)
+                        // {
+                        //     scheduledDaysList.Add("Monday");
+                        // }
+                        // if (SalonScheduleDays.Tuesday == true)
+                        // {
+                        //     scheduledDaysList.Add("Tuesday");
+                        // }
+                        // if (SalonScheduleDays.Wednesday == true)
+                        // {
+                        //     scheduledDaysList.Add("Wednesday");
+                        // }
+                        // if (SalonScheduleDays.Thursday == true)
+                        // {
+                        //     scheduledDaysList.Add("Thursday");
+                        // }
+                        // if (SalonScheduleDays.Friday == true)
+                        // {
+                        //     scheduledDaysList.Add("Friday");
+                        // }
+                        // if (SalonScheduleDays.Saturday == true)
+                        // {
+                        //     scheduledDaysList.Add("Saturday");
+                        // }
+                        // if (SalonScheduleDays.Sunday == true)
+                        // {
+                        //     scheduledDaysList.Add("Sunday");
+                        // }
 
-                        // update timeslots according to schedule
-                        var services = await _context.SalonService.Where(u => u.SalonId == Salon.SalonId).ToListAsync();
-                        foreach (var item in services)
-                        {
-                            var deleteTimeSlot = await _context.TimeSlot.Where(u => u.ServiceId == item.ServiceId).ToListAsync();
+                        // // update timeslots according to schedule
+                        // var services = await _context.SalonService.Where(u => u.SalonId == Salon.SalonId).ToListAsync();
+                        // foreach (var item in services)
+                        // {
+                        //     var deleteTimeSlot = await _context.TimeSlot.Where(u => u.ServiceId == item.ServiceId).ToListAsync();
 
-                            foreach (var item3 in deleteTimeSlot)
-                            {
-                                item3.Status = false;
-                            }
-                            _context.UpdateRange(deleteTimeSlot);
-                            await _context.SaveChangesAsync();
+                        //     foreach (var item3 in deleteTimeSlot)
+                        //     {
+                        //         item3.Status = false;
+                        //     }
+                        //     _context.UpdateRange(deleteTimeSlot);
+                        //     await _context.SaveChangesAsync();
 
-                            int addDay = 0;
-                            for (int i = 0; i < 7; i++)
-                            {
-                                DateTime currentDate = DateTime.Now.AddDays(i);
-                                string currentDateStr = currentDate.ToString("yyyy-MM-dd");
-                                string dayName = currentDate.ToString("dddd");
+                        //     int addDay = 0;
+                        //     for (int i = 0; i < 7; i++)
+                        //     {
+                        //         DateTime currentDate = DateTime.Now.AddDays(i);
+                        //         string currentDateStr = currentDate.ToString("yyyy-MM-dd");
+                        //         string dayName = currentDate.ToString("dddd");
 
-                                var existingTimeSlot = _context.TimeSlot
-                                    .Where(u => u.ServiceId == item.ServiceId && u.SlotDate.Date == currentDate.Date)
-                                    .ToList();
+                        //         var existingTimeSlot = _context.TimeSlot
+                        //             .Where(u => u.ServiceId == item.ServiceId && u.SlotDate.Date == currentDate.Date)
+                        //             .ToList();
 
-                                if (!scheduledDaysList.Contains(dayName))
-                                {
-                                    foreach (var existingSlot in existingTimeSlot)
-                                    {
-                                        existingSlot.Status = false;
-                                    }
+                        //         if (!scheduledDaysList.Contains(dayName))
+                        //         {
+                        //             foreach (var existingSlot in existingTimeSlot)
+                        //             {
+                        //                 existingSlot.Status = false;
+                        //             }
 
-                                    _context.UpdateRange(existingTimeSlot);
-                                    await _context.SaveChangesAsync();
-                                    continue;
-                                }
+                        //             _context.UpdateRange(existingTimeSlot);
+                        //             await _context.SaveChangesAsync();
+                        //             continue;
+                        //         }
 
-                                startDateTime = DateTime.Parse(currentDateStr + " " + startTime);
-                                endDateTime = DateTime.Parse(currentDateStr + " " + endTime);
-                                int minutes = item.DurationInMinutes;
-                                startDateTime = startDateTime.AddMinutes(-minutes);
-                                endDateTime = endDateTime.AddMinutes(-minutes);
+                        //         startDateTime = DateTime.Parse(currentDateStr + " " + startTime);
+                        //         endDateTime = DateTime.Parse(currentDateStr + " " + endTime);
+                        //         int minutes = item.DurationInMinutes;
+                        //         startDateTime = startDateTime.AddMinutes(-minutes);
+                        //         endDateTime = endDateTime.AddMinutes(-minutes);
 
-                                TimeSpan timeInterval = endDateTime - startDateTime;
-                                int totalMinutes = (int)timeInterval.TotalMinutes;
-                                int noOfTimeSlot = totalMinutes / minutes;
+                        //         TimeSpan timeInterval = endDateTime - startDateTime;
+                        //         int totalMinutes = (int)timeInterval.TotalMinutes;
+                        //         int noOfTimeSlot = totalMinutes / minutes;
 
-                                timeList = new List<TimeList>();
-                                for (int j = 0; j < noOfTimeSlot; j++)
-                                {
-                                    TimeList obj1 = new TimeList();
-                                    startDateTime = startDateTime.AddMinutes(minutes);
-                                    obj1.time = startDateTime.ToString("hh:mm tt");
-                                    timeList.Add(obj1);
-                                }
+                        //         timeList = new List<TimeList>();
+                        //         for (int j = 0; j < noOfTimeSlot; j++)
+                        //         {
+                        //             TimeList obj1 = new TimeList();
+                        //             startDateTime = startDateTime.AddMinutes(minutes);
+                        //             obj1.time = startDateTime.ToString("hh:mm tt");
+                        //             timeList.Add(obj1);
+                        //         }
 
-                                foreach (var item2 in timeList)
-                                {
-                                    var timeslot = new TimeSlot
-                                    {
-                                        ServiceId = item.ServiceId,
-                                        FromTime = item2.time,
-                                        ToTime = DateTime.Parse(item2.time).AddMinutes(minutes).ToString("hh:mm tt"),
-                                        SlotDate = Convert.ToDateTime(currentDate.ToString(@"yyyy-MM-dd")),
-                                        SlotCount = item.TotalCountPerDuration,
-                                        Status = true
-                                    };
+                        //         foreach (var item2 in timeList)
+                        //         {
+                        //             var timeslot = new TimeSlot
+                        //             {
+                        //                 ServiceId = item.ServiceId,
+                        //                 FromTime = item2.time,
+                        //                 ToTime = DateTime.Parse(item2.time).AddMinutes(minutes).ToString("hh:mm tt"),
+                        //                 SlotDate = Convert.ToDateTime(currentDate.ToString(@"yyyy-MM-dd")),
+                        //                 SlotCount = item.TotalCountPerDuration,
+                        //                 Status = true
+                        //             };
 
-                                    bool pass = true;
-                                    var existingTimeSlotDetails = existingTimeSlot.FirstOrDefault(u => u.FromTime == timeslot.FromTime);
+                        //             bool pass = true;
+                        //             var existingTimeSlotDetails = existingTimeSlot.FirstOrDefault(u => u.FromTime == timeslot.FromTime);
 
-                                    if (!string.IsNullOrEmpty(item.LockTimeStart))
-                                    {
-                                        string[] splitLockTimeStart = item.LockTimeStart.Split(",");
-                                        string[] splitLockTimeEnd = item.LockTimeEnd.Split(",");
-                                        List<DateTime> lockTimeStart = splitLockTimeStart.Select(DateTime.Parse).ToList();
-                                        List<DateTime> lockTimeEnd = splitLockTimeEnd.Select(DateTime.Parse).ToList();
-                                        var fromTime = DateTime.Parse(currentDateStr + " " + timeslot.FromTime);
-                                        var toTime = DateTime.Parse(currentDateStr + " " + timeslot.ToTime);
+                        //             if (!string.IsNullOrEmpty(item.LockTimeStart))
+                        //             {
+                        //                 string[] splitLockTimeStart = item.LockTimeStart.Split(",");
+                        //                 string[] splitLockTimeEnd = item.LockTimeEnd.Split(",");
+                        //                 List<DateTime> lockTimeStart = splitLockTimeStart.Select(DateTime.Parse).ToList();
+                        //                 List<DateTime> lockTimeEnd = splitLockTimeEnd.Select(DateTime.Parse).ToList();
+                        //                 var fromTime = DateTime.Parse(currentDateStr + " " + timeslot.FromTime);
+                        //                 var toTime = DateTime.Parse(currentDateStr + " " + timeslot.ToTime);
 
-                                        for (int m = 0; m < lockTimeStart.Count; m++)
-                                        {
-                                            var chkLockedFrom = DateTime.Parse(currentDateStr + " " + lockTimeStart[m].ToString(@"hh:mm tt"));
-                                            var chkLockedTo = DateTime.Parse(currentDateStr + " " + lockTimeEnd[m].ToString(@"hh:mm tt"));
+                        //                 for (int m = 0; m < lockTimeStart.Count; m++)
+                        //                 {
+                        //                     var chkLockedFrom = DateTime.Parse(currentDateStr + " " + lockTimeStart[m].ToString(@"hh:mm tt"));
+                        //                     var chkLockedTo = DateTime.Parse(currentDateStr + " " + lockTimeEnd[m].ToString(@"hh:mm tt"));
 
-                                            if ((fromTime <= chkLockedFrom && toTime <= chkLockedFrom) || (fromTime >= chkLockedTo && toTime >= chkLockedTo))
-                                            {
-                                                if (existingTimeSlotDetails == null)
-                                                {
-                                                    await _context.AddAsync(timeslot);
-                                                    await _context.SaveChangesAsync();
-                                                }
-                                                else
-                                                {
-                                                    existingTimeSlotDetails.Status = true;
-                                                    _context.Update(existingTimeSlotDetails);
-                                                    await _context.SaveChangesAsync();
-                                                }
-                                            }
-                                        }
-                                    }
-                                    else
-                                    {
-                                        if (existingTimeSlotDetails == null)
-                                        {
-                                            await _context.AddAsync(timeslot);
-                                            await _context.SaveChangesAsync();
-                                        }
-                                        else
-                                        {
-                                            existingTimeSlotDetails.Status = true;
-                                            _context.Update(existingTimeSlotDetails);
-                                            await _context.SaveChangesAsync();
-                                        }
-                                    }
-                                }
-                                addDay++;
-                            }
-                        }
+                        //                     if ((fromTime <= chkLockedFrom && toTime <= chkLockedFrom) || (fromTime >= chkLockedTo && toTime >= chkLockedTo))
+                        //                     {
+                        //                         if (existingTimeSlotDetails == null)
+                        //                         {
+                        //                             await _context.AddAsync(timeslot);
+                        //                             await _context.SaveChangesAsync();
+                        //                         }
+                        //                         else
+                        //                         {
+                        //                             existingTimeSlotDetails.Status = true;
+                        //                             _context.Update(existingTimeSlotDetails);
+                        //                             await _context.SaveChangesAsync();
+                        //                         }
+                        //                     }
+                        //                 }
+                        //             }
+                        //             else
+                        //             {
+                        //                 if (existingTimeSlotDetails == null)
+                        //                 {
+                        //                     await _context.AddAsync(timeslot);
+                        //                     await _context.SaveChangesAsync();
+                        //                 }
+                        //                 else
+                        //                 {
+                        //                     existingTimeSlotDetails.Status = true;
+                        //                     _context.Update(existingTimeSlotDetails);
+                        //                     await _context.SaveChangesAsync();
+                        //                 }
+                        //             }
+                        //         }
+                        //         addDay++;
+                        //     }
+                        // }
+                        _backgroundService.StartService();
 
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = true;
@@ -395,9 +400,12 @@ namespace BeautyHubAPI.Controllers
                 SalonSchedule.Sunday = model.sunday;
                 SalonSchedule.FromTime = model.fromTime;
                 SalonSchedule.ToTime = model.toTime;
+                SalonSchedule.Status = false;
 
                 _context.SalonSchedule.Add(SalonSchedule);
                 _context.SaveChanges();
+
+                _backgroundService.StartService();
 
                 var scheduledDays = new ScheduleDayDTO();
                 scheduledDays.monday = SalonSchedule.Monday;
@@ -624,7 +632,7 @@ namespace BeautyHubAPI.Controllers
                     _response.Messages = "Not found any record.";
                     return Ok(_response);
                 }
-                // query = query.Where(u => u.SalonId == model.SalonId);
+                query = query.Where(u => u.salonId == model.salonId);
             }
 
             List<int?> customerSalonIds = new List<int?>();
