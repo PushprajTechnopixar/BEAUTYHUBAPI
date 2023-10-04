@@ -10,6 +10,7 @@ namespace BeautyHubAPI.Models
             TimeSlot = new HashSet<TimeSlot>();
             FavouriteService = new HashSet<FavouriteService>();
             Cart = new HashSet<Cart>();
+            ServicePackage = new HashSet<ServicePackage>();
         }
 
         public int ServiceId { get; set; }
@@ -37,6 +38,7 @@ namespace BeautyHubAPI.Models
         public bool IsDeleted { get; set; }
         public DateTime CreateDate { get; set; }
         public DateTime ModifyDate { get; set; }
+        public string? ServiceType { get; set; }
 
         public virtual ICollection<FavouriteService> FavouriteService { get; set; }
         public virtual MainCategory MainCategory { get; set; } = null!;
@@ -44,5 +46,7 @@ namespace BeautyHubAPI.Models
         public virtual SubCategory? Subcategory { get; set; }
         public virtual ICollection<TimeSlot> TimeSlot { get; set; }
         public virtual ICollection<Cart> Cart { get; set; }
+        public virtual ICollection<ServicePackage> ServicePackage { get; set; }
+
     }
 }

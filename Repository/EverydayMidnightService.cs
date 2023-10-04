@@ -76,7 +76,7 @@ public class EverydayMidnightService : BackgroundService
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-                await UpdateSchedule(dbContext);
+                // await UpdateSchedule(dbContext);
             }
             // Delay for a certain duration before checking the flag again
             await Task.Delay(delay, stoppingToken); // Polling interval
@@ -113,7 +113,7 @@ public class EverydayMidnightService : BackgroundService
 
     private async Task UpdateSchedule(ApplicationDbContext dbContext)
     {
-        var salonScheduleList = await dbContext.SalonSchedule.Where(u => u.IsDeleted != true && u.Status != true).ToListAsync();
+        var salonScheduleList = await dbContext.SalonSchedule.Where(u => u.IsDeleted != true).ToListAsync();
         foreach (var SalonScheduleDays in salonScheduleList)
         {
             SalonScheduleDays.Status = true;
@@ -265,7 +265,31 @@ public class EverydayMidnightService : BackgroundService
                     addDay++;
                 }
             }
+            var backDateTimeSlots = dbContext.TimeSlot
+                        .Where(t => t.SlotDate.Date < DateTime.Now.Date && t.Status != false);
+            foreach (var item in backDateTimeSlots)
+            {
+                item.Status = false;
+                var backDateBookedService = dbContext.BookedService
+                                        .Where(u => Convert.ToDateTime(u.AppointmentDate.Date) < DateTime.Now.Date && u.AppointmentStatus != "Completed" || u.AppointmentStatus != "Cancelled");
+                foreach (var item1 in backDateBookedService)
+                {
+                    item1.AppointmentStatus = "Cancelled";
+                    var backAppointmentService = dbContext.Appointment
+                                        .Where(u => u.AppointmentId == item1.AppointmentId && u.AppointmentStatus != "Completed" || u.AppointmentStatus != "Cancelled");
 
+                    foreach (var item2 in backDateBookedService)
+                    {
+                        item1.AppointmentStatus = "Cancelled";
+                    }
+                    dbContext.UpdateRange(backAppointmentService);
+                    await dbContext.SaveChangesAsync();
+                }
+                dbContext.UpdateRange(backDateBookedService);
+                await dbContext.SaveChangesAsync();
+            }
+            dbContext.UpdateRange(backDateTimeSlots);
+            await dbContext.SaveChangesAsync();
         }
         _logger.LogInformation("Status updated.");
     }

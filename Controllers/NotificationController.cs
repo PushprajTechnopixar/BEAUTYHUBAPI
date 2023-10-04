@@ -170,93 +170,99 @@ namespace BeautyHubAPI.Controllers
                     return Ok(_response);
                 }
 
+                string[] allRoles = model.sendToRole.Split(",");
+
                 var roles = await _userManager.GetRolesAsync(currentUserDetail);
                 int salonId = 0;
 
-                if (roles.FirstOrDefault().ToString() == Role.Vendor.ToString())
+                foreach (var item in allRoles)
                 {
-                    if (model.sendToRole != Role.Customer.ToString())
+                    if (model.sendToRole != Role.Admin.ToString()
+                    && model.sendToRole != Role.Vendor.ToString()
+                    && model.sendToRole != Role.Customer.ToString())
                     {
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = false;
                         _response.Messages = "Please enter valid role.";
                         return Ok(_response);
                     }
-                    model.sendToRole = Role.Customer.ToString();
-                    salonId = await _context.SalonDetail.Where(u => u.VendorId == currentUserId).Select(u => u.SalonId).FirstOrDefaultAsync();
-                }
 
-                if (model.sendToRole != Role.Admin.ToString()
-                && model.sendToRole != Role.Vendor.ToString()
-                && model.sendToRole != Role.Customer.ToString()
-                && model.sendToRole != Role.SuperAdmin.ToString())
-                {
-                    _response.StatusCode = HttpStatusCode.OK;
-                    _response.IsSuccess = false;
-                    _response.Messages = "Please enter valid role.";
-                    return Ok(_response);
-                }
-
-                var addNotification = new Notification();
-                addNotification.Title = model.title;
-                addNotification.Description = model.description;
-                addNotification.UserRole = model.sendToRole;
-                addNotification.CreatedBy = currentUserId;
-                addNotification.NotificationType = NotificationType.Broadcast.ToString();
-
-                await _context.AddAsync(addNotification);
-                await _context.SaveChangesAsync();
-
-                var mapData = _mapper.Map<NotificationDTO>(addNotification);
-
-                // send notification
-                var allUsers = await _userManager.GetUsersInRoleAsync(model.sendToRole);
-
-                if (allUsers.Count > 0)
-                {
-                    foreach (var user in allUsers)
+                    if (roles.FirstOrDefault().ToString() == Role.Vendor.ToString())
                     {
-                        var token = "";
-                        var userDetail = await _context.UserDetail.Where(u => u.UserId == user.Id).FirstOrDefaultAsync();
-                        if (userDetail != null)
+                        if (model.sendToRole != Role.Customer.ToString())
                         {
-                            if (roles.FirstOrDefault().ToString() == Role.Vendor.ToString())
+                            _response.StatusCode = HttpStatusCode.OK;
+                            _response.IsSuccess = false;
+                            _response.Messages = "Please enter valid role.";
+                            return Ok(_response);
+                        }
+                        model.sendToRole = Role.Customer.ToString();
+                        salonId = await _context.SalonDetail.Where(u => u.VendorId == currentUserId).Select(u => u.SalonId).FirstOrDefaultAsync();
+                    }
+                }
+
+                foreach (var item in allRoles)
+                {
+                    var addNotification = new Notification();
+                    addNotification.Title = model.title;
+                    addNotification.Description = model.description;
+                    addNotification.UserRole = item;
+                    addNotification.CreatedBy = currentUserId;
+                    addNotification.NotificationType = NotificationType.Broadcast.ToString();
+
+                    await _context.AddAsync(addNotification);
+                    await _context.SaveChangesAsync();
+
+                    var mapData = _mapper.Map<NotificationDTO>(addNotification);
+
+                    // send notification
+                    var allUsers = await _userManager.GetUsersInRoleAsync(item);
+
+                    if (allUsers.Count > 0)
+                    {
+                        foreach (var user in allUsers)
+                        {
+                            var token = "";
+                            var userDetail = await _context.UserDetail.Where(u => u.UserId == user.Id).FirstOrDefaultAsync();
+                            if (userDetail != null)
                             {
-                                var customerSalon = await _context.CustomerSalon.Where(u => u.SalonId == salonId && u.CustomerUserId == userDetail.UserId).FirstOrDefaultAsync();
-                                if (customerSalon == null)
+                                if (roles.FirstOrDefault().ToString() == Role.Vendor.ToString())
                                 {
-                                    continue;
+                                    var customerSalon = await _context.CustomerSalon.Where(u => u.SalonId == salonId && u.CustomerUserId == userDetail.UserId).FirstOrDefaultAsync();
+                                    if (customerSalon == null)
+                                    {
+                                        continue;
+                                    }
                                 }
-                            }
-                            if (!string.IsNullOrEmpty(userDetail.Fcmtoken))
-                            {
+                                // if (!string.IsNullOrEmpty(userDetail.Fcmtoken))
+                                // {
                                 // if (user.IsNotificationEnabled == true)
                                 // {
                                 token = userDetail.Fcmtoken;
                                 var resp = await _mobileMessagingClient.SendNotificationAsync(token, addNotification.Title, addNotification.Description);
-                                if (!string.IsNullOrEmpty(resp))
-                                {
-                                    // update notification sent
-                                    var notificationSent = new NotificationSent();
-                                    notificationSent.Title = addNotification.Title;
-                                    notificationSent.Description = addNotification.Description;
-                                    notificationSent.UserId = user.Id;
-                                    notificationSent.NotificationType = NotificationType.Broadcast.ToString();
+                                // if (!string.IsNullOrEmpty(resp))
+                                // {
+                                // update notification sent
+                                var notificationSent = new NotificationSent();
+                                notificationSent.Title = addNotification.Title;
+                                notificationSent.Description = addNotification.Description;
+                                notificationSent.UserId = user.Id;
+                                notificationSent.NotificationType = NotificationType.Broadcast.ToString();
 
-                                    await _context.AddAsync(notificationSent);
-                                    await _context.SaveChangesAsync();
-                                }
+                                await _context.AddAsync(notificationSent);
+                                await _context.SaveChangesAsync();
+                                // }
+                                // }
                                 // }
                             }
                         }
                     }
-                }
 
+                }
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
                 _response.Messages = "Notification sent sucessfullly.";
                 return Ok(_response);
-
             }
             catch (Exception ex)
             {

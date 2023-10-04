@@ -26,7 +26,7 @@ namespace BeautyHubAPI.Models
         public int? DurationInMinutes { get; set; }
         public int? ServiceCountInCart { get; set; }
         public DateTime CreateDate { get; set; }
-        public string? BookingStatus { get; set; }
+        public string? AppointmentStatus { get; set; }
         public int? SlotId { get; set; }
 
         public virtual Appointment Appointment { get; set; } = null!;

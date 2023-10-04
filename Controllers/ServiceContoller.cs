@@ -31,6 +31,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Net.Http;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
+using GSF.Collections;
 
 namespace BeautyHubAPI.Controllers
 {
@@ -208,6 +209,50 @@ namespace BeautyHubAPI.Controllers
 
                     if (update == 1)
                     {
+                        var scheduledStartDateTime = Convert.ToDateTime(indiaDate + " " + SalonScheduleDays.FromTime);
+                        var scheduledEndDateTime = Convert.ToDateTime(indiaDate + " " + SalonScheduleDays.ToTime);
+                        var modelFromTime = Convert.ToDateTime(indiaDate + " " + model.fromTime);
+                        var modelToTime = Convert.ToDateTime(indiaDate + " " + model.toTime);
+                        if (modelFromTime > scheduledStartDateTime || modelToTime < scheduledEndDateTime)
+                        {
+                            if (modelFromTime > scheduledStartDateTime)
+                            {
+                                var timeSlots = await _context.BookedService
+                               .Where(u => u.AppointmentStatus == "Scheduled").ToListAsync();
+                                foreach (var item in timeSlots)
+                                {
+                                    var scheduledToTime = Convert.ToDateTime(indiaDate + " " + item.ToTime);
+                                    var scheduledFromTime = Convert.ToDateTime(indiaDate + " " + item.FromTime);
+                                    if (scheduledFromTime < modelFromTime)
+                                    {
+                                        _response.StatusCode = HttpStatusCode.OK;
+                                        _response.IsSuccess = false;
+                                        _response.Messages = "Can't update while an appointment is scheduled.";
+                                        return Ok(_response);
+                                    }
+                                }
+                            }
+                            if (modelToTime < scheduledEndDateTime)
+                            {
+                                var timeSlots = await _context.BookedService
+                                .Where(u => u.AppointmentStatus == "Scheduled").ToListAsync();
+
+                                foreach (var item in timeSlots)
+                                {
+                                    var scheduledToTime = Convert.ToDateTime(indiaDate + " " + item.ToTime);
+                                    var scheduledFromTime = Convert.ToDateTime(indiaDate + " " + item.FromTime);
+                                    if (scheduledToTime > modelToTime)
+                                    {
+                                        _response.StatusCode = HttpStatusCode.OK;
+                                        _response.IsSuccess = false;
+                                        _response.Messages = "Can't update while an appointment is scheduled.";
+                                        return Ok(_response);
+                                    }
+                                }
+                            }
+
+                        }
+
                         SalonScheduleDays.Monday = model.monday;
                         SalonScheduleDays.Tuesday = model.tuesday;
                         SalonScheduleDays.Wednesday = model.wednesday;
@@ -468,7 +513,14 @@ namespace BeautyHubAPI.Controllers
             var roles = await _userManager.GetRolesAsync(currentUserDetail);
 
             int dairyMainCategoryId = Convert.ToInt32(CategoryName.DairyandEggs);
-
+            model.serviceType = !string.IsNullOrEmpty(model.serviceType) ? model.serviceType : "Single";
+            if (model.serviceType != "Single" && model.serviceType != "Package")
+            {
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = false;
+                _response.Messages = "Please enter valid service type.";
+                return Ok(_response);
+            }
             IQueryable<SalonServiceListDTO>? query;
 
             if (roles[0].ToString() == "Customer")
@@ -479,6 +531,7 @@ namespace BeautyHubAPI.Controllers
 
                         where t1.IsDeleted != true
                         where t1.Status == 1
+                        where t1.ServiceType == model.serviceType
                         // where t6.CustomerUserId == currentUserId
                         orderby t1.MainCategoryId descending
                         // Add more joins as needed
@@ -551,6 +604,7 @@ namespace BeautyHubAPI.Controllers
 
                         where t1.IsDeleted != true
                         where t1.Status == 1
+                        where t1.ServiceType == model.serviceType
                         // where t6.CustomerUserId == currentUserId
                         orderby t1.ServiceId
 
@@ -735,7 +789,7 @@ namespace BeautyHubAPI.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [Authorize(Roles = "SuperAdmin,Admin,Vendor,Customer")]
         [Route("GetSalonServiceDetail")]
-        public async Task<IActionResult> GetSalonServiceDetail(int serviceId)
+        public async Task<IActionResult> GetSalonServiceDetail(int serviceId, string? serviceType)
         {
             string currentUserId = (HttpContext.User.Claims.First().Value);
             if (string.IsNullOrEmpty(currentUserId))
@@ -751,6 +805,15 @@ namespace BeautyHubAPI.Controllers
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
                 _response.Messages = "User does not exists.";
+                return Ok(_response);
+            }
+            serviceType = string.IsNullOrEmpty(serviceType) ? "Single" : serviceType;
+
+            if (serviceType != "Single" && serviceType != "Package")
+            {
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = false;
+                _response.Messages = "Please enter valid servivce type.";
                 return Ok(_response);
             }
 
@@ -772,6 +835,27 @@ namespace BeautyHubAPI.Controllers
             }
 
             var serviceResponse = _mapper.Map<serviceDetailDTO>(serviceDetail);
+
+            if (serviceType == "Package")
+            {
+                var includeService = await _context.ServicePackage.Where(u => u.ServiceId == serviceResponse.serviceId).FirstOrDefaultAsync();
+                if (includeService != null)
+                {
+                    var splittedService = includeService.IncludeServiceId.Split(",");
+                    var packageServices = new List<IncludeServiceDTO>();
+                    foreach (var item in splittedService)
+                    {
+                        var packageService = new IncludeServiceDTO();
+                        var includeServiceDetail = await _context.SalonService.Where(u => u.ServiceId == Convert.ToInt32(item)).FirstOrDefaultAsync();
+                        if (includeServiceDetail != null)
+                        {
+                            packageServices.Add(_mapper.Map(includeServiceDetail, packageService));
+                        }
+                    }
+                    serviceResponse.IncludeServic = packageServices;
+                }
+
+            }
 
             var serivceImageList = new List<ServiceImageDTO>();
 
@@ -946,6 +1030,26 @@ namespace BeautyHubAPI.Controllers
                     return Ok(_response);
                 }
 
+                if (!string.IsNullOrEmpty(model.ServiceType))
+                {
+                    if (model.ServiceType == "Package")
+                    {
+                        model.mainCategoryId = 53;
+                        model.subCategoryId = 55;
+                        if (string.IsNullOrEmpty(model.IncludeServiceId))
+                        {
+                            _response.StatusCode = HttpStatusCode.OK;
+                            _response.IsSuccess = false;
+                            _response.Messages = "Please enter service id for package.";
+                            return Ok(_response);
+                        }
+                    }
+                    else
+                    {
+                        model.ServiceType = "Single";
+                    }
+                }
+
                 if (model.ageRestrictions != "Kids" && model.ageRestrictions != "Adult")
                 {
                     _response.StatusCode = HttpStatusCode.OK;
@@ -980,6 +1084,19 @@ namespace BeautyHubAPI.Controllers
 
                 string[] splitLockTimeStart = model.lockTimeStart.Split(",");
                 string[] splitLockTimeend = model.lockTimeEnd.Split(",");
+                string[] splitIncludeProduct = model.IncludeServiceId.Split(",");
+
+                foreach (var item in splitIncludeProduct)
+                {
+                    var ckeckService = await _context.SalonService.Where(u => u.ServiceId == Convert.ToInt32(item)).FirstOrDefaultAsync();
+                    if (splitLockTimeStart.Length != splitLockTimeend.Length)
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Messages = "Not found selected service for package.";
+                        return Ok(_response);
+                    }
+                }
 
                 if (splitLockTimeStart.Length != splitLockTimeend.Length)
                 {
@@ -1088,6 +1205,14 @@ namespace BeautyHubAPI.Controllers
                     await _context.AddAsync(addUpdateServiceEntity);
                     await _context.SaveChangesAsync();
 
+                    var servicePackage = new ServicePackage();
+                    servicePackage.ServiceId = addUpdateServiceEntity.ServiceId;
+                    servicePackage.IncludeServiceId = model.IncludeServiceId;
+                    servicePackage.SalonId = model.salonId;
+
+                    await _context.AddAsync(servicePackage);
+                    await _context.SaveChangesAsync();
+
                     response = _mapper.Map<GetSalonServiceDTO>(addUpdateServiceEntity);
 
                     message = "Service" + ResponseMessages.msgAdditionSuccess;
@@ -1105,6 +1230,15 @@ namespace BeautyHubAPI.Controllers
                     _mapper.Map(model, serviceDetail);
                     _context.Update(serviceDetail);
                     await _context.SaveChangesAsync();
+
+                    var servicePackage = await _context.ServicePackage.FirstOrDefaultAsync(u => u.ServiceId == serviceDetail.ServiceId);
+                    if (servicePackage != null)
+                    {
+                        servicePackage.IncludeServiceId = model.IncludeServiceId;
+
+                        _context.Update(servicePackage);
+                        await _context.SaveChangesAsync();
+                    }
 
                     response = _mapper.Map<GetSalonServiceDTO>(serviceDetail);
                     message = "Service" + ResponseMessages.msgUpdationSuccess;
@@ -1684,7 +1818,6 @@ namespace BeautyHubAPI.Controllers
             }
         }
         #endregion
-
 
     }
 }

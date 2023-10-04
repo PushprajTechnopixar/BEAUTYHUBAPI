@@ -26,7 +26,7 @@ namespace BeautyHubAPI.Models.Dtos
         public List<UPIResponseDTO> upiResponses { get; set; }
         public GetMembershipRecordDTO membershipResponses { get; set; }
     }
-    
+
     public class SuperAdminResponseDTO
     {
         public string id { get; set; }
@@ -47,7 +47,7 @@ namespace BeautyHubAPI.Models.Dtos
         public List<BankResponseDTO> bankResponses { get; set; }
         public List<UPIResponseDTO> upiResponses { get; set; }
     }
-    
+
     public class SalonResponseDTO
     {
         public int salonId { get; set; }
@@ -67,10 +67,8 @@ namespace BeautyHubAPI.Models.Dtos
         public string? zip { get; set; }
         public int status { get; set; }
         public string statusDisplay { get; set; }
-        public bool groceryStatus { get; set; }
-        public bool dairyStatus { get; set; }
     }
-    
+
     public class BankResponseDTO
     {
         public int bankId { get; set; }
@@ -81,7 +79,7 @@ namespace BeautyHubAPI.Models.Dtos
         public string? branchName { get; set; }
         public bool? isActive { get; set; }
     }
-    
+
     public class UPIResponseDTO
     {
         public int upidetailId { get; set; }

@@ -1612,7 +1612,7 @@ namespace BeautyHubAPI.Controllers
                     string appointmentStatus = string.Empty;
 
                     var scheduledServices = bookedServices
-                        .Where(a => a.BookingStatus == AppointmentStatus.Scheduled.ToString())
+                        .Where(a => a.AppointmentStatus == AppointmentStatus.Scheduled.ToString())
                         .ToList();
 
                     if (scheduledServices.Any())
@@ -1623,7 +1623,7 @@ namespace BeautyHubAPI.Controllers
                     else
                     {
                         var completedServices = bookedServices
-                            .Where(a => a.BookingStatus == AppointmentStatus.Completed.ToString())
+                            .Where(a => a.AppointmentStatus == AppointmentStatus.Completed.ToString())
                             .ToList();
 
                         if (completedServices.Any())
@@ -1634,7 +1634,7 @@ namespace BeautyHubAPI.Controllers
                         else
                         {
                             bookedServices = bookedServices
-                                .Where(a => a.BookingStatus == AppointmentStatus.Cancelled.ToString())
+                                .Where(a => a.AppointmentStatus == AppointmentStatus.Cancelled.ToString())
                                 .ToList();
 
                             appointmentStatus = AppointmentStatus.Cancelled.ToString();
@@ -1858,7 +1858,7 @@ namespace BeautyHubAPI.Controllers
                         return Ok(_response);
                     }
 
-                    var bookedServices = await _context.BookedService.Where(u => u.AppointmentId == model.appointmentId).ToListAsync();//&& u.BookingStatus != AppointmentStatus.Cancelled.ToString()
+                    var bookedServices = await _context.BookedService.Where(u => u.AppointmentId == model.appointmentId).ToListAsync();//&& u.AppointmentStatus != AppointmentStatus.Cancelled.ToString()
                     if (bookedServices.Count > 0)
                     {
                         if (slotIds.Count > 0 || bookedServices.Count == 1 && model.setToAll == false)
@@ -1878,7 +1878,7 @@ namespace BeautyHubAPI.Controllers
 
                                 if (bookedService != null)
                                 {
-                                    if (bookedService.BookingStatus == AppointmentStatus.Completed.ToString())
+                                    if (bookedService.AppointmentStatus == AppointmentStatus.Completed.ToString())
                                     {
                                         _response.StatusCode = HttpStatusCode.OK;
                                         _response.IsSuccess = false;
@@ -1887,11 +1887,11 @@ namespace BeautyHubAPI.Controllers
                                     }
                                 }
 
-                                bookedService.BookingStatus = AppointmentStatus.Completed.ToString();
+                                bookedService.AppointmentStatus = AppointmentStatus.Completed.ToString();
                                 _context.Update(bookedService);
                                 await _context.SaveChangesAsync();
 
-                                var bookingServiceStatus = bookedServices.Where(u => u.BookingStatus == AppointmentStatus.Scheduled.ToString() || u.BookingStatus == AppointmentStatus.Cancelled.ToString());
+                                var bookingServiceStatus = bookedServices.Where(u => u.AppointmentStatus == AppointmentStatus.Scheduled.ToString() || u.AppointmentStatus == AppointmentStatus.Cancelled.ToString());
                                 if (bookingServiceStatus == null)
                                 {
                                     appointmentDetail.AppointmentStatus = AppointmentStatus.Completed.ToString();
@@ -1913,7 +1913,7 @@ namespace BeautyHubAPI.Controllers
                                 _context.Update(timeSlot);
                                 await _context.SaveChangesAsync();
 
-                                booked.BookingStatus = AppointmentStatus.Completed.ToString();
+                                booked.AppointmentStatus = AppointmentStatus.Completed.ToString();
                                 _context.Update(booked);
                                 await _context.SaveChangesAsync();
                             }
@@ -1938,7 +1938,7 @@ namespace BeautyHubAPI.Controllers
                         _response.Messages = "Can't be change after cancelled";
                         return Ok(_response);
                     }
-                    var bookedServices = await _context.BookedService.Where(u => u.AppointmentId == model.appointmentId).ToListAsync();//&& u.BookingStatus != AppointmentStatus.Cancelled.ToString()
+                    var bookedServices = await _context.BookedService.Where(u => u.AppointmentId == model.appointmentId).ToListAsync();//&& u.AppointmentStatus != AppointmentStatus.Cancelled.ToString()
                     if (bookedServices.Count > 0)
                     {
                         if (slotIds.Count > 0 || bookedServices.Count == 1 && model.setToAll == false)
@@ -1958,7 +1958,7 @@ namespace BeautyHubAPI.Controllers
 
                                 if (bookedService != null)
                                 {
-                                    if (bookedService.BookingStatus == AppointmentStatus.Cancelled.ToString())
+                                    if (bookedService.AppointmentStatus == AppointmentStatus.Cancelled.ToString())
                                     {
                                         _response.StatusCode = HttpStatusCode.OK;
                                         _response.IsSuccess = false;
@@ -1967,11 +1967,11 @@ namespace BeautyHubAPI.Controllers
                                     }
 
                                 }
-                                bookedService.BookingStatus = AppointmentStatus.Cancelled.ToString();
+                                bookedService.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
                                 _context.Update(bookedService);
                                 await _context.SaveChangesAsync();
 
-                                var bookingServiceStatus = bookedServices.Where(u => u.BookingStatus == AppointmentStatus.Scheduled.ToString() || u.BookingStatus == AppointmentStatus.Completed.ToString());
+                                var bookingServiceStatus = bookedServices.Where(u => u.AppointmentStatus == AppointmentStatus.Scheduled.ToString() || u.AppointmentStatus == AppointmentStatus.Completed.ToString());
                                 if (bookingServiceStatus == null)
                                 {
                                     appointmentDetail.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
@@ -1993,7 +1993,7 @@ namespace BeautyHubAPI.Controllers
                                 _context.Update(timeSlot);
                                 await _context.SaveChangesAsync();
 
-                                booked.BookingStatus = AppointmentStatus.Cancelled.ToString();
+                                booked.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
                                 _context.Update(booked);
                                 await _context.SaveChangesAsync();
                             }

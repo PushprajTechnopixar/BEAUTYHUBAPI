@@ -19,6 +19,8 @@
         public string? lockTimeStart { get; set; }
         public string? lockTimeEnd { get; set; }
         public int? status { get; set; }
+        public string? ServiceType { get; set; }
+        public string? IncludeServiceId { get; set; }
     }
 
     public partial class GetSalonServiceDTO
@@ -104,6 +106,18 @@
         public int DurationInMinutes { get; set; }
         public string? LockTimeStart { get; set; }
         public string? LockTimeEnd { get; set; }
+        public List<IncludeServiceDTO> IncludeServic { get; set; }
+
+    }
+
+    public class IncludeServiceDTO
+    {
+        public int serviceId { get; set; }
+        public string serviceName { get; set; }
+        public string? serviceIconImage { get; set; }
+        public double basePrice { get; set; }
+        public double? discount { get; set; }
+        public double listingPrice { get; set; }
     }
 
     public class ServiceImageDTO

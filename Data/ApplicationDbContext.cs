@@ -35,10 +35,24 @@ namespace BeautyHubAPI.Data
         public virtual DbSet<FavouriteSalon> FavouriteSalon { get; set; } = null!;
         public virtual DbSet<Appointment> Appointment { get; set; } = null!;
         public virtual DbSet<BookedService> BookedService { get; set; } = null!;
+        public virtual DbSet<ServicePackage> ServicePackage { get; set; } = null!;
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+
+            modelBuilder.Entity<ServicePackage>(entity =>
+            {
+                entity.Property(e => e.CreateDate)
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("(getdate())");
+
+                entity.HasOne(d => d.PackageService)
+                    .WithMany(p => p.ServicePackage)
+                    .HasForeignKey(d => d.ServiceId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ServicePackage_SalonService");
+            });
 
             modelBuilder.Entity<Appointment>(entity =>
             {
@@ -86,7 +100,7 @@ namespace BeautyHubAPI.Data
                 entity.Property(e => e.ToTime).HasMaxLength(50);
 
                 entity.Property(e => e.VendorId).HasMaxLength(450);
-                entity.Property(e => e.BookingStatus).HasMaxLength(100);
+                entity.Property(e => e.AppointmentStatus).HasMaxLength(100);
 
                 entity.HasOne(d => d.Appointment)
                     .WithMany(p => p.BookedService)
@@ -115,7 +129,6 @@ namespace BeautyHubAPI.Data
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_FavouriteSalon_SalonDetail");
             });
-
 
             modelBuilder.Entity<Cart>(entity =>
             {
@@ -172,6 +185,7 @@ namespace BeautyHubAPI.Data
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_FavouriteService_SalonService");
             });
+
             modelBuilder.Entity<Notification>(entity =>
             {
                 entity.Property(e => e.CreateDate)
@@ -261,6 +275,9 @@ namespace BeautyHubAPI.Data
                     .HasMaxLength(50)
                     .HasDefaultValueSql("(N'Male')");
 
+                entity.Property(e => e.ServiceType)
+                .HasMaxLength(50)
+                .HasDefaultValueSql("(N'Single')");
 
                 entity.Property(e => e.LockTimeEnd).HasMaxLength(50);
 

@@ -61,7 +61,7 @@ namespace BeautyHubAPI.Models.Dtos
         public int? couponId { get; set; }
         public string customerFirstName { get; set; }
         public string? customerLastName { get; set; }
-        public string? deliveryType { get; set; }
+        // public string? deliveryType { get; set; }
         public string? appointmentStatus { get; set; }
         public string? paymentMethod { get; set; }
         public string? paymentStatus { get; set; }
@@ -121,7 +121,7 @@ namespace BeautyHubAPI.Models.Dtos
         public string toTime { get; set; } = null!;
         public int? durationInMinutes { get; set; }
         public bool favoritesStatus { get; set; }
-        public string? bookingStatus { get; set; }
+        public string? AppointmentStatus { get; set; }
         public string createDate { get; set; }
         // public string slotDate { get; set; }
         public int serviceCountInCart { get; set; }

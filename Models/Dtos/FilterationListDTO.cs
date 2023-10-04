@@ -22,6 +22,7 @@
         public string? searchQuery { get; set; }
         public string? genderPreferences { get; set; }
         public string? ageRestrictions { get; set; }
+        public string? serviceType { get; set; }
     }
     public class InventoryProductFilterationListDTO
     {
