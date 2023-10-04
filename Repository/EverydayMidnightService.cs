@@ -76,7 +76,7 @@ public class EverydayMidnightService : BackgroundService
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-                // await UpdateSchedule(dbContext);
+                await UpdateSchedule(dbContext);
             }
             // Delay for a certain duration before checking the flag again
             await Task.Delay(delay, stoppingToken); // Polling interval

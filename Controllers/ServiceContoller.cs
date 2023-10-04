@@ -513,53 +513,89 @@ namespace BeautyHubAPI.Controllers
             var roles = await _userManager.GetRolesAsync(currentUserDetail);
 
             int dairyMainCategoryId = Convert.ToInt32(CategoryName.DairyandEggs);
-            model.serviceType = !string.IsNullOrEmpty(model.serviceType) ? model.serviceType : "Single";
-            if (model.serviceType != "Single" && model.serviceType != "Package")
-            {
-                _response.StatusCode = HttpStatusCode.OK;
-                _response.IsSuccess = false;
-                _response.Messages = "Please enter valid service type.";
-                return Ok(_response);
-            }
-            IQueryable<SalonServiceListDTO>? query;
+
+            IQueryable<SalonServiceListDTO> query = _context.SalonService.Select(service => new SalonServiceListDTO { });
 
             if (roles[0].ToString() == "Customer")
             {
+                if (string.IsNullOrEmpty(model.serviceType))
+                {
+                    query = from t1 in _context.SalonService
+                            join t2 in _context.MainCategory on t1.MainCategoryId equals t2.MainCategoryId
 
-                query = from t1 in _context.SalonService
-                        join t2 in _context.MainCategory on t1.MainCategoryId equals t2.MainCategoryId
+                            where t1.IsDeleted != true
+                            where t1.Status == 1
+                            // where t6.CustomerUserId == currentUserId
+                            orderby t1.MainCategoryId descending
+                            // Add more joins as needed
+                            select new SalonServiceListDTO
+                            {
+                                serviceName = t1.ServiceName,
+                                serviceId = t1.ServiceId,
+                                vendorId = _context.SalonDetail.Where(u => u.SalonId == (t1.SalonId != null ? t1.SalonId : 0)).Select(u => u.VendorId).FirstOrDefault(),
+                                salonId = t1.SalonId,
+                                salonName = _context.SalonDetail.Where(u => u.SalonId == (t1.SalonId != null ? t1.SalonId : 0)).Select(u => u.SalonName).FirstOrDefault(),
+                                mainCategoryId = t1.MainCategoryId,
+                                mainCategoryName = t2.CategoryName,
+                                subCategoryId = t1.SubcategoryId,
+                                subCategoryName = _context.SubCategory.Where(u => u.SubCategoryId == (t1.SubcategoryId != null ? t1.SubcategoryId : 0)).Select(u => u.CategoryName).FirstOrDefault(),
+                                serviceDescription = t1.ServiceDescription,
+                                serviceImage = t1.ServiceIconImage,
+                                listingPrice = t1.ListingPrice,
+                                basePrice = (double)t1.BasePrice,
+                                favoritesStatus = (_context.FavouriteService.Where(u => u.ServiceId == t1.ServiceId && u.CustomerUserId == currentUserId)).FirstOrDefault() != null ? true : false,
+                                discount = t1.Discount,
+                                genderPreferences = t1.GenderPreferences,
+                                ageRestrictions = t1.AgeRestrictions,
+                                ServiceType = t1.ServiceType,
+                                totalCountPerDuration = t1.TotalCountPerDuration,
+                                isSlotAvailable = _context.TimeSlot.Where(a => a.ServiceId == t1.ServiceId && a.Status && a.SlotCount > 0 && !a.IsDeleted)
+                                                            .Select(u => u.SlotDate).Distinct().Count(),
+                                serviceCountInCart = _context.Cart.Where(a => a.ServiceId == t1.ServiceId && a.CustomerUserId == currentUserId).Sum(a => a.ServiceCountInCart),
+                                // Additional properties from other tables
+                            };
+                    if (model.mainCategoryId != 53 || model.mainCategoryId == null)
+                    {
+                        var query1 = from t1 in _context.SalonService
+                                     join t2 in _context.MainCategory on t1.MainCategoryId equals t2.MainCategoryId
 
-                        where t1.IsDeleted != true
-                        where t1.Status == 1
-                        where t1.ServiceType == model.serviceType
-                        // where t6.CustomerUserId == currentUserId
-                        orderby t1.MainCategoryId descending
-                        // Add more joins as needed
-                        select new SalonServiceListDTO
-                        {
-                            serviceName = t1.ServiceName,
-                            serviceId = t1.ServiceId,
-                            vendorId = _context.SalonDetail.Where(u => u.SalonId == (t1.SalonId != null ? t1.SalonId : 0)).Select(u => u.VendorId).FirstOrDefault(),
-                            salonId = t1.SalonId,
-                            salonName = _context.SalonDetail.Where(u => u.SalonId == (t1.SalonId != null ? t1.SalonId : 0)).Select(u => u.SalonName).FirstOrDefault(),
-                            mainCategoryId = t1.MainCategoryId,
-                            mainCategoryName = t2.CategoryName,
-                            subCategoryId = t1.SubcategoryId,
-                            subCategoryName = _context.SubCategory.Where(u => u.SubCategoryId == (t1.SubcategoryId != null ? t1.SubcategoryId : 0)).Select(u => u.CategoryName).FirstOrDefault(),
-                            serviceDescription = t1.ServiceDescription,
-                            serviceImage = t1.ServiceIconImage,
-                            listingPrice = t1.ListingPrice,
-                            basePrice = (double)t1.BasePrice,
-                            favoritesStatus = (_context.FavouriteService.Where(u => u.ServiceId == t1.ServiceId && u.CustomerUserId == currentUserId)).FirstOrDefault() != null ? true : false,
-                            discount = t1.Discount,
-                            genderPreferences = t1.GenderPreferences,
-                            ageRestrictions = t1.AgeRestrictions,
-                            totalCountPerDuration = t1.TotalCountPerDuration,
-                            isSlotAvailable = _context.TimeSlot.Where(a => a.ServiceId == t1.ServiceId && a.Status && a.SlotCount > 0 && !a.IsDeleted)
-                                                        .Select(u => u.SlotDate).Distinct().Count(),
-                            serviceCountInCart = _context.Cart.Where(a => a.ServiceId == t1.ServiceId && a.CustomerUserId == currentUserId).Sum(a => a.ServiceCountInCart),
-                            // Additional properties from other tables
-                        };
+                                     where t1.IsDeleted != true
+                                     where t1.Status == 1
+                                     where t1.ServiceType == "Package"
+                                     // where t6.CustomerUserId == currentUserId
+                                     orderby t1.MainCategoryId descending
+                                     // Add more joins as needed
+                                     select new SalonServiceListDTO
+                                     {
+                                         serviceName = t1.ServiceName,
+                                         serviceId = t1.ServiceId,
+                                         vendorId = _context.SalonDetail.Where(u => u.SalonId == (t1.SalonId != null ? t1.SalonId : 0)).Select(u => u.VendorId).FirstOrDefault(),
+                                         salonId = t1.SalonId,
+                                         salonName = _context.SalonDetail.Where(u => u.SalonId == (t1.SalonId != null ? t1.SalonId : 0)).Select(u => u.SalonName).FirstOrDefault(),
+                                         mainCategoryId = t1.MainCategoryId,
+                                         mainCategoryName = t2.CategoryName,
+                                         subCategoryId = t1.SubcategoryId,
+                                         subCategoryName = _context.SubCategory.Where(u => u.SubCategoryId == (t1.SubcategoryId != null ? t1.SubcategoryId : 0)).Select(u => u.CategoryName).FirstOrDefault(),
+                                         serviceDescription = t1.ServiceDescription,
+                                         serviceImage = t1.ServiceIconImage,
+                                         listingPrice = t1.ListingPrice,
+                                         basePrice = (double)t1.BasePrice,
+                                         favoritesStatus = (_context.FavouriteService.Where(u => u.ServiceId == t1.ServiceId && u.CustomerUserId == currentUserId)).FirstOrDefault() != null ? true : false,
+                                         discount = t1.Discount,
+                                         genderPreferences = t1.GenderPreferences,
+                                         ageRestrictions = t1.AgeRestrictions,
+                                         totalCountPerDuration = t1.TotalCountPerDuration,
+                                         ServiceType = t1.ServiceType,
+                                         isSlotAvailable = _context.TimeSlot.Where(a => a.ServiceId == t1.ServiceId && a.Status && a.SlotCount > 0 && !a.IsDeleted)
+                                                                     .Select(u => u.SlotDate).Distinct().Count(),
+                                         serviceCountInCart = _context.Cart.Where(a => a.ServiceId == t1.ServiceId && a.CustomerUserId == currentUserId).Sum(a => a.ServiceCountInCart),
+                                         // Additional properties from other tables
+                                     };
+
+                        _mapper.Map(query1, query);
+                    }
+
+                }
 
                 // query = from t1 in _context.SalonService
                 //         join t2 in _context.MainCategory on t1.MainCategoryId equals t2.MainCategoryId
@@ -628,6 +664,7 @@ namespace BeautyHubAPI.Controllers
                             discount = t1.Discount,
                             totalCountPerDuration = t1.TotalCountPerDuration,
                             genderPreferences = t1.GenderPreferences,
+                            ServiceType = t1.ServiceType,
                             ageRestrictions = t1.AgeRestrictions
                             // Additional properties from other tables
                         };
@@ -710,7 +747,7 @@ namespace BeautyHubAPI.Controllers
             //     return Ok(_response);
             // }
             // var products = query.ToList();
-            var SalonServiceList = query.ToList();
+            var SalonServiceList = query.OrderByDescending(u => u.ServiceType).ToList();
 
             if (!string.IsNullOrEmpty(model.searchQuery))
             {
@@ -1401,7 +1438,41 @@ namespace BeautyHubAPI.Controllers
 
                 foreach (var item in slotDetail)
                 {
-                    availableDates.Add(item.ToString(@"dd-MM-yyyy"));
+                    if (item.Date == DateTime.Now.Date)
+                    {
+                        // get scheduled days
+                        var slotDetail1 = await _context.TimeSlot
+                                            .Where(a => a.ServiceId == serviceId && a.Status != false && a.SlotCount > 0 && a.IsDeleted != true && a.SlotDate == DateTime.Now.Date)
+                                            .ToListAsync();
+
+                        // Get the current time and add 2 hours to it
+                        var limitDate = DateTime.Now.AddHours(2);
+                        var availableSlots = new List<timeSlotsDTO>();
+                        foreach (var item1 in slotDetail1)
+                        {
+                            // Assuming item.FromTime is a string representation of a time in "HH:mm" format
+                            var fromTime = (Convert.ToDateTime(item1.FromTime).TimeOfDay);
+
+                            // Get the current time as a TimeSpan
+                            var currentTime = DateTime.Now.TimeOfDay;
+
+                            // Calculate the time difference between limitDate and fromTime
+                            var timeDifference = (fromTime - currentTime).Duration();
+
+                            // Check if the time difference is less than or equal to a certain number of minutes
+                            int minutesThreshold = 60; // Set your threshold here
+                            if (timeDifference.TotalMinutes! <= minutesThreshold)
+                            {
+                                availableSlots.Add(_mapper.Map<timeSlotsDTO>(item));
+                            }
+                        }
+                        if (availableSlots.Count > 0)
+                        {
+                            availableDates.Add(item.ToString(@"dd-MM-yyyy"));
+                        }
+                    }
+                    else
+                        availableDates.Add(item.ToString(@"dd-MM-yyyy"));
                 }
 
                 if (slotDetail != null)
@@ -1471,8 +1542,32 @@ namespace BeautyHubAPI.Controllers
                                     .Where(a => a.ServiceId == serviceId && a.Status != false && a.SlotCount > 0 && a.IsDeleted != true && a.SlotDate == searchDate)
                                     .ToListAsync();
 
+                // Get the current time and add 2 hours to it
+                var limitDate = DateTime.Now.AddHours(2);
                 var availableSlots = new List<timeSlotsDTO>();
-                _mapper.Map(slotDetail, availableSlots);
+                foreach (var item in slotDetail)
+                {
+                    if (searchDate.Date == DateTime.Now.Date)
+                    {
+                        // Assuming item.FromTime is a string representation of a time in "HH:mm" format
+                        var fromTime = (Convert.ToDateTime(item.FromTime).TimeOfDay);
+
+                        // Get the current time as a TimeSpan
+                        var currentTime = DateTime.Now.TimeOfDay;
+
+                        // Calculate the time difference between limitDate and fromTime
+                        var timeDifference = (fromTime - currentTime).Duration();
+
+                        // Check if the time difference is less than or equal to a certain number of minutes
+                        int minutesThreshold = 60; // Set your threshold here
+                        if (timeDifference.TotalMinutes! <= minutesThreshold)
+                        {
+                            availableSlots.Add(_mapper.Map<timeSlotsDTO>(item));
+                        }
+                    }
+                    else
+                        availableSlots.Add(_mapper.Map<timeSlotsDTO>(item));
+                }
 
                 if (slotDetail != null)
                 {

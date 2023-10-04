@@ -75,7 +75,34 @@
         public string? genderPreferences { get; set; }
         public string? ageRestrictions { get; set; }
         public bool favoritesStatus { get; set; }
+        public string? ServiceType { get; set; }
+        // public List<SalonPackageServiceListDTO> package { get; set; }
     }
+
+    // public class SalonPackageServiceListDTO
+    // {
+    //     public int serviceId { get; set; }
+    //     public string vendorId { get; set; } = null!;
+    //     public int? salonId { get; set; }
+    //     public string? salonName { get; set; }
+    //     public int? mainCategoryId { get; set; }
+    //     public string? mainCategoryName { get; set; }
+    //     public int? subCategoryId { get; set; }
+    //     public string? subCategoryName { get; set; }
+    //     public string serviceName { get; set; }
+    //     public string? serviceDescription { get; set; }
+    //     public string? serviceImage { get; set; }
+    //     public double? discount { get; set; }
+    //     public double listingPrice { get; set; }
+    //     public double basePrice { get; set; }
+    //     public int? totalCountPerDuration { get; set; }
+    //     public int? serviceCountInCart { get; set; }
+    //     public int? status { get; set; }
+    //     public int? isSlotAvailable { get; set; }
+    //     public string? genderPreferences { get; set; }
+    //     public string? ageRestrictions { get; set; }
+    //     public bool favoritesStatus { get; set; }
+    // }
 
     public class serviceDetailDTO
     {
