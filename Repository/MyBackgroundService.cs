@@ -34,7 +34,7 @@ public class MyBackgroundService : BackgroundService
                 {
                     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-                    await UpdateSchedule(dbContext);
+                    // await UpdateSchedule(dbContext);
                     StopServiceOnce();
                 }
 

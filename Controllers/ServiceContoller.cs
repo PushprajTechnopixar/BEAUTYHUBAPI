@@ -220,8 +220,8 @@ namespace BeautyHubAPI.Controllers
                         {
                             bookeddays.Add(Convert.ToDateTime(item.AppointmentDate).DayOfWeek.ToString());
                         }
-                        var unbookedDays = bookeddays.Except(daysList);
-                        if (unbookedDays.Any())
+                        var remainingBookedDays = bookeddays.Except(daysList);
+                        if (remainingBookedDays.Any())
                         {
                             _response.StatusCode = HttpStatusCode.OK;
                             _response.IsSuccess = false;
@@ -564,7 +564,7 @@ namespace BeautyHubAPI.Controllers
                                 serviceCountInCart = _context.Cart.Where(a => a.ServiceId == t1.ServiceId && a.CustomerUserId == currentUserId).Sum(a => a.ServiceCountInCart),
                                 // Additional properties from other tables
                             };
-                    if (model.mainCategoryId != 53 || model.mainCategoryId == null)
+                    if (model.mainCategoryId != 53 || model.mainCategoryId == null || model.mainCategoryId == 0)
                     {
                         var query1 = from t1 in _context.SalonService
                                      join t2 in _context.MainCategory on t1.MainCategoryId equals t2.MainCategoryId
@@ -604,8 +604,48 @@ namespace BeautyHubAPI.Controllers
 
                         _mapper.Map(query1, query);
                     }
-
                 }
+
+                else
+                {
+                    model.serviceType = model.serviceType == null ? "Single" : "Package";
+                    query = from t1 in _context.SalonService
+                            join t2 in _context.MainCategory on t1.MainCategoryId equals t2.MainCategoryId
+
+                            where t1.IsDeleted != true
+                            where t1.ServiceType == model.serviceType
+                            where t1.Status == 1
+                            // where t6.CustomerUserId == currentUserId
+                            orderby t1.MainCategoryId descending
+                            // Add more joins as needed
+                            select new SalonServiceListDTO
+                            {
+                                serviceName = t1.ServiceName,
+                                serviceId = t1.ServiceId,
+                                vendorId = _context.SalonDetail.Where(u => u.SalonId == (t1.SalonId != null ? t1.SalonId : 0)).Select(u => u.VendorId).FirstOrDefault(),
+                                salonId = t1.SalonId,
+                                salonName = _context.SalonDetail.Where(u => u.SalonId == (t1.SalonId != null ? t1.SalonId : 0)).Select(u => u.SalonName).FirstOrDefault(),
+                                mainCategoryId = t1.MainCategoryId,
+                                mainCategoryName = t2.CategoryName,
+                                subCategoryId = t1.SubcategoryId,
+                                subCategoryName = _context.SubCategory.Where(u => u.SubCategoryId == (t1.SubcategoryId != null ? t1.SubcategoryId : 0)).Select(u => u.CategoryName).FirstOrDefault(),
+                                serviceDescription = t1.ServiceDescription,
+                                serviceImage = t1.ServiceIconImage,
+                                listingPrice = t1.ListingPrice,
+                                basePrice = (double)t1.BasePrice,
+                                favoritesStatus = (_context.FavouriteService.Where(u => u.ServiceId == t1.ServiceId && u.CustomerUserId == currentUserId)).FirstOrDefault() != null ? true : false,
+                                discount = t1.Discount,
+                                genderPreferences = t1.GenderPreferences,
+                                ageRestrictions = t1.AgeRestrictions,
+                                ServiceType = t1.ServiceType,
+                                totalCountPerDuration = t1.TotalCountPerDuration,
+                                isSlotAvailable = _context.TimeSlot.Where(a => a.ServiceId == t1.ServiceId && a.Status && a.SlotCount > 0 && !a.IsDeleted)
+                                                            .Select(u => u.SlotDate).Distinct().Count(),
+                                serviceCountInCart = _context.Cart.Where(a => a.ServiceId == t1.ServiceId && a.CustomerUserId == currentUserId).Sum(a => a.ServiceCountInCart),
+                                // Additional properties from other tables
+                            };
+                }
+
 
                 // query = from t1 in _context.SalonService
                 //         join t2 in _context.MainCategory on t1.MainCategoryId equals t2.MainCategoryId
@@ -642,6 +682,7 @@ namespace BeautyHubAPI.Controllers
             }
             else
             {
+                model.serviceType = model.serviceType == null ? "Single" : "Package";
                 query = from t1 in _context.SalonService
                         join t2 in _context.MainCategory on t1.MainCategoryId equals t2.MainCategoryId
                         // join t3 in _context.MainProductCategory on t1.MainProductCategoryId equals t3.MainProductCategoryId
@@ -1096,6 +1137,10 @@ namespace BeautyHubAPI.Controllers
                         model.ServiceType = "Single";
                     }
                 }
+                else
+                {
+                    model.ServiceType = "Single";
+                }
 
                 if (model.ageRestrictions != "Kids" && model.ageRestrictions != "Adult")
                 {
@@ -1176,6 +1221,60 @@ namespace BeautyHubAPI.Controllers
                     _response.IsSuccess = false;
                     _response.Messages = "Can't add service before schedule.";
                     return Ok(_response);
+                }
+                var serviceDetail = await _context.SalonService.Where(u => u.ServiceId == model.serviceId).FirstOrDefaultAsync();
+                if (model.serviceId > 0)
+                {
+                    if (serviceDetail == null)
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Messages = "Service" + ResponseMessages.msgNotFound;
+                        return Ok(_response);
+                    }
+
+                    string indiaDate = DateTime.Now.ToString(@"yyyy-MM-dd");
+                    var lockStartDateTime = Convert.ToDateTime(indiaDate + " " + serviceDetail.LockTimeStart);
+                    var lockEndDateTime = Convert.ToDateTime(indiaDate + " " + serviceDetail.LockTimeEnd);
+                    var modelFromTime = Convert.ToDateTime(indiaDate + " " + model.lockTimeStart);
+                    var modelToTime = Convert.ToDateTime(indiaDate + " " + model.lockTimeEnd);
+                    var timeSlots = await _context.BookedService.Where(u => u.AppointmentStatus == "Scheduled" && u.SalonId == model.salonId).ToListAsync();
+
+                    if (modelFromTime > lockStartDateTime || modelToTime < lockEndDateTime)
+                    {
+                        if (modelFromTime > lockStartDateTime)
+                        {
+                            foreach (var item in timeSlots)
+                            {
+                                var scheduledToTime = Convert.ToDateTime(indiaDate + " " + item.ToTime);
+                                var scheduledFromTime = Convert.ToDateTime(indiaDate + " " + item.FromTime);
+                                if (scheduledFromTime < modelFromTime)
+                                {
+                                    _response.StatusCode = HttpStatusCode.OK;
+                                    _response.IsSuccess = false;
+                                    _response.Messages = "Can't update while an appointment is scheduled.";
+                                    return Ok(_response);
+                                }
+                            }
+                        }
+                        if (modelToTime < lockEndDateTime)
+                        {
+                            foreach (var item in timeSlots)
+                            {
+                                var scheduledToTime = Convert.ToDateTime(indiaDate + " " + item.ToTime);
+                                var scheduledFromTime = Convert.ToDateTime(indiaDate + " " + item.FromTime);
+                                if (scheduledToTime > modelToTime)
+                                {
+                                    _response.StatusCode = HttpStatusCode.OK;
+                                    _response.IsSuccess = false;
+                                    _response.Messages = "Can't update while an appointment is scheduled.";
+                                    return Ok(_response);
+                                }
+                            }
+                        }
+
+                    }
+
                 }
 
                 var scheduledDaysList = new List<string>();
@@ -1273,14 +1372,6 @@ namespace BeautyHubAPI.Controllers
                 }
                 else
                 {
-                    var serviceDetail = await _context.SalonService.Where(u => u.ServiceId == model.serviceId).FirstOrDefaultAsync();
-                    if (serviceDetail == null)
-                    {
-                        _response.StatusCode = HttpStatusCode.OK;
-                        _response.IsSuccess = false;
-                        _response.Messages = "Service" + ResponseMessages.msgNotFound;
-                        return Ok(_response);
-                    }
                     _mapper.Map(model, serviceDetail);
                     _context.Update(serviceDetail);
                     await _context.SaveChangesAsync();
