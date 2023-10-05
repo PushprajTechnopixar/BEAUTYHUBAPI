@@ -1121,17 +1121,21 @@ namespace BeautyHubAPI.Controllers
 
                 string[] splitLockTimeStart = model.lockTimeStart.Split(",");
                 string[] splitLockTimeend = model.lockTimeEnd.Split(",");
-                string[] splitIncludeProduct = model.IncludeServiceId.Split(",");
-
-                foreach (var item in splitIncludeProduct)
+                string[] splitIncludeProduct = new string[0];
+                if (!string.IsNullOrEmpty(model.IncludeServiceId))
                 {
-                    var ckeckService = await _context.SalonService.Where(u => u.ServiceId == Convert.ToInt32(item)).FirstOrDefaultAsync();
-                    if (splitLockTimeStart.Length != splitLockTimeend.Length)
+                    splitIncludeProduct = model.IncludeServiceId.Split(",");
+
+                    foreach (var item in splitIncludeProduct)
                     {
-                        _response.StatusCode = HttpStatusCode.OK;
-                        _response.IsSuccess = false;
-                        _response.Messages = "Not found selected service for package.";
-                        return Ok(_response);
+                        var ckeckService = await _context.SalonService.Where(u => u.ServiceId == Convert.ToInt32(item)).FirstOrDefaultAsync();
+                        if (splitLockTimeStart.Length != splitLockTimeend.Length)
+                        {
+                            _response.StatusCode = HttpStatusCode.OK;
+                            _response.IsSuccess = false;
+                            _response.Messages = "Not found selected service for package.";
+                            return Ok(_response);
+                        }
                     }
                 }
 
@@ -1242,13 +1246,16 @@ namespace BeautyHubAPI.Controllers
                     await _context.AddAsync(addUpdateServiceEntity);
                     await _context.SaveChangesAsync();
 
-                    var servicePackage = new ServicePackage();
-                    servicePackage.ServiceId = addUpdateServiceEntity.ServiceId;
-                    servicePackage.IncludeServiceId = model.IncludeServiceId;
-                    servicePackage.SalonId = model.salonId;
+                    if (splitIncludeProduct.Count() > 0)
+                    {
+                        var servicePackage = new ServicePackage();
+                        servicePackage.ServiceId = addUpdateServiceEntity.ServiceId;
+                        servicePackage.IncludeServiceId = model.IncludeServiceId;
+                        servicePackage.SalonId = model.salonId;
 
-                    await _context.AddAsync(servicePackage);
-                    await _context.SaveChangesAsync();
+                        await _context.AddAsync(servicePackage);
+                        await _context.SaveChangesAsync();
+                    }
 
                     response = _mapper.Map<GetSalonServiceDTO>(addUpdateServiceEntity);
 
@@ -1268,20 +1275,23 @@ namespace BeautyHubAPI.Controllers
                     _context.Update(serviceDetail);
                     await _context.SaveChangesAsync();
 
-                    var servicePackage = await _context.ServicePackage.FirstOrDefaultAsync(u => u.ServiceId == serviceDetail.ServiceId);
-                    if (servicePackage != null)
+                    if (splitIncludeProduct.Count() > 0)
                     {
-                        servicePackage.IncludeServiceId = model.IncludeServiceId;
+                        var servicePackage = await _context.ServicePackage.FirstOrDefaultAsync(u => u.ServiceId == serviceDetail.ServiceId);
+                        if (servicePackage != null)
+                        {
+                            servicePackage.IncludeServiceId = model.IncludeServiceId;
 
-                        _context.Update(servicePackage);
-                        await _context.SaveChangesAsync();
+                            _context.Update(servicePackage);
+                            await _context.SaveChangesAsync();
+                        }
                     }
 
                     response = _mapper.Map<GetSalonServiceDTO>(serviceDetail);
                     message = "Service" + ResponseMessages.msgUpdationSuccess;
                 }
 
-                var deleteTimeSlot = await _context.TimeSlot.Where(u => u.ServiceId == response.serviceId).ToListAsync();
+                var deleteTimeSlot = _context.TimeSlot.Where(u => u.ServiceId == response.serviceId);
 
                 foreach (var item3 in deleteTimeSlot)
                 {
