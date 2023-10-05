@@ -213,12 +213,25 @@ namespace BeautyHubAPI.Controllers
                         var scheduledEndDateTime = Convert.ToDateTime(indiaDate + " " + SalonScheduleDays.ToTime);
                         var modelFromTime = Convert.ToDateTime(indiaDate + " " + model.fromTime);
                         var modelToTime = Convert.ToDateTime(indiaDate + " " + model.toTime);
+                        var timeSlots = await _context.BookedService.Where(u => u.AppointmentStatus == "Scheduled" && u.SalonId == model.salonId).ToListAsync();
+                        var bookeddates = timeSlots.DistinctBy(u => u.AppointmentDate);
+                        var bookeddays = new List<string>();
+                        foreach (var item in bookeddates)
+                        {
+                            bookeddays.Add(Convert.ToDateTime(item.AppointmentDate).DayOfWeek.ToString());
+                        }
+                        var unbookedDays = bookeddays.Except(daysList);
+                        if (unbookedDays.Any())
+                        {
+                            _response.StatusCode = HttpStatusCode.OK;
+                            _response.IsSuccess = false;
+                            _response.Messages = "Can't update while an appointment is scheduled.";
+                            return Ok(_response);
+                        }
                         if (modelFromTime > scheduledStartDateTime || modelToTime < scheduledEndDateTime)
                         {
                             if (modelFromTime > scheduledStartDateTime)
                             {
-                                var timeSlots = await _context.BookedService
-                               .Where(u => u.AppointmentStatus == "Scheduled").ToListAsync();
                                 foreach (var item in timeSlots)
                                 {
                                     var scheduledToTime = Convert.ToDateTime(indiaDate + " " + item.ToTime);
@@ -234,9 +247,6 @@ namespace BeautyHubAPI.Controllers
                             }
                             if (modelToTime < scheduledEndDateTime)
                             {
-                                var timeSlots = await _context.BookedService
-                                .Where(u => u.AppointmentStatus == "Scheduled").ToListAsync();
-
                                 foreach (var item in timeSlots)
                                 {
                                     var scheduledToTime = Convert.ToDateTime(indiaDate + " " + item.ToTime);
@@ -447,7 +457,7 @@ namespace BeautyHubAPI.Controllers
                 SalonSchedule.FromTime = model.fromTime;
                 SalonSchedule.ToTime = model.toTime;
                 SalonSchedule.Status = false;
-                SalonScheduleDays.UpdateStatus = false;
+                SalonSchedule.UpdateStatus = false;
 
                 _context.SalonSchedule.Add(SalonSchedule);
                 _context.SaveChanges();
@@ -1473,7 +1483,7 @@ namespace BeautyHubAPI.Controllers
                             int minutesThreshold = 60; // Set your threshold here
                             if (timeDifference.TotalMinutes! <= minutesThreshold)
                             {
-                                availableSlots.Add(_mapper.Map<timeSlotsDTO>(item));
+                                availableSlots.Add(_mapper.Map<timeSlotsDTO>(item1));
                             }
                         }
                         if (availableSlots.Count > 0)

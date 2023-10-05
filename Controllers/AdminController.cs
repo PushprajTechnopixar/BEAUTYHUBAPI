@@ -1370,6 +1370,14 @@ namespace BeautyHubAPI.Controllers
                     {
                         updateShop.BankId = activeBank.BankId;
                     }
+                    roles = await _userManager.GetRolesAsync(currentUserDetail);
+                    if ((roles[0] == Role.SuperAdmin.ToString()))
+                    {
+                        updateShop.Status = Convert.ToInt32(Status.Approved);
+                    }
+                    // else
+                    //     updateShop.Status = Convert.ToInt32(Status.Pending);
+
                     _context.SalonDetail.Update(addUpdatesalonDetail);
                     await _context.SaveChangesAsync();
                 }
@@ -1385,6 +1393,13 @@ namespace BeautyHubAPI.Controllers
                     {
                         addSalon.BankId = activeBank.BankId;
                     }
+                    roles = await _userManager.GetRolesAsync(currentUserDetail);
+                    if ((roles[0] == Role.SuperAdmin.ToString()))
+                    {
+                        addSalon.Status = Convert.ToInt32(Status.Approved);
+                    }
+                    // else
+                    //     addSalon.Status = Convert.ToInt32(Status.Pending);
 
                     await _context.AddAsync(addSalon);
                     await _context.SaveChangesAsync();

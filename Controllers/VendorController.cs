@@ -1890,14 +1890,13 @@ namespace BeautyHubAPI.Controllers
                                 bookedService.AppointmentStatus = AppointmentStatus.Completed.ToString();
                                 _context.Update(bookedService);
                                 await _context.SaveChangesAsync();
-
-                                var bookingServiceStatus = bookedServices.Where(u => u.AppointmentStatus == AppointmentStatus.Scheduled.ToString() || u.AppointmentStatus == AppointmentStatus.Cancelled.ToString());
-                                if (bookingServiceStatus == null)
-                                {
-                                    appointmentDetail.AppointmentStatus = AppointmentStatus.Completed.ToString();
-                                    _context.Update(appointmentDetail);
-                                    await _context.SaveChangesAsync();
-                                }
+                            }
+                            var bookingServiceStatus = bookedServices.Where(u => u.AppointmentId == model.appointmentId && u.AppointmentStatus == AppointmentStatus.Scheduled.ToString() || u.AppointmentStatus == AppointmentStatus.Cancelled.ToString());
+                            if (bookingServiceStatus.Count() < 1)
+                            {
+                                appointmentDetail.AppointmentStatus = AppointmentStatus.Completed.ToString();
+                                _context.Update(appointmentDetail);
+                                await _context.SaveChangesAsync();
                             }
                         }
                         else
@@ -1971,8 +1970,8 @@ namespace BeautyHubAPI.Controllers
                                 _context.Update(bookedService);
                                 await _context.SaveChangesAsync();
 
-                                var bookingServiceStatus = bookedServices.Where(u => u.AppointmentStatus == AppointmentStatus.Scheduled.ToString() || u.AppointmentStatus == AppointmentStatus.Completed.ToString());
-                                if (bookingServiceStatus == null)
+                                var bookingServiceStatus = bookedServices.Where(u => u.AppointmentId == model.appointmentId && u.AppointmentStatus == AppointmentStatus.Scheduled.ToString() || u.AppointmentStatus == AppointmentStatus.Completed.ToString());
+                                if (bookingServiceStatus.Count() < 1)
                                 {
                                     appointmentDetail.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
                                     _context.Update(appointmentDetail);

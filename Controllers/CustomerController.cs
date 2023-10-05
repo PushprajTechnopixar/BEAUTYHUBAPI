@@ -1557,14 +1557,14 @@ namespace BeautyHubAPI.Controllers
                             bookedService.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
                             _context.Update(bookedService);
                             await _context.SaveChangesAsync();
+                        }
 
-                            var bookingServiceStatus = bookedServices.Where(u => u.AppointmentStatus == AppointmentStatus.Scheduled.ToString() || u.AppointmentStatus == AppointmentStatus.Completed.ToString());
-                            if (bookingServiceStatus == null)
-                            {
-                                appointmentDetail.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
-                                _context.Update(appointmentDetail);
-                                await _context.SaveChangesAsync();
-                            }
+                        var bookingServiceStatus = await _context.BookedService.Where(u => u.AppointmentId == model.appointmentId && u.AppointmentStatus == AppointmentStatus.Scheduled.ToString() || u.AppointmentStatus == AppointmentStatus.Completed.ToString()).ToListAsync();
+                        if (bookingServiceStatus.Count < 1)
+                        {
+                            appointmentDetail.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
+                            _context.Update(appointmentDetail);
+                            await _context.SaveChangesAsync();
                         }
 
                         _response.StatusCode = HttpStatusCode.OK;
