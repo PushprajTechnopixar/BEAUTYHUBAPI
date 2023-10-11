@@ -32,6 +32,7 @@ using System.Net.Http;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 using GSF.Collections;
+using GSF;
 
 namespace BeautyHubAPI.Controllers
 {
@@ -1239,17 +1240,20 @@ namespace BeautyHubAPI.Controllers
                     var lockEndDateTime = Convert.ToDateTime(indiaDate + " " + serviceDetail.LockTimeEnd);
                     var modelFromTime = Convert.ToDateTime(indiaDate + " " + model.lockTimeStart);
                     var modelToTime = Convert.ToDateTime(indiaDate + " " + model.lockTimeEnd);
-                    var timeSlots = await _context.BookedService.Where(u => u.AppointmentStatus == "Scheduled" && u.SalonId == model.salonId).ToListAsync();
+                    var timeSlots = await _context.BookedService.Where(u => u.AppointmentStatus == "Scheduled" && u.ServiceId == model.serviceId && u.SalonId == model.salonId).ToListAsync();
 
                     if (modelFromTime > lockStartDateTime || modelToTime < lockEndDateTime)
                     {
-                        if (modelFromTime > lockStartDateTime)
+                       
+                        if (modelFromTime <= lockStartDateTime || modelFromTime >= lockStartDateTime)
                         {
                             foreach (var item in timeSlots)
                             {
                                 var scheduledToTime = Convert.ToDateTime(indiaDate + " " + item.ToTime);
                                 var scheduledFromTime = Convert.ToDateTime(indiaDate + " " + item.FromTime);
-                                if (scheduledFromTime < modelFromTime)
+                                var fromtime = Convert.ToDateTime(indiaDate + " " + model.lockTimeStart);
+                                var totime = Convert.ToDateTime(indiaDate + " " + model.lockTimeEnd);
+                                if (scheduledFromTime <= modelFromTime && scheduledToTime >= modelFromTime)
                                 {
                                     _response.StatusCode = HttpStatusCode.OK;
                                     _response.IsSuccess = false;
@@ -1258,13 +1262,15 @@ namespace BeautyHubAPI.Controllers
                                 }
                             }
                         }
-                        if (modelToTime < lockEndDateTime)
+                        if (modelToTime <= lockEndDateTime || modelToTime >= lockEndDateTime)
                         {
                             foreach (var item in timeSlots)
                             {
                                 var scheduledToTime = Convert.ToDateTime(indiaDate + " " + item.ToTime);
                                 var scheduledFromTime = Convert.ToDateTime(indiaDate + " " + item.FromTime);
-                                if (scheduledToTime > modelToTime)
+                                var fromtime = Convert.ToDateTime(indiaDate + " " + model.lockTimeStart);
+                                var totime = Convert.ToDateTime(indiaDate + " " + model.lockTimeEnd);
+                                if (scheduledToTime > modelToTime && scheduledToTime <= modelToTime)
                                 {
                                     _response.StatusCode = HttpStatusCode.OK;
                                     _response.IsSuccess = false;
@@ -1538,7 +1544,7 @@ namespace BeautyHubAPI.Controllers
                     _response.Messages = "Token expired.";
                     return Ok(_response);
                 }
-
+           
                 // get scheduled days
                 var slotDetail = await _context.TimeSlot
                                     .Where(a => a.ServiceId == serviceId && a.Status != false && a.SlotCount > 0 && a.IsDeleted != true)
@@ -1956,6 +1962,84 @@ namespace BeautyHubAPI.Controllers
             _response.Data = serviceImageList;
             _response.Messages = "Service image list shown successfully.";
             return Ok(_response);
+        }
+        #endregion
+
+        #region SetServiceStatus
+        /// <summary>
+        /// Set service status 
+        /// </summary>
+        [HttpPost]
+        [Route("SetServiceStatus")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [Authorize(Roles = "SuperAdmin,Admin,Vendor")]
+        public async Task<IActionResult> SetServiceStatus(SetServiceStatusDTO model)
+        {
+            try
+            {
+                string currentUserId = (HttpContext.User.Claims.First().Value);
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Token expired.";
+                    return Ok(_response);
+                }
+
+                if (model.status != Convert.ToInt32(ServiceStatus.Active)
+                && model.status != Convert.ToInt32(ServiceStatus.Pending)
+                && model.status != Convert.ToInt32(ServiceStatus.InActive))
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Please select a valid status.";
+                    return Ok(_response);
+                }
+
+                 var serviceDeatils = await _context.SalonService.FirstOrDefaultAsync(u => u.ServiceId == model.serviceId);
+                 if (serviceDeatils == null)
+                 {
+                     _response.StatusCode = HttpStatusCode.OK;
+                     _response.IsSuccess = false;
+                     _response.Data = new Object { };
+                     _response.Messages = "Not found any service";
+                     return Ok(_response);
+                 }
+
+                 serviceDeatils.Status = model.status;
+                  _context.Update(serviceDeatils);
+                 _context.SaveChanges();
+
+
+                 var getService = await _context.SalonService.FirstOrDefaultAsync(u => u.ServiceId == model.serviceId);
+                 if (getService != null)
+                 {
+                     var response = _mapper.Map<serviceDetailDTO>(getService);
+                     _response.StatusCode = HttpStatusCode.OK;
+                     _response.IsSuccess = true;
+                     _response.Data = response;
+                     _response.Messages = "Service" + ResponseMessages.msgUpdationSuccess;
+                     return Ok(_response);
+                 }
+                 else
+                 {
+                     _response.StatusCode = HttpStatusCode.OK;
+                     _response.IsSuccess = false;
+                     _response.Data = new Object { };
+                     _response.Messages = ResponseMessages.msgSomethingWentWrong;
+                     return Ok(_response);
+                 }
+                
+            }
+            catch (Exception ex)
+            {
+                _response.StatusCode = HttpStatusCode.InternalServerError;
+                _response.IsSuccess = false;
+                _response.Data = new { };
+                _response.Messages = ResponseMessages.msgSomethingWentWrong + ex.Message;
+                return Ok(_response);
+            }
         }
         #endregion
 

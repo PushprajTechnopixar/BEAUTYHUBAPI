@@ -163,4 +163,9 @@
         public int salonId { get; set; }
         public bool status { get; set; }
     }
+    public class SetServiceStatusDTO
+    {
+        public int serviceId { get; set; }
+        public int status { get; set; }
+    }
 }
