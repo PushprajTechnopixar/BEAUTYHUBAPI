@@ -602,7 +602,7 @@ namespace BeautyHubAPI.Controllers
                                          // Additional properties from other tables
                                      };
 
-                        _mapper.Map(query1, query);
+                        query = query.Concat(query1);
                     }
                 }
 
@@ -754,11 +754,11 @@ namespace BeautyHubAPI.Controllers
 
             if (model.mainCategoryId > 0)
             {
-                query = query.Where(u => u.mainCategoryId == model.mainCategoryId);
+                query = query.Where(u => u.mainCategoryId == model.mainCategoryId || u.mainCategoryId == 53);
             }
             if (model.subCategoryId > 0)
             {
-                query = query.Where(u => u.subCategoryId == model.subCategoryId);
+                query = query.Where(u => u.subCategoryId == model.subCategoryId || u.subCategoryId == 55);
             }
             if (model.salonId > 0)
             {
@@ -940,7 +940,8 @@ namespace BeautyHubAPI.Controllers
                             packageServices.Add(_mapper.Map(includeServiceDetail, packageService));
                         }
                     }
-                    serviceResponse.IncludeServic = packageServices;
+                    serviceResponse.IncludeService = packageServices;
+                    serviceResponse.IncludeServiceId = includeService.IncludeServiceId;
                 }
 
             }

@@ -658,6 +658,8 @@ namespace BeautyHubAPI.Controllers
                     }
                 }
 
+                Categories = Categories.Where(u => u.mainCategoryId != 53).ToList();
+
                 if (Categories.Count > 0)
                 {
                     _response.StatusCode = HttpStatusCode.OK;

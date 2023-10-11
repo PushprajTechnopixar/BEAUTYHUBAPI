@@ -133,7 +133,8 @@
         public int DurationInMinutes { get; set; }
         public string? LockTimeStart { get; set; }
         public string? LockTimeEnd { get; set; }
-        public List<IncludeServiceDTO> IncludeServic { get; set; }
+        public string? IncludeServiceId { get; set; }
+        public List<IncludeServiceDTO> IncludeService { get; set; }
 
     }
 
