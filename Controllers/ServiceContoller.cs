@@ -560,6 +560,7 @@ namespace BeautyHubAPI.Controllers
                                 ageRestrictions = t1.AgeRestrictions,
                                 ServiceType = t1.ServiceType,
                                 totalCountPerDuration = t1.TotalCountPerDuration,
+                                status =t1.Status,
                                 isSlotAvailable = _context.TimeSlot.Where(a => a.ServiceId == t1.ServiceId && a.Status && a.SlotCount > 0 && !a.IsDeleted)
                                                             .Select(u => u.SlotDate).Distinct().Count(),
                                 serviceCountInCart = _context.Cart.Where(a => a.ServiceId == t1.ServiceId && a.CustomerUserId == currentUserId).Sum(a => a.ServiceCountInCart),
@@ -597,6 +598,7 @@ namespace BeautyHubAPI.Controllers
                                          ageRestrictions = t1.AgeRestrictions,
                                          totalCountPerDuration = t1.TotalCountPerDuration,
                                          ServiceType = t1.ServiceType,
+                                         status = t1.Status,
                                          isSlotAvailable = _context.TimeSlot.Where(a => a.ServiceId == t1.ServiceId && a.Status && a.SlotCount > 0 && !a.IsDeleted)
                                                                      .Select(u => u.SlotDate).Distinct().Count(),
                                          serviceCountInCart = _context.Cart.Where(a => a.ServiceId == t1.ServiceId && a.CustomerUserId == currentUserId).Sum(a => a.ServiceCountInCart),
@@ -640,6 +642,7 @@ namespace BeautyHubAPI.Controllers
                                 ageRestrictions = t1.AgeRestrictions,
                                 ServiceType = t1.ServiceType,
                                 totalCountPerDuration = t1.TotalCountPerDuration,
+                                status = t1.Status,
                                 isSlotAvailable = _context.TimeSlot.Where(a => a.ServiceId == t1.ServiceId && a.Status && a.SlotCount > 0 && !a.IsDeleted)
                                                             .Select(u => u.SlotDate).Distinct().Count(),
                                 serviceCountInCart = _context.Cart.Where(a => a.ServiceId == t1.ServiceId && a.CustomerUserId == currentUserId).Sum(a => a.ServiceCountInCart),
@@ -717,7 +720,8 @@ namespace BeautyHubAPI.Controllers
                             totalCountPerDuration = t1.TotalCountPerDuration,
                             genderPreferences = t1.GenderPreferences,
                             ServiceType = t1.ServiceType,
-                            ageRestrictions = t1.AgeRestrictions
+                            ageRestrictions = t1.AgeRestrictions,
+                            status = t1.Status,
                             // Additional properties from other tables
                         };
 
