@@ -2087,7 +2087,7 @@ namespace BeautyHubAPI.Controllers
                 var selectedSlotDetail = await _context.TimeSlot.Where(u => (u.ServiceId == stockDetail.ServiceId) && (u.SlotId == stockDetail.SlotId)).FirstOrDefaultAsync();
                 // send Notification
 
-                // string motificationMessage = "Dear {0}, \nYou have received a new appointment from {1}.";
+                // string notificationMessage = "Dear {0}, \nYou have received a new appointment from {1}.";
 
                 var vendorDetail = await _context.UserDetail.Where(a => (a.UserId == vendorId) && (a.IsDeleted != true)).FirstOrDefaultAsync();
                 var customerDetail = await _context.UserDetail.Where(a => (a.UserId == currentUserId) && (a.IsDeleted != true)).FirstOrDefaultAsync();
