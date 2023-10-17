@@ -1665,6 +1665,15 @@ namespace BeautyHubAPI.Controllers
                     orderList = orderList.Where(x => (x.customerFirstName?.IndexOf(model.searchQuery, StringComparison.OrdinalIgnoreCase) >= 0)
                     ).ToList();
                 }
+                if (model.sortDateBy == 2)
+                {
+                    orderList = orderList.OrderByDescending(x => Convert.ToDateTime(x.appointmentDate)).ToList();
+                    if (model.fromDate != null && model.toDate != null)
+                    {
+                        orderList = orderList.Where(x => (Convert.ToDateTime(x.appointmentDate).Date >= fromDate) && (Convert.ToDateTime(x.appointmentDate) <= toDate)).OrderByDescending(x => Convert.ToDateTime(x.appointmentDate)).ToList();
+                    }
+               
+                }
 
                 // Get's No of Rows Count   
                 int count = orderList.Count();
