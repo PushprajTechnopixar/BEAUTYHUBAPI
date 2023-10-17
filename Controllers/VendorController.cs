@@ -1673,7 +1673,7 @@ namespace BeautyHubAPI.Controllers
                     orderList = orderList.OrderByDescending(x => CommonMethod.ddMMyyyToDateTime(x.appointmentDate)).ToList();
                     if (model.fromDate != null && model.toDate != null)
                     {
-                        orderList = orderList.Where(x => (CommonMethod.ddMMyyyToDateTime(x.appointmentDate).Date >= fromDate) && (CommonMethod.ddMMyyyToDateTime(x.appointmentDate) <= toDate)).OrderByDescending(x => Convert.ToDateTime(x.appointmentDate)).ToList();
+                        orderList = orderList.Where(x => (CommonMethod.ddMMyyyToDateTime(x.appointmentDate).Date >= fromDate.Date) && (CommonMethod.ddMMyyyToDateTime(x.appointmentDate) <= toDate.Date)).OrderByDescending(x => CommonMethod.ddMMyyyToDateTime(x.appointmentDate)).ToList();
                     }
                 }
                 // Get's No of Rows Count   
