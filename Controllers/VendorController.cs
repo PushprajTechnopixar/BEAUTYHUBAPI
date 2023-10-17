@@ -1590,10 +1590,17 @@ namespace BeautyHubAPI.Controllers
                     fromDate = DateTime.ParseExact(model.fromDate, "dd-MM-yyyy", null);
                     toDate = DateTime.ParseExact(model.toDate, "dd-MM-yyyy", null);
 
-                    bookedService = bookedService.Where(x => (x.CreateDate.Date >= fromDate) && (x.CreateDate.Date <= toDate)).ToList();
+                    bookedService = bookedService.Where(x => (x.CreateDate.Date >= fromDate) && (x.CreateDate.Date <= toDate)&&(x.AppointmentDate.Date >= fromDate) && (x.AppointmentDate.Date <= toDate)).ToList();
+                   // bookedService = bookedService.Where(x => (x.AppointmentDate.Date >= fromDate) && (x.AppointmentDate.Date <= toDate)).ToList();
                     if (model.sortDateBy == 2)
                     {
                         bookedService = bookedService.Where(x => (x.AppointmentDate.Date >= fromDate) && (x.AppointmentDate.Date <= toDate)).OrderByDescending(u => u.AppointmentDate).ToList();
+                    
+                    }
+                    if (model.sortDateBy == 1)
+                    {
+                        bookedService = bookedService.Where(x => (x.AppointmentDate.Date >= fromDate) && (x.AppointmentDate.Date <= toDate)).OrderByDescending(u => u.AppointmentDate).ToList();
+
                     }
                 }
 
@@ -1674,7 +1681,15 @@ namespace BeautyHubAPI.Controllers
                     }
                
                 }
+                if (model.sortDateBy == 1)
+                {
+                    orderList = orderList.OrderByDescending(x => Convert.ToDateTime(x.appointmentDate)).ToList();
+                    if (model.fromDate != null && model.toDate != null)
+                    {
+                        orderList = orderList.Where(x => (Convert.ToDateTime(x.appointmentDate).Date >= fromDate) && (Convert.ToDateTime(x.appointmentDate) <= toDate)).OrderByDescending(x => Convert.ToDateTime(x.appointmentDate)).ToList();
+                    }
 
+                }
                 // Get's No of Rows Count   
                 int count = orderList.Count();
 
