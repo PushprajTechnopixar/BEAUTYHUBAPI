@@ -560,7 +560,7 @@ namespace BeautyHubAPI.Controllers
                                 ageRestrictions = t1.AgeRestrictions,
                                 ServiceType = t1.ServiceType,
                                 totalCountPerDuration = t1.TotalCountPerDuration,
-                                status =t1.Status,
+                                status = t1.Status,
                                 isSlotAvailable = _context.TimeSlot.Where(a => a.ServiceId == t1.ServiceId && a.Status && a.SlotCount > 0 && !a.IsDeleted)
                                                             .Select(u => u.SlotDate).Distinct().Count(),
                                 serviceCountInCart = _context.Cart.Where(a => a.ServiceId == t1.ServiceId && a.CustomerUserId == currentUserId).Sum(a => a.ServiceCountInCart),
@@ -694,7 +694,7 @@ namespace BeautyHubAPI.Controllers
                         // join t6 in _context.Cart on t1.ProductId equals t6.ProductId
 
                         where t1.IsDeleted != true
-                        where t1.Status == 1
+                        // where t1.Status == 1
                         where t1.ServiceType == model.serviceType
                         // where t6.CustomerUserId == currentUserId
                         orderby t1.ServiceId
@@ -1248,7 +1248,7 @@ namespace BeautyHubAPI.Controllers
 
                     if (modelFromTime > lockStartDateTime || modelToTime < lockEndDateTime)
                     {
-                       
+
                         if (modelFromTime <= lockStartDateTime || modelFromTime >= lockStartDateTime)
                         {
                             foreach (var item in timeSlots)
@@ -1548,7 +1548,7 @@ namespace BeautyHubAPI.Controllers
                     _response.Messages = "Token expired.";
                     return Ok(_response);
                 }
-           
+
                 // get scheduled days
                 var slotDetail = await _context.TimeSlot
                                     .Where(a => a.ServiceId == serviceId && a.Status != false && a.SlotCount > 0 && a.IsDeleted != true)
@@ -2001,40 +2001,39 @@ namespace BeautyHubAPI.Controllers
                     return Ok(_response);
                 }
 
-                 var serviceDeatils = await _context.SalonService.FirstOrDefaultAsync(u => u.ServiceId == model.serviceId);
-                 if (serviceDeatils == null)
-                 {
-                     _response.StatusCode = HttpStatusCode.OK;
-                     _response.IsSuccess = false;
-                     _response.Data = new Object { };
-                     _response.Messages = "Not found any service";
-                     return Ok(_response);
-                 }
+                var serviceDeatils = await _context.SalonService.FirstOrDefaultAsync(u => u.ServiceId == model.serviceId);
+                if (serviceDeatils == null)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Data = new Object { };
+                    _response.Messages = "Not found any service";
+                    return Ok(_response);
+                }
 
-                 serviceDeatils.Status = model.status;
-                  _context.Update(serviceDeatils);
-                 _context.SaveChanges();
+                serviceDeatils.Status = model.status;
+                _context.Update(serviceDeatils);
+                _context.SaveChanges();
 
+                var getService = await _context.SalonService.FirstOrDefaultAsync(u => u.ServiceId == model.serviceId);
+                if (getService != null)
+                {
+                    var response = _mapper.Map<serviceDetailDTO>(getService);
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = true;
+                    _response.Data = response;
+                    _response.Messages = "Service" + ResponseMessages.msgUpdationSuccess;
+                    return Ok(_response);
+                }
+                else
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Data = new Object { };
+                    _response.Messages = ResponseMessages.msgSomethingWentWrong;
+                    return Ok(_response);
+                }
 
-                 var getService = await _context.SalonService.FirstOrDefaultAsync(u => u.ServiceId == model.serviceId);
-                 if (getService != null)
-                 {
-                     var response = _mapper.Map<serviceDetailDTO>(getService);
-                     _response.StatusCode = HttpStatusCode.OK;
-                     _response.IsSuccess = true;
-                     _response.Data = response;
-                     _response.Messages = "Service" + ResponseMessages.msgUpdationSuccess;
-                     return Ok(_response);
-                 }
-                 else
-                 {
-                     _response.StatusCode = HttpStatusCode.OK;
-                     _response.IsSuccess = false;
-                     _response.Data = new Object { };
-                     _response.Messages = ResponseMessages.msgSomethingWentWrong;
-                     return Ok(_response);
-                 }
-                
             }
             catch (Exception ex)
             {
