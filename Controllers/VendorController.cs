@@ -1589,15 +1589,6 @@ namespace BeautyHubAPI.Controllers
 
                     fromDate = DateTime.ParseExact(model.fromDate, "dd-MM-yyyy", null);
                     toDate = DateTime.ParseExact(model.toDate, "dd-MM-yyyy", null);
-
-                    bookedService = bookedService.Where(x => (x.CreateDate.Date >= fromDate) && (x.CreateDate.Date <= toDate) && (x.AppointmentDate.Date >= fromDate) && (x.AppointmentDate.Date <= toDate)).ToList();
-                    // bookedService = bookedService.Where(x => (x.AppointmentDate.Date >= fromDate) && (x.AppointmentDate.Date <= toDate)).ToList();
-                    if (model.sortDateBy == 2)
-                    {
-                        bookedService = bookedService.Where(x => (x.AppointmentDate.Date >= fromDate) && (x.AppointmentDate.Date <= toDate)).OrderByDescending(u => u.AppointmentDate).ToList();
-                    }
-                    else
-                        bookedService = bookedService.Where(x => (x.AppointmentDate.Date >= fromDate) && (x.AppointmentDate.Date <= toDate)).OrderByDescending(u => u.CreateDate).ToList();
                 }
 
                 var distinctAppointments = bookedService.DistinctBy(u => u.AppointmentId).OrderByDescending(u => u.CreateDate).ToList();
@@ -1673,7 +1664,15 @@ namespace BeautyHubAPI.Controllers
                     orderList = orderList.OrderByDescending(x => CommonMethod.ddMMyyyToDateTime(x.appointmentDate)).ToList();
                     if (model.fromDate != null && model.toDate != null)
                     {
-                        orderList = orderList.Where(x => (CommonMethod.ddMMyyyToDateTime(x.appointmentDate).Date >= fromDate.Date) && (CommonMethod.ddMMyyyToDateTime(x.appointmentDate) <= toDate.Date)).OrderByDescending(x => CommonMethod.ddMMyyyToDateTime(x.appointmentDate)).ToList();
+                        orderList = orderList.Where(x => (CommonMethod.ddMMyyyToDateTime(x.appointmentDate).Date >= fromDate.Date) && (CommonMethod.ddMMyyyToDateTime(x.appointmentDate).Date <= toDate.Date)).OrderByDescending(x => CommonMethod.ddMMyyyToDateTime(x.appointmentDate)).ToList();
+                    }
+                }
+                else
+                {
+                    orderList = orderList.OrderByDescending(x => CommonMethod.ddMMyyyToDateTime(x.createDate)).ToList();
+                    if (model.fromDate != null && model.toDate != null)
+                    {
+                        orderList = orderList.Where(x => (CommonMethod.ddMMyyyToDateTime(x.createDate).Date >= fromDate.Date) && (CommonMethod.ddMMyyyToDateTime(x.createDate).Date <= toDate.Date)).OrderByDescending(x => CommonMethod.ddMMyyyToDateTime(x.createDate)).ToList();
                     }
                 }
                 // Get's No of Rows Count   
