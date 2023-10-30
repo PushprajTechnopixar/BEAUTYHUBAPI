@@ -1840,6 +1840,17 @@ namespace BeautyHubAPI.Controllers
                         slotIds.Add(item);
                     }
                 }
+                if (appointmentDetail.AppointmentStatus == AppointmentStatus.Scheduled.ToString())
+                {
+                    if (model.appointmentStatus == AppointmentStatus.Pending.ToString())
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Data = new Object { };
+                        _response.Messages = "Please enter valid appointment status.";
+                        return Ok(_response);
+                    }
+                }
 
                 if (appointmentDetail.AppointmentStatus == AppointmentStatus.Cancelled.ToString())
                 {
@@ -2021,7 +2032,6 @@ namespace BeautyHubAPI.Controllers
                 }
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
-                // _response.Data = response;
                 _response.Messages = "appointment status" + ResponseMessages.msgUpdationSuccess;
                 return Ok(_response);
             }
