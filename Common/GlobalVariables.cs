@@ -31,8 +31,12 @@
         // public const string bucketURL = "https://beautyhubtest-file.s3.ap-south-1.amazonaws.com/FileToSave/";
         // public const string imgURL = "https://beautyhubtest-file.s3.ap-south-1.amazonaws.com/FileToSave/";
 
-        public const string imgURL = "https://beautyhubtest-file.s3.ap-south-1.amazonaws.com/FileToSave/";
-        public const string bucketURL = "https://beautyhubtest-file.s3.ap-south-1.amazonaws.com/FileToSave/";
+        // public const string imgURL = "https://beautyhubtest-file.s3.ap-south-1.amazonaws.com/FileToSave/";
+        // public const string bucketURL = "https://beautyhubtest-file.s3.ap-south-1.amazonaws.com/FileToSave/";
+
+
+        public const string imgURL = "https://beautyhub-file.s3.ap-south-1.amazonaws.com/FileToSave/";
+        public const string bucketURL = "https://beautyhub-file.s3.ap-south-1.amazonaws.com/FileToSave/";
 
         public const string imgData = $"data:image/jpeg;base64,";
         public static readonly string vendor_registration = "Vendor_Register.html";
