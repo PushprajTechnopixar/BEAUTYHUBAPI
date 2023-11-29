@@ -136,12 +136,16 @@ namespace BeautyHubAPI.Controllers
                         await _context.AddAsync(mainsCategory);
                         await _context.SaveChangesAsync();
                     }
-                    else if (model.categoryType != mainsCategory.MainCategoryId)
+                    else 
                     {
-                        _response.StatusCode = HttpStatusCode.OK;
-                        _response.IsSuccess = false;
-                        _response.Messages = "Please select valid Categorytype";
-                        return Ok(_response);
+                        if (model.categoryType == mainCategoryType)
+                        {
+                            _response.StatusCode = HttpStatusCode.OK;
+                            _response.IsSuccess = false;
+                            _response.Messages = "Please select valid Category type";
+                            return Ok(_response);
+                        }
+                           
 
                     }
                     if (roles[0].ToString() == "SuperAdmin")
@@ -215,8 +219,6 @@ namespace BeautyHubAPI.Controllers
                     await _context.AddAsync(categoryDetail);
                     await _context.SaveChangesAsync();
 
-                   
-                    
                     if (roles[0].ToString() == "SuperAdmin")
                     {
                         var SalonDetail = await _context.SalonDetail.Where(u => u.IsDeleted != true).ToListAsync();

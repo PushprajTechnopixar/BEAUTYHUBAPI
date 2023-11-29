@@ -1003,8 +1003,8 @@ namespace BeautyHubAPI.Controllers
             serviceResponse.salonName = salonDetail.SalonName;
             serviceResponse.vendorId = salonDetail.VendorId;
             serviceResponse.serviceImage = serivceImageList;
-            serviceResponse.isSlotAvailable = _context.TimeSlot.Where(a => a.ServiceId == serviceId && a.Status && a.SlotCount > 0 && !a.IsDeleted)
-                                                        .Select(u => u.SlotDate).Distinct().Count();
+           // serviceResponse.isSlotAvailable = _context.TimeSlot.Where(a => a.ServiceId == serviceId && a.Status && a.SlotCount > 0 && !a.IsDeleted)
+           //                                             .Select(u => u.SlotDate).Distinct().Count();
             serviceResponse.LockTimeStart = !string.IsNullOrEmpty(serviceResponse.LockTimeStart) ? Convert.ToDateTime(serviceResponse.LockTimeStart).ToString(@"HH:mm") : null;
             serviceResponse.LockTimeEnd = !string.IsNullOrEmpty(serviceResponse.LockTimeEnd) ? Convert.ToDateTime(serviceResponse.LockTimeEnd).ToString(@"HH:mm") : null;
             // if (serviceResponse.BrandId > 0)
