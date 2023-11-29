@@ -1444,17 +1444,13 @@ namespace BeautyHubAPI.Controllers
                 var salonBanners = new List<SalonBanner>();
                 if (string.IsNullOrEmpty(model.salonBannerType))
                 {
-                    if (model.subCategoryId > 0)
-                    {
-                        salonBanners = await _context.SalonBanner.Where(u => (u.SalonId == model.salonId) && (u.SubCategoryId == model.subCategoryId)).ToListAsync();
-                    }
-                    else if (model.mainCategoryId > 0)
+                    if (model.mainCategoryId > 0)
                     {
                         salonBanners = await _context.SalonBanner.Where(u => (u.SalonId == model.salonId) && (u.MainCategoryId == model.mainCategoryId)).ToListAsync();
                     }
-                    else
+                    else if (model.subCategoryId > 0)
                     {
-                        salonBanners = await _context.SalonBanner.Where(u => (u.SalonId == model.salonId)).ToListAsync();
+                        salonBanners = await _context.SalonBanner.Where(u => (u.SalonId == model.salonId) && (u.SubCategoryId == model.subCategoryId)).ToListAsync();
                     }
                 }
                 else
@@ -1466,12 +1462,17 @@ namespace BeautyHubAPI.Controllers
                     else if (model.salonBannerType == BannerType.SalonCategoryBanner.ToString())
                     {
                         salonBanners = await _context.SalonBanner.Where(u => (u.SalonId == model.salonId) && (u.BannerType == BannerType.SalonCategoryBanner.ToString())).ToListAsync();
-                    }
-                    else
-                    {
-                        salonBanners = await _context.SalonBanner.Where(u => u.SalonId == model.salonId).ToListAsync();
+                        if (model.subCategoryId > 0)
+                        {
+                            salonBanners = salonBanners.Where(u => (u.SalonId == model.salonId) && (u.SubCategoryId == model.subCategoryId)).ToList();
+                        }
+                        else if (model.mainCategoryId > 0)
+                        {
+                            salonBanners = salonBanners.Where(u => (u.SalonId == model.salonId) && (u.MainCategoryId == model.mainCategoryId)).ToList();
+                        }
                     }
                 }
+
                 if (salonBanners == null)
                 {
                     _response.StatusCode = HttpStatusCode.OK;
