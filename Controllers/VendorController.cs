@@ -1452,6 +1452,10 @@ namespace BeautyHubAPI.Controllers
                     {
                         salonBanners = await _context.SalonBanner.Where(u => (u.SalonId == model.salonId) && (u.SubCategoryId == model.subCategoryId)).ToListAsync();
                     }
+                    else
+                    {
+                        salonBanners = await _context.SalonBanner.Where(u => (u.SalonId == model.salonId) && (u.BannerType == BannerType.SalonBanner.ToString())).ToListAsync();
+                    }
                 }
                 else
                 {
@@ -1470,6 +1474,10 @@ namespace BeautyHubAPI.Controllers
                         {
                             salonBanners = salonBanners.Where(u => (u.SalonId == model.salonId) && (u.MainCategoryId == model.mainCategoryId)).ToList();
                         }
+                    }
+                    else
+                    {
+                        salonBanners = await _context.SalonBanner.Where(u => u.SalonId == model.salonId).ToListAsync();
                     }
                 }
 
