@@ -117,6 +117,33 @@ namespace BeautyHubAPI.Controllers
                     await _context.AddAsync(categoryDetail);
                     await _context.SaveChangesAsync();
 
+                    var mainsCategory = await _context.MainCategory.FirstOrDefaultAsync(x => x.MainCategoryId == model.mainCategoryId);
+                    int mainCategoryType = 0;
+                    if (mainsCategory.Male == true && mainsCategory.Female == true)
+                    {
+                        mainCategoryType = 3;
+                    }
+                    else if (mainsCategory.Male == true && mainsCategory.Female == false)
+                    {
+                        mainCategoryType = 1;
+                    }
+                    else
+                    {
+                        mainCategoryType = 2;
+                    }
+                    if (mainCategoryType == 3)
+                    {
+                        await _context.AddAsync(mainsCategory);
+                        await _context.SaveChangesAsync();
+                    }
+                    else if (model.categoryType != mainsCategory.MainCategoryId)
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Messages = "Please select valid Categorytype";
+                        return Ok(_response);
+
+                    }
                     if (roles[0].ToString() == "SuperAdmin")
                     {
                         var SalonDetail = await _context.SalonDetail.Where(u => u.IsDeleted != true).ToListAsync();
@@ -142,12 +169,13 @@ namespace BeautyHubAPI.Controllers
                                 vendorCategory.Male = true;
                                 vendorCategory.Female = true;
                             }
-
+                           
                             await _context.AddAsync(vendorCategory);
                             await _context.SaveChangesAsync();
                         }
                     }
                     CategoryDetail = _mapper.Map<CategoryDTO>(categoryDetail);
+
                 }
                 else
                 {
@@ -187,6 +215,8 @@ namespace BeautyHubAPI.Controllers
                     await _context.AddAsync(categoryDetail);
                     await _context.SaveChangesAsync();
 
+                   
+                    
                     if (roles[0].ToString() == "SuperAdmin")
                     {
                         var SalonDetail = await _context.SalonDetail.Where(u => u.IsDeleted != true).ToListAsync();
@@ -216,10 +246,11 @@ namespace BeautyHubAPI.Controllers
                             await _context.AddAsync(vendorCategory);
                             await _context.SaveChangesAsync();
                         }
+                       
                     }
                     CategoryDetail = _mapper.Map<CategoryDTO>(categoryDetail); ;
                 }
-
+               
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
                 _response.Data = CategoryDetail;
