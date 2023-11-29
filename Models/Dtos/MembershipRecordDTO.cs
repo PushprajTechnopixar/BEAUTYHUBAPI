@@ -30,7 +30,7 @@ namespace BeautyHubAPI.Models.Dtos
     {
         public long transactionId { get; set; }
         public double transactionAmount { get; set; }
-        public bool transactionStaus { get; set; }
+        public bool transactionStatus { get; set; }
         public int membershipRecordId { get; set; }
         public int membershipPlanId { get; set; }
         public string planName { get; set; }

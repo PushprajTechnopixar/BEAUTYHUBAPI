@@ -881,7 +881,7 @@ namespace BeautyHubAPI.Controllers
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
                 _response.Data = response;
-                _response.Messages = "Address staus updated successfully.";
+                _response.Messages = "Address status updated successfully.";
                 return Ok(_response);
             }
             catch (Exception ex)

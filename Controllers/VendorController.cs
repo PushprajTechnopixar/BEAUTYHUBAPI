@@ -1463,7 +1463,7 @@ namespace BeautyHubAPI.Controllers
                     {
                         salonBanners = await _context.SalonBanner.Where(u => (u.SalonId == model.salonId) && (u.BannerType == BannerType.SalonBanner.ToString())).ToListAsync();
                     }
-                    else if (model.salonBannerType == BannerType.SalonBanner.ToString())
+                    else if (model.salonBannerType == BannerType.SalonCategoryBanner.ToString())
                     {
                         salonBanners = await _context.SalonBanner.Where(u => (u.SalonId == model.salonId) && (u.BannerType == BannerType.SalonCategoryBanner.ToString())).ToListAsync();
                     }
