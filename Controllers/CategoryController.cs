@@ -138,15 +138,14 @@ namespace BeautyHubAPI.Controllers
                     }
                     else 
                     {
-                        if (model.categoryType == mainCategoryType)
+                        if (model.categoryType != mainCategoryType)
                         {
                             _response.StatusCode = HttpStatusCode.OK;
                             _response.IsSuccess = false;
                             _response.Messages = "Please select valid Category type";
                             return Ok(_response);
                         }
-                           
-
+                        
                     }
                     if (roles[0].ToString() == "SuperAdmin")
                     {
@@ -194,7 +193,7 @@ namespace BeautyHubAPI.Controllers
                         categoryDetail.CategoryStatus = Convert.ToInt32(Status.Pending);
                     }
                     var checkCategoryName = await _context.MainCategory.Where(u => u.CategoryName.ToLower() == model.categoryName.ToLower()).FirstOrDefaultAsync();
-                    if (checkCategoryName != null)
+                    if (checkCategoryName == null)
                     {
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = false;
@@ -250,7 +249,7 @@ namespace BeautyHubAPI.Controllers
                         }
                        
                     }
-                    CategoryDetail = _mapper.Map<CategoryDTO>(categoryDetail); ;
+                    CategoryDetail = _mapper.Map<CategoryDTO>(categoryDetail); 
                 }
                
                 _response.StatusCode = HttpStatusCode.OK;
@@ -456,6 +455,74 @@ namespace BeautyHubAPI.Controllers
                 _response.IsSuccess = true;
                 _response.Data = CategoryDetail;
                 _response.Messages = "Category updated successfully.";
+                return Ok(_response);
+            }
+            catch (Exception ex)
+            {
+                _response.StatusCode = HttpStatusCode.InternalServerError;
+                _response.IsSuccess = false;
+                _response.Messages = ex.Message;
+                return Ok(_response);
+            }
+        }
+        #endregion
+
+        #region GetSubCategoryType
+        /// <summary>
+        ///  Get SubCategory Type.
+        /// </summary>
+        [HttpPost("GetSubCategoryType")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [Authorize]
+        public async Task<IActionResult> GetSubCategoryType(int mainCategoryId)
+        {
+            try
+            {
+                string currentUserId = (HttpContext.User.Claims.First().Value);
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Token expired.";
+                    return Ok(_response);
+                }
+
+                var CategoryDetail = new CategoryDTO();
+
+                if (mainCategoryId > 0)
+                {
+                    
+                    var mainsCategory = await _context.MainCategory.FirstOrDefaultAsync(x => x.MainCategoryId == mainCategoryId);
+                    int mainCategoryType = 0;
+                    if (mainsCategory.Male == true && mainsCategory.Female == true)
+                    {
+                        mainCategoryType = 3;
+                    }
+                    else if (mainsCategory.Male == true && mainsCategory.Female == false)
+                    {
+                        mainCategoryType = 1;
+                    }
+                    else
+                    {
+                        mainCategoryType = 2;
+                    }
+                    if (mainCategoryType == 3)
+                    {
+                         _context.AddAsync(mainsCategory);
+                         _context.SaveChanges();
+
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = true;
+                        _response.Data = mainsCategory;
+                        _response.Messages = "SubCategoryType added successfully.";
+                        return Ok(_response);
+                    }
+                   
+                }
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = true;
+                _response.Messages = "SubCategoryType added successfully.";
                 return Ok(_response);
             }
             catch (Exception ex)
@@ -1317,6 +1384,8 @@ namespace BeautyHubAPI.Controllers
             }
         }
         #endregion
+
+
 
     }
 }
