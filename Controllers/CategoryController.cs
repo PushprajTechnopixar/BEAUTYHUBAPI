@@ -487,12 +487,8 @@ namespace BeautyHubAPI.Controllers
                     _response.Messages = "Token expired.";
                     return Ok(_response);
                 }
-
-                var CategoryDetail = new CategoryDTO();
-
                 if (mainCategoryId > 0)
                 {
-                    
                     var mainsCategory = await _context.MainCategory.FirstOrDefaultAsync(x => x.MainCategoryId == mainCategoryId);
                     if (mainsCategory == null)
                     {
@@ -514,19 +510,19 @@ namespace BeautyHubAPI.Controllers
                     {
                         mainCategoryType = 2;
                     }
-              
-                        _response.StatusCode = HttpStatusCode.OK;
-                        _response.IsSuccess = true;
-                        _response.Data = mainCategoryType;
-                        _response.Messages = "MainCategory showing successfully.";
-                        return Ok(_response);
+                  
+
+                    _response.StatusCode = HttpStatusCode.OK;
+                     _response.IsSuccess = true;
+                    _response.Data = new  {mainCategoryType =mainCategoryType };
+                    _response.Messages = "Category type shown successfully.";
+                     return Ok(_response);
 
                 }
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
                 _response.Messages = "Not found any record.";
                 return Ok(_response);
-
 
 
             }
