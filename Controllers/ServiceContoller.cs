@@ -1658,29 +1658,24 @@ namespace BeautyHubAPI.Controllers
                     _response.Messages = "Invalid date format.";
                     return Ok(_response);
                 }
-
-                // get scheduled days
                 var slotDetail = await _context.TimeSlot
-                                    .Where(a => a.ServiceId == serviceId && a.Status != false && a.SlotCount > 0 && a.IsDeleted != true && a.SlotDate == searchDate)
-                                    .ToListAsync();
+                                   .Where(a => a.ServiceId == serviceId && a.Status != false && a.SlotCount > 0 && a.IsDeleted != true && a.SlotDate == searchDate)
+                                   .ToListAsync();
+                // get scheduled days
+                var sortedSlots = slotDetail.OrderBy(a => Convert.ToDateTime(a.FromTime)).ToList();
 
                 // Get the current time and add 2 hours to it
                 var limitDate = DateTime.Now.AddHours(2);
                 var availableSlots = new List<timeSlotsDTO>();
-                foreach (var item in slotDetail)
+
+                foreach (var item in sortedSlots)
                 {
                     if (searchDate.Date == DateTime.Now.Date)
                     {
-                        // Assuming item.FromTime is a string representation of a time in "HH:mm" format
                         var fromTime = (Convert.ToDateTime(item.FromTime).TimeOfDay);
-
-                        // Get the current time as a TimeSpan
                         var currentTime = DateTime.Now.TimeOfDay;
-
-                        // Calculate the time difference between limitDate and fromTime
                         var timeDifference = (fromTime - currentTime).Duration();
 
-                        // Check if the time difference is less than or equal to a certain number of minutes
                         int minutesThreshold = 60; // Set your threshold here
                         if (timeDifference.TotalMinutes! <= minutesThreshold)
                         {
@@ -1688,10 +1683,12 @@ namespace BeautyHubAPI.Controllers
                         }
                     }
                     else
+                    {
                         availableSlots.Add(_mapper.Map<timeSlotsDTO>(item));
+                    }
                 }
 
-                if (slotDetail != null)
+                if (availableSlots.Any())
                 {
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = true;
@@ -1703,6 +1700,7 @@ namespace BeautyHubAPI.Controllers
                 _response.IsSuccess = false;
                 _response.Messages = "Not found any record.";
                 return Ok(_response);
+                
             }
             catch (Exception ex)
             {
