@@ -193,7 +193,7 @@ namespace BeautyHubAPI.Controllers
                         categoryDetail.CategoryStatus = Convert.ToInt32(Status.Pending);
                     }
                     var checkCategoryName = await _context.MainCategory.Where(u => u.CategoryName.ToLower() == model.categoryName.ToLower()).FirstOrDefaultAsync();
-                    if (checkCategoryName == null)
+                    if (checkCategoryName != null)
                     {
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = false;
@@ -471,7 +471,7 @@ namespace BeautyHubAPI.Controllers
         /// <summary>
         ///  Get SubCategory Type.
         /// </summary>
-        [HttpPost("GetSubCategoryType")]
+        [HttpGet("GetSubCategoryType")]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [Authorize]
@@ -494,6 +494,13 @@ namespace BeautyHubAPI.Controllers
                 {
                     
                     var mainsCategory = await _context.MainCategory.FirstOrDefaultAsync(x => x.MainCategoryId == mainCategoryId);
+                    if (mainsCategory == null)
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Messages = "Not found any record.";
+                        return Ok(_response);
+                    }
                     int mainCategoryType = 0;
                     if (mainsCategory.Male == true && mainsCategory.Female == true)
                     {
@@ -507,23 +514,21 @@ namespace BeautyHubAPI.Controllers
                     {
                         mainCategoryType = 2;
                     }
-                    if (mainCategoryType == 3)
-                    {
-                         _context.AddAsync(mainsCategory);
-                         _context.SaveChanges();
-
+              
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = true;
-                        _response.Data = mainsCategory;
-                        _response.Messages = "SubCategoryType added successfully.";
+                        _response.Data = mainCategoryType;
+                        _response.Messages = "MainCategory showing successfully.";
                         return Ok(_response);
-                    }
-                   
+
                 }
                 _response.StatusCode = HttpStatusCode.OK;
-                _response.IsSuccess = true;
-                _response.Messages = "SubCategoryType added successfully.";
+                _response.IsSuccess = false;
+                _response.Messages = "Not found any record.";
                 return Ok(_response);
+
+
+
             }
             catch (Exception ex)
             {
