@@ -50,7 +50,7 @@
         public static readonly string ExcelFileContainer = "ExcelFiles/";
 
         public static readonly char stringSplitterPipe = '|';
-        public static string distancematrixAPIKey = "AIzaSyAqVkAIpWw38LEG9LghW1s0ZzSW-PUsjt0";
+        public static string distancematrixAPIKey = "AIzaSyBStBK-iNO1S6himB2q41PLm9bSoBfVmP4";
         public enum TwilioChannelTypes
         {
             Sms = 1,

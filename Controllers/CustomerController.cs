@@ -1108,7 +1108,7 @@ namespace BeautyHubAPI.Controllers
                     _response.Messages = "Not found any record.";
                     return Ok(_response);
                 }
-
+           
                 var checkTimeSlot = await _context.TimeSlot.Where(u => (u.ServiceId == model.serviceId) && (u.SlotId == model.slotId) && (u.Status != false) && (u.SlotCount > 0)).FirstOrDefaultAsync();
                 if (checkTimeSlot == null)
                 {
@@ -1117,7 +1117,7 @@ namespace BeautyHubAPI.Controllers
                     _response.Messages = "Slot is not available.";
                     return Ok(_response);
                 }
-
+                
                 // Validation for Salon count
                 if (!(SalonIdList.Any(u => u.Value == checkServiceDetail.SalonId)))
                 {
@@ -1130,45 +1130,59 @@ namespace BeautyHubAPI.Controllers
                     }
                 }
 
+
                 Cart? cartDeatil;
                 CartServicesDTO? response;
                 string responseMessage;
-
-                var getCartDetail = await _context.Cart.Where(u => (u.ServiceId == model.serviceId) && (u.SlotId == model.slotId) && (u.CustomerUserId == currentUserId)).FirstOrDefaultAsync();
-                if (getCartDetail != null)
+                
+                if (checkServiceDetail.TotalCountPerDuration != null)
                 {
-                    getCartDetail.ServiceCountInCart = getCartDetail.ServiceCountInCart + 1;
+                    var getCartCount = _context.Cart.Where(a => a.ServiceId == model.serviceId && a.CustomerUserId == currentUserId && a.SlotId == model.slotId && a.SalonId == checkServiceDetail.SalonId).Sum(a => a.ServiceCountInCart);
+                    if (getCartCount <= checkServiceDetail.TotalCountPerDuration)
+                    {
+                        var getCartDetail = await _context.Cart.Where(u => (u.ServiceId == model.serviceId) && (u.SlotId == model.slotId) && (u.CustomerUserId == currentUserId)).FirstOrDefaultAsync();
+                        if (getCartDetail != null)
+                        {
+                            getCartDetail.ServiceCountInCart = getCartDetail.ServiceCountInCart + 1;
 
-                    _context.Update(getCartDetail);
-                    await _context.SaveChangesAsync();
+                            _context.Update(getCartDetail);
+                            await _context.SaveChangesAsync();
 
-                    response = _mapper.Map<CartServicesDTO>(getCartDetail);
-                }
-                else
-                {
-                    cartDeatil = _mapper.Map<Cart>(model);
-                    cartDeatil.CustomerUserId = currentUserId;
-                    cartDeatil.ServiceCountInCart = 1;
-                    cartDeatil.SalonId = checkServiceDetail.SalonId;
+                            response = _mapper.Map<CartServicesDTO>(getCartDetail);
+                        }
+                        else
+                        {
+                            cartDeatil = _mapper.Map<Cart>(model);
+                            cartDeatil.CustomerUserId = currentUserId;
+                            cartDeatil.ServiceCountInCart = 1;
+                            cartDeatil.SalonId = checkServiceDetail.SalonId;
 
-                    await _context.AddAsync(cartDeatil);
-                    await _context.SaveChangesAsync();
+                            await _context.AddAsync(cartDeatil);
+                            await _context.SaveChangesAsync();
 
-                    response = _mapper.Map<CartServicesDTO>(cartDeatil);
-                }
+                            response = _mapper.Map<CartServicesDTO>(cartDeatil);
+                        }
 
-                if (checkServiceDetail != null)
-                {
-                    _mapper.Map(checkServiceDetail, response);
-                    _mapper.Map(checkTimeSlot, response);
-                    response.serviceImage = checkServiceDetail.ServiceIconImage;
-                    response.slotDate = Convert.ToDateTime(response.slotDate).ToString(@"dd-MM-yyy");
+                        if (checkServiceDetail != null)
+                        {
+                            _mapper.Map(checkServiceDetail, response);
+                            _mapper.Map(checkTimeSlot, response);
+                            response.serviceImage = checkServiceDetail.ServiceIconImage;
+                            response.slotDate = Convert.ToDateTime(response.slotDate).ToString(@"dd-MM-yyy");
+                        }
+
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = true;
+                        _response.Data = response;
+                        _response.Messages = "Service added to cart successfully.";
+                        return Ok(_response);
+
+                    }
                 }
 
                 _response.StatusCode = HttpStatusCode.OK;
-                _response.IsSuccess = true;
-                _response.Data = response;
-                _response.Messages = "Service added to cart successfully.";
+                _response.IsSuccess = false;
+                _response.Messages = "Can't more than add more service";
                 return Ok(_response);
             }
             catch (Exception ex)
