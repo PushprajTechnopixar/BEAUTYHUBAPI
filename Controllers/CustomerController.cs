@@ -1044,13 +1044,13 @@ namespace BeautyHubAPI.Controllers
                 _context.Update(user);
                 await _context.SaveChangesAsync();
 
-                currentUserDetail.Email = "deleted" + currentUserDetail.Email;
-                currentUserDetail.UserName = "deleted" + currentUserDetail.Email;
-                currentUserDetail.NormalizedUserName = "deleted" + currentUserDetail.Email;
-                currentUserDetail.PhoneNumber = "001" + currentUserDetail.PhoneNumber;
+                currentUserDetail.Email = DateTime.Now.Ticks + "deleted" + currentUserDetail.Email;
+                currentUserDetail.UserName = DateTime.Now.Ticks + "deleted" + currentUserDetail.Email;
+                currentUserDetail.NormalizedUserName = DateTime.Now.Ticks + "deleted" + currentUserDetail.Email;
+                currentUserDetail.PhoneNumber = DateTime.Now.Ticks + "001" + currentUserDetail.PhoneNumber;
                 currentUserDetail.SecurityStamp = CommonMethod.RandomString(20);
 
-                await _userManager.UpdateAsync(currentUserDetail);
+                var res = await _userManager.UpdateAsync(currentUserDetail);
 
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
