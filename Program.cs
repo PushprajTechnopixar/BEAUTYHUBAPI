@@ -86,8 +86,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddSingleton<IMobileMessagingClient, MobileMessagingClient>();
 builder.Services.AddHostedService<MyBackgroundService>();
 builder.Services.AddScoped<MyBackgroundService>();
-builder.Services.AddHostedService<EverydayMidnightService>();
-builder.Services.AddScoped<EverydayMidnightService>();
+// builder.Services.AddHostedService<EverydayMidnightService>();
+// builder.Services.AddScoped<EverydayMidnightService>();
 
 
 //Inject EmailSettings
@@ -187,7 +187,7 @@ builder.Services
 
                 if (user != null)
                 {
-                    if (user.SecurityStamp != securityStamp)
+                    if (user.SecurityStamp != securityStamp && user.PhoneNumber.Length < 11)
                     {
                         context.Fail("Unauthorized");
 
