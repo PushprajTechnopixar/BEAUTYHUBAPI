@@ -267,38 +267,39 @@ namespace BeautyHubAPI.Controllers
                         {
                             salonDetail = await _context.SalonDetail.Where(u => (u.SalonId == item.SalonId)
                             && (u.IsDeleted != true)
-                            && (u.SalonType != salonType)
+                            && (u.SalonType == salonType)
                             ).FirstOrDefaultAsync();
                         }
                         else
                         {
                             salonDetail = await _context.SalonDetail.Where(u => (u.SalonId == item.SalonId) && (u.IsDeleted != true)).FirstOrDefaultAsync();
                         }
-
-                        if (salonDetail != null)
-                        {
-                            var vendorDetail = _userManager.FindByIdAsync(salonDetail.VendorId).GetAwaiter().GetResult();
-                            var mappedData = _mapper.Map<CustomerSalonListDTO>(salonDetail);
-                            mappedData.vendorName = vendorDetail.FirstName + " " + vendorDetail.LastName;
-
-                            double endLat = Convert.ToDouble(salonDetail.AddressLatitude != null ? salonDetail.AddressLatitude : "0");
-                            double endLong = Convert.ToDouble(salonDetail.AddressLongitude != null ? salonDetail.AddressLongitude : "0");
-
-                            var APIResponse = CommonMethod.GoogleDistanceMatrixAPILatLonAsync(startLat, startLong, endLat, endLong).GetAwaiter().GetResult();
-                            mappedData.distance = APIResponse.distance;
-                            mappedData.duration = APIResponse.duration;
-                            mappedData.isSalonAdded = false;
-                            mappedData.favoritesStatus = (_context.FavouriteSalon.Where(u => u.SalonId == mappedData.salonId && u.CustomerUserId == currentUserId)).FirstOrDefault() != null ? true : false;
-
-                            nearBysalonResponse.Add(mappedData);
-                        }
-                    }
+                   
+                       if (salonDetail != null)
+                       {
+                           var vendorDetail = _userManager.FindByIdAsync(salonDetail.VendorId).GetAwaiter().GetResult();
+                           var mappedData = _mapper.Map<CustomerSalonListDTO>(salonDetail);
+                           mappedData.vendorName = vendorDetail.FirstName + " " + vendorDetail.LastName;
+                   
+                           double endLat = Convert.ToDouble(salonDetail.AddressLatitude != null ? salonDetail.AddressLatitude : "0");
+                           double endLong = Convert.ToDouble(salonDetail.AddressLongitude != null ? salonDetail.AddressLongitude : "0");
+                   
+                           var APIResponse = CommonMethod.GoogleDistanceMatrixAPILatLonAsync(startLat, startLong, endLat, endLong).GetAwaiter().GetResult();
+                           mappedData.distance = APIResponse.distance;
+                           mappedData.duration = APIResponse.duration;
+                           mappedData.isSalonAdded = false;
+                           mappedData.favoritesStatus = (_context.FavouriteSalon.Where(u => u.SalonId == mappedData.salonId && u.CustomerUserId == currentUserId)).FirstOrDefault() != null ? true : false;
+                   
+                           nearBysalonResponse.Add(mappedData);
+                       }
+                   }
 
                     if (!string.IsNullOrEmpty(searchBy))
                     {
                         nearBysalonResponse = nearBysalonResponse.Where(x => (x.salonName?.IndexOf(searchBy, StringComparison.OrdinalIgnoreCase) >= 0)).ToList();
                         salonResponse = salonResponse.Where(x => (x.salonName?.IndexOf(searchBy, StringComparison.OrdinalIgnoreCase) >= 0)).ToList();
                     }
+              
 
                     var res = new AllCustomerSalonList();
                     res.customerSalonList = salonResponse.OrderBy(u => Convert.ToDecimal(u.distance != null ? (u.distance.IndexOf("km") != -1 ? u.distance.Replace(" km", "") : u.distance.Replace(" m", "")) : 0)).ToList();
