@@ -365,6 +365,7 @@ namespace BeautyHubAPI.Controllers
                         categoryDetail.Male = true;
                         categoryDetail.Female = true;
                     }
+
                     _context.Update(categoryDetail);
                     await _context.SaveChangesAsync();
                     // if (roles[0].ToString() == "SuperAdmin")
@@ -430,6 +431,35 @@ namespace BeautyHubAPI.Controllers
                         categoryDetail.Male = true;
                         categoryDetail.Female = true;
                     }
+
+                    var subCategory = await _context.MainCategory.FirstOrDefaultAsync(x => x.MainCategoryId == model.mainCategoryId);
+                    int subCategoryType = 0;
+                    if (subCategory.Male == true && subCategory.Female == true)
+                    {
+                        subCategoryType = 3;
+                    }
+                    else if (subCategory.Male == false && subCategory.Female == true)
+                    {
+                        subCategoryType = 1;
+                    }
+                    else
+                    {
+                        subCategoryType = 2;
+                    }
+                    if (subCategoryType == 3)
+                    {
+                         _context.Update(subCategory);
+                        await _context.SaveChangesAsync();
+                    }
+
+                    if (model.categoryType != subCategoryType)
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Messages = "Updating the primary category is restricted when a subcategory under the category exists.";
+                        return Ok(_response);
+                    }
+
                     _context.Update(categoryDetail);
                     await _context.SaveChangesAsync();
 
