@@ -847,6 +847,11 @@ namespace BeautyHubAPI.Controllers
                 _response.Messages = "User does not exists.";
                 return Ok(_response);
             }
+            var userProfileDetail = await _context.UserDetail.Where(u => u.UserId == currentUserId).FirstOrDefaultAsync();
+            
+            userProfileDetail.Fcmtoken = "";
+            _context.Update(userProfileDetail);
+            await _context.SaveChangesAsync();
 
             userDetail.SecurityStamp = CommonMethod.RandomString(20);
 

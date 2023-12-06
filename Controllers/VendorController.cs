@@ -1786,6 +1786,7 @@ namespace BeautyHubAPI.Controllers
                     response.basePrice = response.basePrice + item.basePrice;
                     response.finalPrice = response.finalPrice + item.finalPrice;
                     response.totalServices = response.totalServices + 1;
+                    item.appointmentDate = Convert.ToDateTime(item.appointmentDate).ToString(@"dd-MM-yyyy");
                 }
                 response.totalDiscount = response.basePrice - response.finalPrice;
                 response.discount = response.basePrice - response.finalPrice;
