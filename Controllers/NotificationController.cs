@@ -160,6 +160,11 @@ namespace BeautyHubAPI.Controllers
         {
             try
             {
+                // var resp1 = await _mobileMessagingClient.SendNotificationAsync(
+                //     "f4UTJ3nIQTCEfC6TI2cwB4:APA91bEoE7xSWP9CpO8Zaj-gDOJcai-OEJCwQOpM0mQIzb2adpZZcnRGt_6UhWRmql3VDG4ZM-fWru7y53zDWf8PpzTz8hitE29e3O0KybAHsspcNztdZKksM695rHSXdeRamzbUdH6Q",
+                //     "addNotification.Title",
+                //     "addNotification.Descriptio");
+
                 var currentUserId = HttpContext.User.Claims.First().Value;
                 var currentUserDetail = _userManager.FindByIdAsync(currentUserId).GetAwaiter().GetResult();
                 if (currentUserDetail == null)
@@ -234,25 +239,25 @@ namespace BeautyHubAPI.Controllers
                                         continue;
                                     }
                                 }
-                                // if (!string.IsNullOrEmpty(userDetail.Fcmtoken))
-                                // {
-                                // if (user.IsNotificationEnabled == true)
-                                // {
-                                token = userDetail.Fcmtoken;
-                                var resp = await _mobileMessagingClient.SendNotificationAsync(token, addNotification.Title, addNotification.Description);
-                                // if (!string.IsNullOrEmpty(resp))
-                                // {
-                                // update notification sent
-                                var notificationSent = new NotificationSent();
-                                notificationSent.Title = addNotification.Title;
-                                notificationSent.Description = addNotification.Description;
-                                notificationSent.UserId = user.Id;
-                                notificationSent.NotificationType = NotificationType.Broadcast.ToString();
+                                if (!string.IsNullOrEmpty(userDetail.Fcmtoken))
+                                {
+                                    // if (user.IsNotificationEnabled == true)
+                                    // {
+                                    token = userDetail.Fcmtoken;
+                                    var resp = await _mobileMessagingClient.SendNotificationAsync(token, addNotification.Title, addNotification.Description);
+                                    // if (!string.IsNullOrEmpty(resp))
+                                    // {
+                                    // update notification sent
+                                    var notificationSent = new NotificationSent();
+                                    notificationSent.Title = addNotification.Title;
+                                    notificationSent.Description = addNotification.Description;
+                                    notificationSent.UserId = user.Id;
+                                    notificationSent.NotificationType = NotificationType.Broadcast.ToString();
 
-                                await _context.AddAsync(notificationSent);
-                                await _context.SaveChangesAsync();
-                                // }
-                                // }
+                                    await _context.AddAsync(notificationSent);
+                                    await _context.SaveChangesAsync();
+                                    // }
+                                }
                                 // }
                             }
                         }
