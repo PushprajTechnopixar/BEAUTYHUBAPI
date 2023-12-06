@@ -560,6 +560,7 @@ namespace BeautyHubAPI.Controllers
                                 ageRestrictions = t1.AgeRestrictions,
                                 ServiceType = t1.ServiceType,
                                 totalCountPerDuration = t1.TotalCountPerDuration,
+                                durationInMinutes = t1.DurationInMinutes,
                                 status = t1.Status,
                                 isSlotAvailable = _context.TimeSlot.Where(a => a.ServiceId == t1.ServiceId && a.Status && a.SlotCount > 0 && !a.IsDeleted)
                                                             .Select(u => u.SlotDate).Distinct().Count(),
@@ -597,6 +598,7 @@ namespace BeautyHubAPI.Controllers
                                          genderPreferences = t1.GenderPreferences,
                                          ageRestrictions = t1.AgeRestrictions,
                                          totalCountPerDuration = t1.TotalCountPerDuration,
+                                         durationInMinutes = t1.DurationInMinutes,
                                          ServiceType = t1.ServiceType,
                                          status = t1.Status,
                                          isSlotAvailable = _context.TimeSlot.Where(a => a.ServiceId == t1.ServiceId && a.Status && a.SlotCount > 0 && !a.IsDeleted)
@@ -642,6 +644,7 @@ namespace BeautyHubAPI.Controllers
                                 ageRestrictions = t1.AgeRestrictions,
                                 ServiceType = t1.ServiceType,
                                 totalCountPerDuration = t1.TotalCountPerDuration,
+                                durationInMinutes = t1.DurationInMinutes,
                                 status = t1.Status,
                                 isSlotAvailable = _context.TimeSlot.Where(a => a.ServiceId == t1.ServiceId && a.Status && a.SlotCount > 0 && !a.IsDeleted)
                                                             .Select(u => u.SlotDate).Distinct().Count(),
@@ -718,6 +721,7 @@ namespace BeautyHubAPI.Controllers
                             //  favoritesStatus = (_context.FavouriteProduct.Where(u => u.ProductId == t1.ProductId && u.CustomerUserId == currentUserId)).FirstOrDefault() != null ? true : false,
                             discount = t1.Discount,
                             totalCountPerDuration = t1.TotalCountPerDuration,
+                            durationInMinutes = t1.DurationInMinutes,
                             genderPreferences = t1.GenderPreferences,
                             ServiceType = t1.ServiceType,
                             ageRestrictions = t1.AgeRestrictions,

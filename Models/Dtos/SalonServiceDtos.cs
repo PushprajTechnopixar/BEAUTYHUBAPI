@@ -69,6 +69,7 @@
         public double listingPrice { get; set; }
         public double basePrice { get; set; }
         public int? totalCountPerDuration { get; set; }
+        public int? durationInMinutes { get; set; }
         public int? serviceCountInCart { get; set; }
         public int? status { get; set; }
         public int? isSlotAvailable { get; set; }
