@@ -566,7 +566,7 @@ namespace BeautyHubAPI.Controllers
                                 serviceCountInCart = _context.Cart.Where(a => a.ServiceId == t1.ServiceId && a.CustomerUserId == currentUserId).Sum(a => a.ServiceCountInCart),
                                 // Additional properties from other tables
                             };
-                    if (model.mainCategoryId != 53 || model.mainCategoryId == null || model.mainCategoryId == 0)
+                    if (model.mainCategoryId == 53 || model.mainCategoryId == null || model.mainCategoryId == 0)
                     {
                         var query1 = from t1 in _context.SalonService
                                      join t2 in _context.MainCategory on t1.MainCategoryId equals t2.MainCategoryId
@@ -759,7 +759,7 @@ namespace BeautyHubAPI.Controllers
 
             if (model.mainCategoryId > 0)
             {
-                query = query.Where(u => u.mainCategoryId == model.mainCategoryId || u.mainCategoryId == 53);
+                query = query.Where(u => u.mainCategoryId == model.mainCategoryId || u.mainCategoryId != 53);
             }
             if (model.subCategoryId > 0)
             {
