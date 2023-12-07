@@ -43,7 +43,7 @@ namespace BeautyHubAPI.Models
         public virtual ICollection<FavouriteService> FavouriteService { get; set; }
         public virtual MainCategory MainCategory { get; set; } = null!;
         public virtual SalonDetail Salon { get; set; } = null!;
-        public virtual SubCategory? Subcategory { get; set; }
+        //public virtual SubCategory? Subcategory { get; set; }
         public virtual ICollection<TimeSlot> TimeSlot { get; set; }
         public virtual ICollection<Cart> Cart { get; set; }
         public virtual ICollection<ServicePackage> ServicePackage { get; set; }

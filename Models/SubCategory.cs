@@ -9,7 +9,7 @@ namespace BeautyHubAPI.Models
         {
             SalonBanner = new HashSet<SalonBanner>();
             VendorCategory = new HashSet<VendorCategory>();
-            SalonService = new HashSet<SalonService>();
+           // SalonService = new HashSet<SalonService>();
         }
 
         public int SubCategoryId { get; set; }
@@ -28,6 +28,6 @@ namespace BeautyHubAPI.Models
         public virtual MainCategory MainCategory { get; set; } = null!;
         public virtual ICollection<SalonBanner> SalonBanner { get; set; }
         public virtual ICollection<VendorCategory> VendorCategory { get; set; }
-        public virtual ICollection<SalonService> SalonService { get; set; }
+        //public virtual ICollection<SalonService> SalonService { get; set; }
     }
 }

@@ -1381,10 +1381,11 @@ namespace BeautyHubAPI.Controllers
                         _response.Messages = "Category is not found.";
                         return Ok(_response);
                     }
-                    addUpdateServiceEntity.MainCategoryId = isCategoryExist.MainCategoryId;
+                    addUpdateServiceEntity.MainCategoryId = isCategoryExist.SubCategoryId;
                 }
                 if (model.serviceId == 0)
                 {
+                    model.subCategoryId = model.subCategoryId == 0 ? null : model.subCategoryId;
                     await _context.AddAsync(addUpdateServiceEntity);
                     await _context.SaveChangesAsync();
 
@@ -1405,6 +1406,7 @@ namespace BeautyHubAPI.Controllers
                 }
                 else
                 {
+                    model.subCategoryId = model.subCategoryId == 0 ? null : model.subCategoryId;
                     _mapper.Map(model, serviceDetail);
                     _context.Update(serviceDetail);
                     await _context.SaveChangesAsync();

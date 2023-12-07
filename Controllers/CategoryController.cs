@@ -429,7 +429,7 @@ namespace BeautyHubAPI.Controllers
                    {
                        _response.StatusCode = HttpStatusCode.OK;
                        _response.IsSuccess = false;
-                       _response.Messages = "Updating the primary category is restricted when a subcategory under the category exists.";
+                       _response.Messages = "Updating the primary category is restricted when a subcategory under the category exists into Main category update not allowed if subcategories are present.";
                        return Ok(_response);
                    }
 

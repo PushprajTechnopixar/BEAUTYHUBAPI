@@ -300,10 +300,10 @@ namespace BeautyHubAPI.Data
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_SalonService_SalonDetail");
 
-                entity.HasOne(d => d.Subcategory)
-                    .WithMany(p => p.SalonService)
-                    .HasForeignKey(d => d.SubcategoryId)
-                    .HasConstraintName("FK_SalonService_SubCategory");
+                //entity.HasOne(d => d.Subcategory)
+                //    .WithMany(p => p.SalonService)
+                //    .HasForeignKey(d => d.SubcategoryId)
+                //    .HasConstraintName("FK_SalonService_SubCategory");
             });
 
             modelBuilder.Entity<SalonSchedule>(entity =>
