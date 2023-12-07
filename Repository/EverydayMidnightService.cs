@@ -4,6 +4,7 @@ using BeautyHubAPI.Data;
 using BeautyHubAPI.Models;
 using static BeautyHubAPI.Common.GlobalVariables;
 using BeautyHubAPI.Models.Dtos;
+using TimeZoneConverter;
 
 public class EverydayMidnightService : BackgroundService
 {
@@ -56,7 +57,9 @@ public class EverydayMidnightService : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         // Calculate the time until 12:00 AM
-        var now = DateTimeOffset.Now;
+        var now = DateTimeOffset.UtcNow;
+        var ctz = TZConvert.GetTimeZoneInfo("India Standard Time");
+        var convrtedZoneDate = TimeZoneInfo.ConvertTimeFromUtc(Convert.ToDateTime(now), ctz);
         var nextRunTime = now.Date.AddDays(1).AddHours(0); // 12:00 AM
 
         // Calculate the delay until the next run
@@ -76,7 +79,7 @@ public class EverydayMidnightService : BackgroundService
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-                // await UpdateSchedule(dbContext);
+                await UpdateSchedule(dbContext);
             }
             // Delay for a certain duration before checking the flag again
             await Task.Delay(delay, stoppingToken); // Polling interval

@@ -546,6 +546,7 @@ namespace BeautyHubAPI.Controllers
 
                             where t1.IsDeleted != true
                             where t1.Status == 1
+                            where t1.ServiceType == (model.mainCategoryId != 53 ? "Single" : "Package")
                             // where t6.CustomerUserId == currentUserId
                             orderby t1.MainCategoryId descending
                             // Add more joins as needed
@@ -577,7 +578,7 @@ namespace BeautyHubAPI.Controllers
                                 serviceCountInCart = _context.Cart.Where(a => a.ServiceId == t1.ServiceId && a.CustomerUserId == currentUserId).Sum(a => a.ServiceCountInCart),
                                 // Additional properties from other tables
                             };
-                    if (model.mainCategoryId != 53 || model.mainCategoryId == null || model.mainCategoryId == 0)
+                    if (model.mainCategoryId != 53)
                     {
                         var query1 = from t1 in _context.SalonService
                                      join t2 in _context.MainCategory on t1.MainCategoryId equals t2.MainCategoryId
