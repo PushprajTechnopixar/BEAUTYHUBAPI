@@ -533,26 +533,26 @@ namespace BeautyHubAPI.Controllers
             {
                 string userphoneNumber = model.dialCode + model.phoneNumber;
 
-                // var verificationResult = await _twilioManager.CheckVerificationAsync(
-                //     userphoneNumber,
-                //     model.OTP
-                // );
-                // if (verificationResult.IsValid)
-                // {
-                _response.StatusCode = HttpStatusCode.OK;
-                _response.IsSuccess = model.otp == "1234" ? true : false;
-                _response.Data = new { };
-                _response.Messages = _response.IsSuccess == true ? ResponseMessages.msgphoneNumberVerifiedSuccess : "Wrong OTP.";
-                return Ok(_response);
-                // }
-                // else
-                // {
-                //     _response.StatusCode = HttpStatusCode.OK;
-                //     _response.IsSuccess = false;
-                //     _response.Data = new { };
-                //     _response.Messages = verificationResult.Errors.FirstOrDefault().ToString();
-                //     return Ok(_response);
-                // }
+                var verificationResult = await _twilioManager.CheckVerificationAsync(
+                    userphoneNumber,
+                    model.otp
+                );
+                if (verificationResult.IsValid)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = true;
+                    _response.Data = new { };
+                    _response.Messages = _response.IsSuccess == true ? ResponseMessages.msgphoneNumberVerifiedSuccess : "Wrong OTP.";
+                    return Ok(_response);
+                }
+                else
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Data = new { };
+                    _response.Messages = verificationResult.Errors.FirstOrDefault().ToString();
+                    return Ok(_response);
+                }
             }
             catch (Exception ex)
             {
@@ -848,7 +848,7 @@ namespace BeautyHubAPI.Controllers
                 return Ok(_response);
             }
             var userProfileDetail = await _context.UserDetail.Where(u => u.UserId == currentUserId).FirstOrDefaultAsync();
-            
+
             userProfileDetail.Fcmtoken = "";
             _context.Update(userProfileDetail);
             await _context.SaveChangesAsync();

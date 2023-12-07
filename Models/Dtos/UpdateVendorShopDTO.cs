@@ -33,7 +33,9 @@ namespace BeautyHubAPI.Models.Dtos
         public int countryId { get; set; }
         public int stateId { get; set; }
         public List<UpdateBankDTO> bankDetail { get; set; }
-        public List<UpdateUPIDTO> upiDetail { get; set; }
+        public string? upiDetail { get; set; }
+
+        // public List<UpdateUPIDTO> upiDetail { get; set; }
     }
 
     public class UpdateSalonDTO

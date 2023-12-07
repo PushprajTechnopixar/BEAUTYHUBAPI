@@ -91,6 +91,16 @@ namespace BeautyHubAPI.Controllers
                     return Ok(_response);
                 }
 
+                if ((!string.IsNullOrEmpty(model.fromTime) && string.IsNullOrEmpty(model.toTime))
+                || (string.IsNullOrEmpty(model.fromTime) && !string.IsNullOrEmpty(model.toTime))
+                )
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Please enter both the from and to time.";
+                    return Ok(_response);
+                }
+
                 var Salon = await _context.SalonDetail.Where(a => a.SalonId == model.salonId).FirstOrDefaultAsync();
                 if (Salon == null)
                 {
@@ -1007,8 +1017,8 @@ namespace BeautyHubAPI.Controllers
             serviceResponse.salonName = salonDetail.SalonName;
             serviceResponse.vendorId = salonDetail.VendorId;
             serviceResponse.serviceImage = serivceImageList;
-           // serviceResponse.isSlotAvailable = _context.TimeSlot.Where(a => a.ServiceId == serviceId && a.Status && a.SlotCount > 0 && !a.IsDeleted)
-           //                                             .Select(u => u.SlotDate).Distinct().Count();
+            // serviceResponse.isSlotAvailable = _context.TimeSlot.Where(a => a.ServiceId == serviceId && a.Status && a.SlotCount > 0 && !a.IsDeleted)
+            //                                             .Select(u => u.SlotDate).Distinct().Count();
             serviceResponse.LockTimeStart = !string.IsNullOrEmpty(serviceResponse.LockTimeStart) ? Convert.ToDateTime(serviceResponse.LockTimeStart).ToString(@"HH:mm") : null;
             serviceResponse.LockTimeEnd = !string.IsNullOrEmpty(serviceResponse.LockTimeEnd) ? Convert.ToDateTime(serviceResponse.LockTimeEnd).ToString(@"HH:mm") : null;
             // if (serviceResponse.BrandId > 0)
@@ -1159,7 +1169,15 @@ namespace BeautyHubAPI.Controllers
                     _response.Messages = "Please enter valid age limit.";
                     return Ok(_response);
                 }
-
+                if ((!string.IsNullOrEmpty(model.lockTimeStart) && string.IsNullOrEmpty(model.lockTimeEnd))
+                || (string.IsNullOrEmpty(model.lockTimeStart) && !string.IsNullOrEmpty(model.lockTimeEnd))
+                )
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Please enter start and end time.";
+                    return Ok(_response);
+                }
                 if (!string.IsNullOrEmpty(model.lockTimeStart) && !string.IsNullOrEmpty(model.lockTimeEnd))
                 {
                     // if (!CommonMethod.IsValidTimeFormat(model.lockTimeStart) || !CommonMethod.IsValidTimeFormat(model.lockTimeEnd))
@@ -1677,7 +1695,9 @@ namespace BeautyHubAPI.Controllers
                     if (searchDate.Date == DateTime.Now.Date)
                     {
                         var fromTime = (Convert.ToDateTime(item.FromTime).TimeOfDay);
-                        var currentTime = DateTime.Now.TimeOfDay;
+                        var ctz = TZConvert.GetTimeZoneInfo("India Standard Time");
+                        var convrtedZoneDate = TimeZoneInfo.ConvertTimeFromUtc(Convert.ToDateTime(DateTime.UtcNow).AddMinutes(90), ctz);
+                        var currentTime = convrtedZoneDate.TimeOfDay;
                         var timeDifference = (fromTime - currentTime).Duration();
 
                         int minutesThreshold = 60; // Set your threshold here
@@ -1704,7 +1724,7 @@ namespace BeautyHubAPI.Controllers
                 _response.IsSuccess = false;
                 _response.Messages = "Not found any record.";
                 return Ok(_response);
-                
+
             }
             catch (Exception ex)
             {

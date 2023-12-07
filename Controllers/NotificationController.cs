@@ -161,9 +161,11 @@ namespace BeautyHubAPI.Controllers
             try
             {
                 // var resp1 = await _mobileMessagingClient.SendNotificationAsync(
-                //     "f4UTJ3nIQTCEfC6TI2cwB4:APA91bEoE7xSWP9CpO8Zaj-gDOJcai-OEJCwQOpM0mQIzb2adpZZcnRGt_6UhWRmql3VDG4ZM-fWru7y53zDWf8PpzTz8hitE29e3O0KybAHsspcNztdZKksM695rHSXdeRamzbUdH6Q",
-                //     "addNotification.Title",
-                //     "addNotification.Descriptio");
+                //     "f4pu4fv37pQDgSIcCOE4g4:APA91bF_9iZz9LN_TDDRaYCx9m0CW9Pvp6BQ8_z2uwCBe25jUwjcblrUJ-E5O7WFLUlClLwsPjI1BcIf9DJHYOLhKiHYFq7WMsDjpwrjFO8YoJ1LR33WDP2tAF-jgq3QLumuEPrewL40",
+                //     "Test",
+                //     "Test Notification");
+
+                // return Ok();
 
                 var currentUserId = HttpContext.User.Claims.First().Value;
                 var currentUserDetail = _userManager.FindByIdAsync(currentUserId).GetAwaiter().GetResult();

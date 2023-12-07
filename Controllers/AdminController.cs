@@ -209,14 +209,14 @@ namespace BeautyHubAPI.Controllers
                 _response.Messages = "Please enter valid gender.";
                 return Ok(_response);
             }
-            var upiCheck = model.upiDetail.Where(u => u.isActive == true).ToList();
-            if (upiCheck.Count > 1)
-            {
-                _response.StatusCode = HttpStatusCode.OK;
-                _response.IsSuccess = false;
-                _response.Messages = "Can't activate two UPI accounts simultaneously.";
-                return Ok(_response);
-            }
+            // var upiCheck = model.upiDetail.Where(u => u.isActive == true).ToList();
+            // if (upiCheck.Count > 1)
+            // {
+            //     _response.StatusCode = HttpStatusCode.OK;
+            //     _response.IsSuccess = false;
+            //     _response.Messages = "Can't activate two UPI accounts simultaneously.";
+            //     return Ok(_response);
+            // }
             var bankStatusCheck = model.bankDetail.Where(u => u.isActive == true).ToList();
             if (bankStatusCheck.Count > 1)
             {
@@ -284,37 +284,37 @@ namespace BeautyHubAPI.Controllers
 
             // Update upi detail
             var existingupiList = await _context.Upidetail.Where(u => u.UserId == user.Id).ToListAsync();
-            List<int> previousUPIs = existingupiList.Select(u => u.UpidetailId).ToList();
-            List<int> updateUPIs = model.upiDetail.Select(u => u.upidetailId).ToList();
-            List<int> subtractedUPIListToRemove = previousUPIs.Except(updateUPIs).ToList();
-            foreach (var item in subtractedUPIListToRemove)
-            {
-                var removeUPIId = await _context.Upidetail.Where(u => u.UpidetailId == item).FirstOrDefaultAsync();
-                _context.Remove(removeUPIId);
-                await _context.SaveChangesAsync();
-            }
-            foreach (var item in model.upiDetail)
-            {
-                var upiDetail = await _context.Upidetail.Where(u => u.UpidetailId == item.upidetailId).FirstOrDefaultAsync();
-                if (upiDetail == null)
-                {
-                    var addUPI = _mapper.Map<Upidetail>(item);
-                    addUPI.UserId = user.Id;
-                    await _context.Upidetail.AddAsync(addUPI);
-                    await _context.SaveChangesAsync();
-                }
-                else
-                {
-                    var updateUPI = _mapper.Map(item, upiDetail);
-                    _context.Upidetail.Update(updateUPI);
-                    await _context.SaveChangesAsync();
-                }
-            }
-            var getupiList = await _context.Upidetail.Where(u => u.UserId == model.id).ToListAsync();
-            var upiResponse = _mapper.Map<List<UPIResponseDTO>>(getupiList);
+            // List<int> previousUPIs = existingupiList.Select(u => u.UpidetailId).ToList();
+            // List<int> updateUPIs = model.upiDetail.Select(u => u.upidetailId).ToList();
+            // List<int> subtractedUPIListToRemove = previousUPIs.Except(updateUPIs).ToList();
+            // foreach (var item in subtractedUPIListToRemove)
+            // {
+            //     var removeUPIId = await _context.Upidetail.Where(u => u.UpidetailId == item).FirstOrDefaultAsync();
+            //     _context.Remove(removeUPIId);
+            //     await _context.SaveChangesAsync();
+            // }
+            // foreach (var item in model.upiDetail)
+            // {
+            //     var upiDetail = await _context.Upidetail.Where(u => u.UpidetailId == item.upidetailId).FirstOrDefaultAsync();
+            //     if (upiDetail == null)
+            //     {
+            //         var addUPI = _mapper.Map<Upidetail>(item);
+            //         addUPI.UserId = user.Id;
+            //         await _context.Upidetail.AddAsync(addUPI);
+            //         await _context.SaveChangesAsync();
+            //     }
+            //     else
+            //     {
+            //         var updateUPI = _mapper.Map(item, upiDetail);
+            //         _context.Upidetail.Update(updateUPI);
+            //         await _context.SaveChangesAsync();
+            //     }
+            // }
+            // var getupiList = await _context.Upidetail.Where(u => u.UserId == model.id).ToListAsync();
+            // var upiResponse = _mapper.Map<List<UPIResponseDTO>>(getupiList);
 
             superAdminDetail.bankResponses = banksResponse;
-            superAdminDetail.upiResponses = upiResponse;
+            // superAdminDetail.upiResponses = upiResponse;
 
             if (superAdminDetail == null)
             {
@@ -1884,7 +1884,7 @@ namespace BeautyHubAPI.Controllers
             }
             string messageBody = body.HtmlBody;
             messageBody = messageBody.Replace("{adminName}", name);
-            messageBody = messageBody.Replace("{link}", "https://beautyhub.com/");
+            messageBody = messageBody.Replace("{link}", "https://salonnearme.com/");
             messageBody = messageBody.Replace("{pasword}", user.password);
             messageBody = messageBody.Replace("{email}", user.email);
 

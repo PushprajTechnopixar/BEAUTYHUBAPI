@@ -83,7 +83,7 @@ public class MyBackgroundService : BackgroundService
 
     private async Task UpdateSchedule(ApplicationDbContext dbContext)
     {
-        var salonScheduleList = await dbContext.SalonSchedule.Where(u => u.IsDeleted != true && u.Status != true).ToListAsync();
+        var salonScheduleList = await dbContext.SalonSchedule.Where(u => u.IsDeleted != true && u.Status != false).ToListAsync();
         foreach (var SalonScheduleDays in salonScheduleList)
         {
             SalonScheduleDays.Status = true;
@@ -118,7 +118,7 @@ public class MyBackgroundService : BackgroundService
             }
 
             // update timeslots according to schedule
-            var services = await dbContext.SalonService.Where(u => u.SalonId == SalonScheduleDays.SalonId).ToListAsync();
+            var services = await dbContext.SalonService.Where(u => u.SalonId == SalonScheduleDays.SalonId && u.IsDeleted != true).ToListAsync();
             foreach (var item in services)
             {
                 var deleteTimeSlot = await dbContext.TimeSlot.Where(u => u.ServiceId == item.ServiceId).ToListAsync();
@@ -235,7 +235,6 @@ public class MyBackgroundService : BackgroundService
                     addDay++;
                 }
             }
-
         }
         _logger.LogInformation("Status updated.");
     }

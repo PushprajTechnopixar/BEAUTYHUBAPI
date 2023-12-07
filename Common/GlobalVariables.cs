@@ -15,10 +15,10 @@
         public static readonly string passwordValidationMessage = "Your password must be at least 8 characters long, contain at least one number and have a mixture of uppercase and lowercase letters";
 
         #region "Twillio Validate Credentials"
-        public const string twilio_accountSid = "ACb4e68a147a1735df65b420f56f4f96c0";
-        public const string twilio_authToken = "e7432f68cef1778a4e21700d3e248f1c";
-        public const string twilio_verificationSid = "VAffc32445ae7ecc4d2eac6cd37f6ad921";
-        public const string twilio_phoneNumber = "+14027611708";
+        public const string twilio_accountSid = "AC827b59b1129fbac11722ad4a561856b3";
+        public const string twilio_authToken = "548b36114477ff0f6fa4c3697ee84d08";
+        public const string twilio_verificationSid = "VA6321353a3daef66b28810e7a1673ab96";
+        public const string twilio_phoneNumber = "+12295525406";
         #endregion
 
         // #region "Twillio Validate Credentials"
