@@ -452,13 +452,13 @@ namespace BeautyHubAPI.Controllers
                         await _context.SaveChangesAsync();
                     }
 
-                    if (model.categoryType == subCategoryType)
-                    {
-                        _response.StatusCode = HttpStatusCode.OK;
-                        _response.IsSuccess = false;
-                        _response.Messages = "Updating the primary category is restricted when a subcategory under the category exists.";
-                        return Ok(_response);
-                    }
+                    //if (model.categoryType == subCategoryType)
+                    //{
+                    //    _response.StatusCode = HttpStatusCode.OK;
+                    //    _response.IsSuccess = false;
+                    //    _response.Messages = "Updating the primary category is restricted when a subcategory under the category exists.";
+                    //    return Ok(_response);
+                    //}
 
                     _context.Update(categoryDetail);
                     await _context.SaveChangesAsync();
