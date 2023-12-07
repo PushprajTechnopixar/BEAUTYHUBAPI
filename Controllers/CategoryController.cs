@@ -452,7 +452,7 @@ namespace BeautyHubAPI.Controllers
                         await _context.SaveChangesAsync();
                     }
 
-                    if (model.categoryType != subCategoryType)
+                    if (model.categoryType == subCategoryType)
                     {
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = false;
