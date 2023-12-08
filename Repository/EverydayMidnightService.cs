@@ -59,7 +59,7 @@ public class EverydayMidnightService : BackgroundService
         // Calculate the time until 12:00 AM
         var now = DateTimeOffset.UtcNow;
         var ctz = TZConvert.GetTimeZoneInfo("India Standard Time");
-        var convrtedZoneDate = TimeZoneInfo.ConvertTimeFromUtc(Convert.ToDateTime(now), ctz);
+        var convrtedZoneDate = TimeZoneInfo.ConvertTimeFromUtc(now.DateTime, ctz);
         var nextRunTime = now.Date.AddDays(1).AddHours(0); // 12:00 AM
 
         // Calculate the delay until the next run
@@ -150,6 +150,9 @@ public class EverydayMidnightService : BackgroundService
                 scheduledDaysList.Add("Sunday");
             }
 
+            var ctz = TZConvert.GetTimeZoneInfo("India Standard Time");
+            var convrtedZoneDate = TimeZoneInfo.ConvertTimeFromUtc(Convert.ToDateTime(DateTime.UtcNow), ctz);
+
             // update timeslots according to schedule
             var services = await dbContext.SalonService.Where(u => u.SalonId == SalonScheduleDays.SalonId).ToListAsync();
             foreach (var item in services)
@@ -166,7 +169,7 @@ public class EverydayMidnightService : BackgroundService
                 int addDay = 0;
                 for (int i = 0; i < 7; i++)
                 {
-                    DateTime currentDate = DateTime.Now.AddDays(i);
+                    DateTime currentDate = convrtedZoneDate.AddDays(i);
                     string currentDateStr = currentDate.ToString("yyyy-MM-dd");
                     string dayName = currentDate.ToString("dddd");
 
@@ -269,12 +272,12 @@ public class EverydayMidnightService : BackgroundService
                 }
             }
             var backDateTimeSlots = dbContext.TimeSlot
-                        .Where(t => t.SlotDate.Date < DateTime.Now.Date && t.Status != false);
+                        .Where(t => t.SlotDate.Date < convrtedZoneDate.Date && t.Status != false);
             foreach (var item in backDateTimeSlots)
             {
                 item.Status = false;
                 var backDateBookedService = dbContext.BookedService
-                                        .Where(u => Convert.ToDateTime(u.AppointmentDate.Date) < DateTime.Now.Date && u.AppointmentStatus != "Completed" || u.AppointmentStatus != "Cancelled");
+                                        .Where(u => Convert.ToDateTime(u.AppointmentDate.Date) < convrtedZoneDate.Date && u.AppointmentStatus != "Completed" || u.AppointmentStatus != "Cancelled");
                 foreach (var item1 in backDateBookedService)
                 {
                     item1.AppointmentStatus = "Cancelled";

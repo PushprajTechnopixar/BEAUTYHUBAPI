@@ -1382,11 +1382,10 @@ namespace BeautyHubAPI.Controllers
                         _response.Messages = "Category is not found.";
                         return Ok(_response);
                     }
-                    addUpdateServiceEntity.MainCategoryId = isCategoryExist.SubCategoryId;
+                    addUpdateServiceEntity.MainCategoryId = isCategoryExist.MainCategoryId;
                 }
                 if (model.serviceId == 0)
                 {
-                    model.subCategoryId = model.subCategoryId == 0 ? null : model.subCategoryId;
                     await _context.AddAsync(addUpdateServiceEntity);
                     await _context.SaveChangesAsync();
 
@@ -1407,7 +1406,6 @@ namespace BeautyHubAPI.Controllers
                 }
                 else
                 {
-                    model.subCategoryId = model.subCategoryId == 0 ? null : model.subCategoryId;
                     _mapper.Map(model, serviceDetail);
                     _context.Update(serviceDetail);
                     await _context.SaveChangesAsync();
@@ -1582,10 +1580,11 @@ namespace BeautyHubAPI.Controllers
                                     .ToListAsync();
 
                 var availableDates = new List<string>();
-
+                var ctz = TZConvert.GetTimeZoneInfo("India Standard Time");
+                var convrtedZoneDate = TimeZoneInfo.ConvertTimeFromUtc(Convert.ToDateTime(DateTime.UtcNow), ctz);
                 foreach (var item in slotDetail)
                 {
-                    if (item.Date == DateTime.Now.Date)
+                    if (item.Date == convrtedZoneDate.Date)
                     {
                         // get scheduled days
                         var slotDetail1 = await _context.TimeSlot
@@ -1597,18 +1596,13 @@ namespace BeautyHubAPI.Controllers
                         var availableSlots = new List<timeSlotsDTO>();
                         foreach (var item1 in slotDetail1)
                         {
-                            // Assuming item.FromTime is a string representation of a time in "HH:mm" format
                             var fromTime = (Convert.ToDateTime(item1.FromTime).TimeOfDay);
 
-                            // Get the current time as a TimeSpan
-                            var currentTime = DateTime.Now.TimeOfDay;
+                            var currentTime = convrtedZoneDate.TimeOfDay;
+                            var timeDifference = (fromTime.TotalMinutes - currentTime.TotalMinutes);
 
-                            // Calculate the time difference between limitDate and fromTime
-                            var timeDifference = (fromTime - currentTime).Duration();
-
-                            // Check if the time difference is less than or equal to a certain number of minutes
-                            int minutesThreshold = 60; // Set your threshold here
-                            if (timeDifference.TotalMinutes! <= minutesThreshold)
+                            int minutesThreshold = 05; // Set your threshold here
+                            if (timeDifference >= minutesThreshold)
                             {
                                 availableSlots.Add(_mapper.Map<timeSlotsDTO>(item1));
                             }
@@ -1693,18 +1687,19 @@ namespace BeautyHubAPI.Controllers
                 var limitDate = DateTime.Now.AddHours(2);
                 var availableSlots = new List<timeSlotsDTO>();
 
+                var ctz = TZConvert.GetTimeZoneInfo("India Standard Time");
+                var convrtedZoneDate = TimeZoneInfo.ConvertTimeFromUtc(Convert.ToDateTime(DateTime.UtcNow), ctz);
+
                 foreach (var item in sortedSlots)
                 {
-                    if (searchDate.Date == DateTime.Now.Date)
+                    if (searchDate.Date == convrtedZoneDate.Date)
                     {
                         var fromTime = (Convert.ToDateTime(item.FromTime).TimeOfDay);
-                        var ctz = TZConvert.GetTimeZoneInfo("India Standard Time");
-                        var convrtedZoneDate = TimeZoneInfo.ConvertTimeFromUtc(Convert.ToDateTime(DateTime.UtcNow).AddMinutes(90), ctz);
                         var currentTime = convrtedZoneDate.TimeOfDay;
-                        var timeDifference = (fromTime - currentTime).Duration();
+                        var timeDifference = (fromTime.TotalMinutes - currentTime.TotalMinutes);
 
-                        int minutesThreshold = 60; // Set your threshold here
-                        if (timeDifference.TotalMinutes! <= minutesThreshold)
+                        int minutesThreshold = 05; // Set your threshold here
+                        if (timeDifference >= minutesThreshold)
                         {
                             availableSlots.Add(_mapper.Map<timeSlotsDTO>(item));
                         }

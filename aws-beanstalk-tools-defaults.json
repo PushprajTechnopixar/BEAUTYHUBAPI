@@ -8,13 +8,6 @@
     "environment"    : "BeautyHubAPI-test",
     "enable-xray"    : false,
     "enhanced-health-type" : "basic",
-    "additional-options"   : "\"aws:autoscaling:launchconfiguration,SecurityGroups\"=\"sg-0cfca77e81683e1b8\";\"aws:ec2:vpc,Subnets\"=\"subnet-0a903b7d21dbefea7\"",
-    "proxy-server"         : "nginx",
-    "solution-stack"       : "64bit Amazon Linux 2 v2.6.0 running .NET Core",
-    "environment-type"     : "SingleInstance",
-    "cname"                : "beautyhubapi-test",
-    "instance-type"        : "t3a.micro",
-    "key-pair"             : "test",
-    "instance-profile"     : "aws-elasticbeanstalk-ec2-role",
-    "service-role"         : "aws-elasticbeanstalk-service1-role"
+    "additional-options"   : "",
+    "proxy-server"         : "nginx"
 }

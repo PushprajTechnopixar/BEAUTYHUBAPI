@@ -289,21 +289,11 @@ namespace BeautyHubAPI.Data
 
                 entity.Property(e => e.ServiceName).HasMaxLength(1000);
 
-                entity.HasOne(d => d.MainCategory)
-                    .WithMany(p => p.SalonService)
-                    .HasForeignKey(d => d.MainCategoryId)
-                    .HasConstraintName("FK_SalonService_MainCategory");
-
                 entity.HasOne(d => d.Salon)
                     .WithMany(p => p.SalonService)
                     .HasForeignKey(d => d.SalonId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_SalonService_SalonDetail");
-
-                //entity.HasOne(d => d.Subcategory)
-                //    .WithMany(p => p.SalonService)
-                //    .HasForeignKey(d => d.SubcategoryId)
-                //    .HasConstraintName("FK_SalonService_SubCategory");
             });
 
             modelBuilder.Entity<SalonSchedule>(entity =>
@@ -718,12 +708,6 @@ namespace BeautyHubAPI.Data
                 entity.Property(e => e.ModifyDate)
                     .HasColumnType("datetime")
                     .HasDefaultValueSql("(getdate())");
-
-                entity.HasOne(d => d.MainCategory)
-                    .WithMany(p => p.SubCategory)
-                    .HasForeignKey(d => d.MainCategoryId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_SubCategory_MainCategory");
             });
 
             modelBuilder.Entity<Upidetail>(entity =>

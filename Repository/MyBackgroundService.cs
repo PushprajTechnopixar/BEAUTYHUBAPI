@@ -4,6 +4,7 @@ using BeautyHubAPI.Data;
 using BeautyHubAPI.Models;
 using static BeautyHubAPI.Common.GlobalVariables;
 using BeautyHubAPI.Models.Dtos;
+using TimeZoneConverter;
 
 public class MyBackgroundService : BackgroundService
 {
@@ -129,11 +130,13 @@ public class MyBackgroundService : BackgroundService
                 }
                 dbContext.UpdateRange(deleteTimeSlot);
                 await dbContext.SaveChangesAsync();
+                var ctz = TZConvert.GetTimeZoneInfo("India Standard Time");
+                var convrtedZoneDate = TimeZoneInfo.ConvertTimeFromUtc(Convert.ToDateTime(DateTime.UtcNow), ctz);
 
                 int addDay = 0;
                 for (int i = 0; i < 7; i++)
                 {
-                    DateTime currentDate = DateTime.Now.AddDays(i);
+                    DateTime currentDate = convrtedZoneDate.AddDays(i);
                     string currentDateStr = currentDate.ToString("yyyy-MM-dd");
                     string dayName = currentDate.ToString("dddd");
 

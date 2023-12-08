@@ -86,8 +86,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddSingleton<IMobileMessagingClient, MobileMessagingClient>();
 builder.Services.AddHostedService<MyBackgroundService>();
 builder.Services.AddScoped<MyBackgroundService>();
-// builder.Services.AddHostedService<EverydayMidnightService>();
-// builder.Services.AddScoped<EverydayMidnightService>();
+builder.Services.AddHostedService<EverydayMidnightService>();
+builder.Services.AddScoped<EverydayMidnightService>();
 
 
 //Inject EmailSettings
