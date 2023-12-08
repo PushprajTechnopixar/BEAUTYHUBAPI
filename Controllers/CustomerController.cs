@@ -274,32 +274,32 @@ namespace BeautyHubAPI.Controllers
                         {
                             salonDetail = await _context.SalonDetail.Where(u => (u.SalonId == item.SalonId) && (u.IsDeleted != true)).FirstOrDefaultAsync();
                         }
-                   
-                       if (salonDetail != null)
-                       {
-                           var vendorDetail = _userManager.FindByIdAsync(salonDetail.VendorId).GetAwaiter().GetResult();
-                           var mappedData = _mapper.Map<CustomerSalonListDTO>(salonDetail);
-                           mappedData.vendorName = vendorDetail.FirstName + " " + vendorDetail.LastName;
-                   
-                           double endLat = Convert.ToDouble(salonDetail.AddressLatitude != null ? salonDetail.AddressLatitude : "0");
-                           double endLong = Convert.ToDouble(salonDetail.AddressLongitude != null ? salonDetail.AddressLongitude : "0");
-                   
-                           var APIResponse = CommonMethod.GoogleDistanceMatrixAPILatLonAsync(startLat, startLong, endLat, endLong).GetAwaiter().GetResult();
-                           mappedData.distance = APIResponse.distance;
-                           mappedData.duration = APIResponse.duration;
-                           mappedData.isSalonAdded = false;
-                           mappedData.favoritesStatus = (_context.FavouriteSalon.Where(u => u.SalonId == mappedData.salonId && u.CustomerUserId == currentUserId)).FirstOrDefault() != null ? true : false;
-                   
-                           nearBysalonResponse.Add(mappedData);
-                       }
-                   }
+
+                        if (salonDetail != null)
+                        {
+                            var vendorDetail = _userManager.FindByIdAsync(salonDetail.VendorId).GetAwaiter().GetResult();
+                            var mappedData = _mapper.Map<CustomerSalonListDTO>(salonDetail);
+                            mappedData.vendorName = vendorDetail.FirstName + " " + vendorDetail.LastName;
+
+                            double endLat = Convert.ToDouble(salonDetail.AddressLatitude != null ? salonDetail.AddressLatitude : "0");
+                            double endLong = Convert.ToDouble(salonDetail.AddressLongitude != null ? salonDetail.AddressLongitude : "0");
+
+                            var APIResponse = CommonMethod.GoogleDistanceMatrixAPILatLonAsync(startLat, startLong, endLat, endLong).GetAwaiter().GetResult();
+                            mappedData.distance = APIResponse.distance;
+                            mappedData.duration = APIResponse.duration;
+                            mappedData.isSalonAdded = false;
+                            mappedData.favoritesStatus = (_context.FavouriteSalon.Where(u => u.SalonId == mappedData.salonId && u.CustomerUserId == currentUserId)).FirstOrDefault() != null ? true : false;
+
+                            nearBysalonResponse.Add(mappedData);
+                        }
+                    }
 
                     if (!string.IsNullOrEmpty(searchBy))
                     {
                         nearBysalonResponse = nearBysalonResponse.Where(x => (x.salonName?.IndexOf(searchBy, StringComparison.OrdinalIgnoreCase) >= 0)).ToList();
                         salonResponse = salonResponse.Where(x => (x.salonName?.IndexOf(searchBy, StringComparison.OrdinalIgnoreCase) >= 0)).ToList();
                     }
-              
+
 
                     var res = new AllCustomerSalonList();
                     res.customerSalonList = salonResponse.OrderBy(u => Convert.ToDecimal(u.distance != null ? (u.distance.IndexOf("km") != -1 ? u.distance.Replace(" km", "") : u.distance.Replace(" m", "")) : 0)).ToList();
@@ -1109,7 +1109,7 @@ namespace BeautyHubAPI.Controllers
                     _response.Messages = "Not found any record.";
                     return Ok(_response);
                 }
-           
+
                 var checkTimeSlot = await _context.TimeSlot.Where(u => (u.ServiceId == model.serviceId) && (u.SlotId == model.slotId) && (u.Status != false) && (u.SlotCount > 0)).FirstOrDefaultAsync();
                 if (checkTimeSlot == null)
                 {
@@ -1118,7 +1118,7 @@ namespace BeautyHubAPI.Controllers
                     _response.Messages = "Slot is not available.";
                     return Ok(_response);
                 }
-                
+
                 // Validation for Salon count
                 if (!(SalonIdList.Any(u => u.Value == checkServiceDetail.SalonId)))
                 {
@@ -1135,7 +1135,7 @@ namespace BeautyHubAPI.Controllers
                 Cart? cartDeatil;
                 CartServicesDTO? response;
                 string responseMessage;
-                
+
                 if (checkServiceDetail.TotalCountPerDuration != null)
                 {
                     var getCartCount = _context.Cart.Where(a => a.ServiceId == model.serviceId && a.CustomerUserId == currentUserId && a.SlotId == model.slotId && a.SalonId == checkServiceDetail.SalonId).Sum(a => a.ServiceCountInCart);
@@ -1570,6 +1570,8 @@ namespace BeautyHubAPI.Controllers
                             }
 
                             bookedService.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
+                            appointmentDetail.FinalPrice = (appointmentDetail.FinalPrice - bookedService.ListingPrice);
+
                             _context.Update(bookedService);
                             await _context.SaveChangesAsync();
                         }
@@ -1600,6 +1602,7 @@ namespace BeautyHubAPI.Controllers
                             _context.Update(timeSlot);
                             await _context.SaveChangesAsync();
 
+                            appointmentDetail.FinalPrice = appointmentDetail.FinalPrice - booked.ListingPrice;
                             booked.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
                             _context.Update(booked);
                             await _context.SaveChangesAsync();
@@ -1621,9 +1624,7 @@ namespace BeautyHubAPI.Controllers
                     _response.IsSuccess = false;
                     _response.Messages = "Appointment not found.";
                     return Ok(_response);
-
                 }
-
             }
             catch (Exception ex)
             {
@@ -1938,6 +1939,14 @@ namespace BeautyHubAPI.Controllers
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
                     _response.Messages = "User not found.";
+                    return Ok(_response);
+                }
+
+                if (string.IsNullOrEmpty(userDetail.FirstName))
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Name required to book appointment.";
                     return Ok(_response);
                 }
                 var customerAddress = await _context.CustomerAddress.Where(u => u.CustomerUserId == currentUserId && u.Status == true).FirstOrDefaultAsync();

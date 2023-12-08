@@ -271,31 +271,53 @@ public class EverydayMidnightService : BackgroundService
                     addDay++;
                 }
             }
-            var backDateTimeSlots = dbContext.TimeSlot
-                        .Where(t => t.SlotDate.Date < convrtedZoneDate.Date && t.Status != false);
-            foreach (var item in backDateTimeSlots)
-            {
-                item.Status = false;
-                var backDateBookedService = dbContext.BookedService
-                                        .Where(u => Convert.ToDateTime(u.AppointmentDate.Date) < convrtedZoneDate.Date && u.AppointmentStatus != "Completed" || u.AppointmentStatus != "Cancelled");
-                foreach (var item1 in backDateBookedService)
-                {
-                    item1.AppointmentStatus = "Cancelled";
-                    var backAppointmentService = dbContext.Appointment
-                                        .Where(u => u.AppointmentId == item1.AppointmentId && u.AppointmentStatus != "Completed" || u.AppointmentStatus != "Cancelled");
 
-                    foreach (var item2 in backDateBookedService)
+            var backDateTimeSlots = dbContext.TimeSlot
+                    .Where(t => t.SlotDate.Date < convrtedZoneDate.Date && t.Status != false)
+                    .ToList();
+
+            foreach (var timeSlot in backDateTimeSlots)
+            {
+                timeSlot.Status = false;
+
+                var backDateBookedService = dbContext.BookedService
+                    .Where(u => u.AppointmentDate.Date == timeSlot.SlotDate.Date &&
+                                (u.AppointmentStatus != "Completed" || u.AppointmentStatus != "Cancelled"))
+                    .ToList();
+
+                foreach (var bookedService in backDateBookedService)
+                {
+                    bookedService.AppointmentStatus = "Cancelled";
+
+                    var backAppointmentService = dbContext.Appointment
+                        .Where(u => u.AppointmentId == bookedService.AppointmentId &&
+                                    (u.AppointmentStatus != "Completed" || u.AppointmentStatus != "Cancelled"))
+                        .ToList(); // Materialize the result set
+
+                    foreach (var appointmentService in backAppointmentService)
                     {
-                        item1.AppointmentStatus = "Cancelled";
+                        appointmentService.AppointmentStatus = "Cancelled";
                     }
+
                     dbContext.UpdateRange(backAppointmentService);
                     await dbContext.SaveChangesAsync();
                 }
+
                 dbContext.UpdateRange(backDateBookedService);
                 await dbContext.SaveChangesAsync();
+
+                // Remove product from cart
+                var cartServices = dbContext.Cart
+                    .Where(u => u.SlotId == timeSlot.SlotId)
+                    .ToList();
+
+                dbContext.RemoveRange(cartServices);
+                await dbContext.SaveChangesAsync();
             }
+
             dbContext.UpdateRange(backDateTimeSlots);
             await dbContext.SaveChangesAsync();
+
         }
         _logger.LogInformation("Status updated.");
     }
