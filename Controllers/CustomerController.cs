@@ -1988,6 +1988,7 @@ namespace BeautyHubAPI.Controllers
                 appointmentDetail.FinalPrice = 1;
                 appointmentDetail.TotalDiscount = 1;
                 appointmentDetail.Discount = 1;
+                appointmentDetail.IsUpdated = true;
 
                 if (!string.IsNullOrEmpty(model.paymentMethod))
                 {
@@ -2062,6 +2063,7 @@ namespace BeautyHubAPI.Controllers
                     bookedService.SlotId = item.SlotId;
                     bookedService.ServiceCountInCart = item.ServiceCountInCart;
 
+
                     await _context.BookedService.AddAsync(bookedService);
                     await _context.SaveChangesAsync();
 
@@ -2078,6 +2080,7 @@ namespace BeautyHubAPI.Controllers
                 appointmentDetail.Discount = basePrice - finalPrice;
                 appointmentDetail.TotalServices = totalServices;
 
+                appointmentDetail.IsUpdated = true;
                 _context.Appointment.Update(appointmentDetail);
                 await _context.SaveChangesAsync();
 

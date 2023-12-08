@@ -33,6 +33,7 @@ namespace BeautyHubAPI.Models
         public string? CancelledBy { get; set; }
         public string? PaymentReceipt { get; set; }
         public string? PhoneNumber { get; set; }
+        public bool? IsUpdated { get; set; }
 
         public virtual ICollection<BookedService> BookedService { get; set; }
     }

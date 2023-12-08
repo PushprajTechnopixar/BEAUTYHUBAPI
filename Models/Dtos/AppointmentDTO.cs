@@ -17,6 +17,12 @@ namespace BeautyHubAPI.Models.Dtos
         public string appointmentStatus { get; set; }
         public bool setToAll { get; set; }
     }
+    public class SetReadStatusDTO
+    {
+        public int appointmentId { get; set; }
+        public string? appointmentStatus { get; set; }
+        public bool? isUpdated { get; set; }
+    }
     public class SetPaymentStatusDTO
     {
         public int appointmentId { get; set; }
