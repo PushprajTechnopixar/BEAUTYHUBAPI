@@ -51,6 +51,7 @@ namespace BeautyHubAPI.Models.Dtos
         public double? sgst { get; set; }
         public double? basePrice { get; set; }
         public double? finalPrice { get; set; }
+        public double? totalPrice { get; set; }
         public double? discount { get; set; }
         public double? totalDiscount { get; set; }
         public string createDate { get; set; }
@@ -78,6 +79,7 @@ namespace BeautyHubAPI.Models.Dtos
         public double? sgst { get; set; }
         public double? basePrice { get; set; }
         public double? finalPrice { get; set; }
+        public double? totalPrice { get; set; }
         public double? discount { get; set; }
         public double? totalDiscount { get; set; }
         public string createDate { get; set; }
@@ -102,7 +104,9 @@ namespace BeautyHubAPI.Models.Dtos
         public double? sgst { get; set; }
         public double? basePrice { get; set; }
         public double? finalPrice { get; set; }
+        public double? totalPrice { get; set; }
         public double? totalDiscount { get; set; }
+        public double? discount { get; set; }
         public int serviceCountInCart { get; set; }
         public List<BookedServicesDTO> AppointmentedServices { get; set; }
     }
@@ -117,8 +121,10 @@ namespace BeautyHubAPI.Models.Dtos
         public string? serviceImage { get; set; }
         public double? basePrice { get; set; }
         public double? listingPrice { get; set; }
-        public double? discount { get; set; }
         public double? finalPrice { get; set; }
+        public double? totalPrice { get; set; }
+        public double? totalDiscount { get; set; }
+        public double? discount { get; set; }
         public string? vendorId { get; set; }
         public int? salonId { get; set; }
         public string? vendorName { get; set; }
@@ -160,6 +166,7 @@ namespace BeautyHubAPI.Models.Dtos
         public string? appointmentStatus { get; set; }
         public string? paymentMethod { get; set; }
         public string? paymentStatus { get; set; }
+        public double? totalPrice { get; set; }
         public double? finalPrice { get; set; }
         // public double? ShippingCharges { get; set; }
         public string appointmentDate { get; set; }

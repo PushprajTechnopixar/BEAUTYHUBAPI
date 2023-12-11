@@ -24,6 +24,7 @@ namespace BeautyHubAPI.Models
         public double? Igst { get; set; }
         public double? Sgst { get; set; }
         public double? BasePrice { get; set; }
+        public double? TotalPrice { get; set; }
         public double? FinalPrice { get; set; }
         public double? Discount { get; set; }
         public double? TotalDiscount { get; set; }

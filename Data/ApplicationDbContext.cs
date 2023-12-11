@@ -776,4 +776,5 @@ namespace BeautyHubAPI.Data
         partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 
     }
+
 }

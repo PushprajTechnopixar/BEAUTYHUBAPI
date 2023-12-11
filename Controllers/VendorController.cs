@@ -1778,6 +1778,7 @@ namespace BeautyHubAPI.Controllers
                 var bookedServices = _mapper.Map<List<BookedServicesDTO>>(appointmentList);
                 response.basePrice = 0;
                 response.finalPrice = 0;
+                response.totalPrice = 0;
                 response.discount = 0;
                 response.totalDiscount = 0;
                 response.totalServices = 0;
@@ -1785,11 +1786,12 @@ namespace BeautyHubAPI.Controllers
                 {
                     response.basePrice = response.basePrice + item.basePrice;
                     response.finalPrice = response.finalPrice + item.finalPrice;
+                    response.totalPrice = response.totalPrice + item.totalPrice;
+                    response.discount = response.discount + item.discount;
                     response.totalServices = response.totalServices + 1;
                     item.appointmentDate = Convert.ToDateTime(item.appointmentDate).ToString(@"dd-MM-yyyy");
                 }
                 response.totalDiscount = response.basePrice - response.finalPrice;
-                response.discount = response.basePrice - response.finalPrice;
 
                 response.bookedServices = bookedServices;
 
@@ -1999,7 +2001,11 @@ namespace BeautyHubAPI.Controllers
 
                                 }
                                 bookedService.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
+                                bookedService.FinalPrice = bookedService.FinalPrice - bookedService.ListingPrice;
+                                bookedService.Discount = bookedService.Discount - bookedService.Discount;
+
                                 appointmentDetail.FinalPrice = appointmentDetail.FinalPrice - bookedService.ListingPrice;
+                                appointmentDetail.Discount = appointmentDetail.Discount - bookedService.Discount;
                                 _context.Update(bookedService);
                                 await _context.SaveChangesAsync();
 
@@ -2014,6 +2020,8 @@ namespace BeautyHubAPI.Controllers
                         }
                         else
                         {
+                            double? finalPrice = 0;
+                            double? discount = 0;
                             foreach (var booked in bookedServices)
                             {
                                 var timeSlot = await _context.TimeSlot.Where(u => u.SlotId == booked.SlotId).FirstOrDefaultAsync();
@@ -2026,11 +2034,20 @@ namespace BeautyHubAPI.Controllers
                                 await _context.SaveChangesAsync();
 
                                 booked.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
+                                booked.FinalPrice = booked.FinalPrice - booked.ListingPrice;
+                                booked.Discount = booked.Discount - booked.Discount;
+
+                                finalPrice = finalPrice + booked.FinalPrice;
+                                discount = discount + booked.Discount;
+
                                 _context.Update(booked);
                                 await _context.SaveChangesAsync();
                             }
 
                             appointmentDetail.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
+                            appointmentDetail.FinalPrice = finalPrice;
+                            appointmentDetail.Discount = discount;
+
                             _context.Update(appointmentDetail);
                             await _context.SaveChangesAsync();
                         }

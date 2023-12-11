@@ -181,6 +181,14 @@ namespace BeautyHubAPI.Controllers
                     return Ok(_response);
                 }
 
+                if (model.salonImage == null)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Please select a image.";
+                    return Ok(_response);
+                }
+
                 var SalonDetail = await _context.SalonDetail.Where(u => (u.SalonId == model.salonId)).FirstOrDefaultAsync();
 
                 if (SalonDetail == null)
