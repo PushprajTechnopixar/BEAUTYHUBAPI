@@ -1582,7 +1582,11 @@ namespace BeautyHubAPI.Controllers
                             await _context.SaveChangesAsync();
                         }
 
-                        var bookingServiceStatus = await _context.BookedService.Where(u => u.AppointmentId == model.appointmentId && u.AppointmentStatus == AppointmentStatus.Scheduled.ToString() || u.AppointmentStatus == AppointmentStatus.Completed.ToString()).ToListAsync();
+                        var bookingServiceStatus = await _context.BookedService
+                            .Where(u => u.AppointmentId == model.appointmentId &&
+                                        (u.AppointmentStatus == AppointmentStatus.Scheduled.ToString() || u.AppointmentStatus == AppointmentStatus.Completed.ToString()))
+                            .ToListAsync();
+
                         if (bookingServiceStatus.Count < 1)
                         {
                             appointmentDetail.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
@@ -1627,6 +1631,7 @@ namespace BeautyHubAPI.Controllers
                             _context.Update(booked);
                             await _context.SaveChangesAsync();
                         }
+
                         appointmentDetail.FinalPrice = finalPrice;
                         appointmentDetail.Discount = discount;
                         appointmentDetail.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
@@ -2350,6 +2355,11 @@ namespace BeautyHubAPI.Controllers
                         item.appointmentFromTime = bookedServices.FirstOrDefault().FromTime;
                         item.appointmentToTime = bookedServices.FirstOrDefault().ToTime;
                         item.appointmentDate = bookedServices.FirstOrDefault().AppointmentDate.ToString(@"dd-MM-yyyy");
+                        TimeSpan appointmentFromTime = Convert.ToDateTime(item.appointmentFromTime).TimeOfDay;
+                        string appointmentDate = item.appointmentDate;
+                        DateTime appointmentDateTime = DateTime.ParseExact(appointmentDate, "dd-MM-yyyy", CultureInfo.InvariantCulture);
+                        appointmentDateTime = appointmentDateTime.Add(appointmentFromTime);
+                        item.appointmentDateTime = appointmentDateTime;
                         var favoritesStatus = await _context.FavouriteService.Where(u => u.ServiceId == bookedServices.FirstOrDefault().ServiceId && u.CustomerUserId == currentUserId).FirstOrDefaultAsync();
                         item.favoritesStatus = favoritesStatus != null ? true : false;
                     }
@@ -2381,6 +2391,10 @@ namespace BeautyHubAPI.Controllers
                     }
 
                 }
+                response = response
+                    .OrderByDescending(u => u.appointmentStatus == "Scheduled")
+                    .ThenByDescending(u => u.appointmentDateTime)
+                    .ToList();
                 // Get's No of Rows Count   
                 int count = response.Count();
 
@@ -2494,7 +2508,7 @@ namespace BeautyHubAPI.Controllers
                     bookedServicePerShop.totalPrice = 0;
                     bookedServicePerShop.discount = 0;
 
-                    var serviceDetail = await _context.BookedService.Where(u => u.SalonId == item.SalonId && u.AppointmentId == item.AppointmentId).ToListAsync();
+                    var serviceDetail = await _context.BookedService.Where(u => u.SalonId == item.SalonId && u.AppointmentId == item.AppointmentId).OrderByDescending(u => u.AppointmentDate).ToListAsync();
 
                     var serviceList = new List<BookedServicesDTO>();
                     foreach (var item1 in serviceDetail)

@@ -186,6 +186,7 @@ namespace BeautyHubAPI.Models.Dtos
         public int scheduleCount { get; set; }
         public int cancelledCount { get; set; }
         public int completedCount { get; set; }
+        public DateTime appointmentDateTime { get; set; }
     }
 
 }
