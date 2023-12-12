@@ -1649,6 +1649,7 @@ namespace BeautyHubAPI.Controllers
                     mappedData.appointmentStatus = appointmentStatus;
                     mappedData.appointmentDate = bookedServices.FirstOrDefault()?.AppointmentDate.ToString(@"dd-MM-yyyy");
                     mappedData.createDate = appointmentDetail.CreateDate.ToString(@"dd-MM-yyyy");
+                    mappedData.cancelledPrice = mappedData.totalPrice - mappedData.finalPrice;
                     orderList.Add(mappedData);
                 }
 
@@ -1788,11 +1789,12 @@ namespace BeautyHubAPI.Controllers
                     response.finalPrice = response.finalPrice + item.finalPrice;
                     response.totalPrice = response.totalPrice + item.totalPrice;
                     response.discount = response.discount + item.discount;
+                    response.totalDiscount = response.totalDiscount + item.totalDiscount;
+                    response.cancelledPrice = response.totalDiscount + item.totalDiscount;
                     response.totalServices = response.totalServices + 1;
+                    item.cancelledPrice = item.totalPrice - item.finalPrice;
                     item.appointmentDate = Convert.ToDateTime(item.appointmentDate).ToString(@"dd-MM-yyyy");
                 }
-                response.totalDiscount = response.basePrice - response.finalPrice;
-
                 response.bookedServices = bookedServices;
 
                 _response.StatusCode = HttpStatusCode.OK;
@@ -2007,6 +2009,7 @@ namespace BeautyHubAPI.Controllers
 
                                 appointmentDetail.FinalPrice = appointmentDetail.FinalPrice - bookedService.ListingPrice;
                                 appointmentDetail.Discount = appointmentDetail.Discount - bookedService.Discount;
+
                                 _context.Update(bookedService);
                                 await _context.SaveChangesAsync();
 
@@ -2014,6 +2017,11 @@ namespace BeautyHubAPI.Controllers
                                 if (bookingServiceStatus.Count() < 1)
                                 {
                                     appointmentDetail.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
+                                    _context.Update(appointmentDetail);
+                                    await _context.SaveChangesAsync();
+                                }
+                                else
+                                {
                                     _context.Update(appointmentDetail);
                                     await _context.SaveChangesAsync();
                                 }

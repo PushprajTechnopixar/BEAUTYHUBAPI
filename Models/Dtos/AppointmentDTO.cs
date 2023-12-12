@@ -51,6 +51,7 @@ namespace BeautyHubAPI.Models.Dtos
         public double? sgst { get; set; }
         public double? basePrice { get; set; }
         public double? finalPrice { get; set; }
+        public double? cancelledPrice { get; set; }
         public double? totalPrice { get; set; }
         public double? discount { get; set; }
         public double? totalDiscount { get; set; }
@@ -82,6 +83,7 @@ namespace BeautyHubAPI.Models.Dtos
         public double? totalPrice { get; set; }
         public double? discount { get; set; }
         public double? totalDiscount { get; set; }
+        public double? cancelledPrice { get; set; }
         public string createDate { get; set; }
         public int? totalServices { get; set; }
         public string? customerAddress { get; set; }
@@ -106,6 +108,7 @@ namespace BeautyHubAPI.Models.Dtos
         public double? finalPrice { get; set; }
         public double? totalPrice { get; set; }
         public double? totalDiscount { get; set; }
+        public double? cancelledPrice { get; set; }
         public double? discount { get; set; }
         public int serviceCountInCart { get; set; }
         public List<BookedServicesDTO> AppointmentedServices { get; set; }
@@ -124,6 +127,7 @@ namespace BeautyHubAPI.Models.Dtos
         public double? finalPrice { get; set; }
         public double? totalPrice { get; set; }
         public double? totalDiscount { get; set; }
+        public double? cancelledPrice { get; set; }
         public double? discount { get; set; }
         public string? vendorId { get; set; }
         public int? salonId { get; set; }
@@ -151,6 +155,8 @@ namespace BeautyHubAPI.Models.Dtos
         public string? paymentMethod { get; set; }
         public string? paymentStatus { get; set; }
         public double? finalPrice { get; set; }
+        public double? totalPrice { get; set; }
+        public double? cancelledPrice { get; set; }
         public string appointmentDate { get; set; }
         public string createDate { get; set; }
         public string? paymentReceipt { get; set; }
@@ -168,6 +174,7 @@ namespace BeautyHubAPI.Models.Dtos
         public string? paymentStatus { get; set; }
         public double? totalPrice { get; set; }
         public double? finalPrice { get; set; }
+        public double? cancelledPrice { get; set; }
         // public double? ShippingCharges { get; set; }
         public string appointmentDate { get; set; }
         public string appointmentFromTime { get; set; }
