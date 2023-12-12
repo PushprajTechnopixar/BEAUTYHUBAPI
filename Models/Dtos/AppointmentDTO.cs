@@ -161,6 +161,7 @@ namespace BeautyHubAPI.Models.Dtos
         public string createDate { get; set; }
         public string? paymentReceipt { get; set; }
         public string? totalServices { get; set; }
+        public bool? IsUpdated { get; set; }
     }
     public class CustomerAppointmentedListDTO
     {
