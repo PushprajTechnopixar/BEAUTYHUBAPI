@@ -1687,7 +1687,7 @@ namespace BeautyHubAPI.Controllers
 
                 foreach (var item in orderList.Where(x => x.appointmentStatus == "Cancelled"))
                 {
-                    item.finalPrice = item.cancelledPrice - item.totalDiscount;
+                    item.finalPrice = item.totalPrice;
                 }
                 // Get's No of Rows Count   
                 int count = orderList.Count();
