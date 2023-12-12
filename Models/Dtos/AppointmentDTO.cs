@@ -140,7 +140,7 @@ namespace BeautyHubAPI.Models.Dtos
         public bool favoritesStatus { get; set; }
         public string? AppointmentStatus { get; set; }
         public string createDate { get; set; }
-        // public string slotDate { get; set; }
+        public DateTime appointmentDateTime { get; set; }
         public int serviceCountInCart { get; set; }
 
     }
@@ -157,6 +157,7 @@ namespace BeautyHubAPI.Models.Dtos
         public double? finalPrice { get; set; }
         public double? totalPrice { get; set; }
         public double? cancelledPrice { get; set; }
+        public double? totalDiscount { get; set; }
         public string appointmentDate { get; set; }
         public string createDate { get; set; }
         public string? paymentReceipt { get; set; }
@@ -176,7 +177,7 @@ namespace BeautyHubAPI.Models.Dtos
         public double? totalPrice { get; set; }
         public double? finalPrice { get; set; }
         public double? cancelledPrice { get; set; }
-        // public double? ShippingCharges { get; set; }
+        public double? totalDiscount { get; set; }
         public string appointmentDate { get; set; }
         public string appointmentFromTime { get; set; }
         public string appointmentToTime { get; set; }

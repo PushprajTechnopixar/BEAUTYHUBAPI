@@ -16,6 +16,7 @@ namespace BeautyHubAPI.Models
         public double? Discount { get; set; }
         public double? TotalDiscount { get; set; }
         public double? FinalPrice { get; set; }
+        public double? CancelledPrice { get; set; }
         public double? TotalPrice { get; set; }
         public string? VendorId { get; set; }
         public int? SalonId { get; set; }

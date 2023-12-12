@@ -1649,7 +1649,6 @@ namespace BeautyHubAPI.Controllers
                     mappedData.appointmentStatus = appointmentStatus;
                     mappedData.appointmentDate = bookedServices.FirstOrDefault()?.AppointmentDate.ToString(@"dd-MM-yyyy");
                     mappedData.createDate = appointmentDetail.CreateDate.ToString(@"dd-MM-yyyy");
-                    mappedData.cancelledPrice = mappedData.totalPrice - mappedData.finalPrice;
                     orderList.Add(mappedData);
                 }
 
@@ -1684,6 +1683,11 @@ namespace BeautyHubAPI.Controllers
                     {
                         orderList = orderList.Where(x => (CommonMethod.ddMMyyyToDateTime(x.createDate).Date >= fromDate.Date) && (CommonMethod.ddMMyyyToDateTime(x.createDate).Date <= toDate.Date)).OrderByDescending(x => CommonMethod.ddMMyyyToDateTime(x.createDate)).ToList();
                     }
+                }
+
+                foreach (var item in orderList.Where(x => x.appointmentStatus == "Cancelled"))
+                {
+                    item.finalPrice = item.cancelledPrice - item.totalDiscount;
                 }
                 // Get's No of Rows Count   
                 int count = orderList.Count();
@@ -1786,13 +1790,25 @@ namespace BeautyHubAPI.Controllers
                 foreach (var item in bookedServices)
                 {
                     response.basePrice = response.basePrice + item.basePrice;
-                    response.finalPrice = response.finalPrice + item.finalPrice;
-                    response.totalPrice = response.totalPrice + item.totalPrice;
-                    response.discount = response.discount + item.discount;
-                    response.totalDiscount = response.totalDiscount + item.totalDiscount;
-                    response.cancelledPrice = response.totalDiscount + item.totalDiscount;
+                    if (response.appointmentStatus != "Cancelled")
+                    {
+                        response.finalPrice = response.finalPrice + item.finalPrice;
+                        response.totalPrice = response.totalPrice + item.totalPrice;
+                        response.discount = response.discount + item.discount;
+                        response.totalDiscount = response.totalDiscount + item.totalDiscount;
+                    }
+                    else
+                    {
+                        response.finalPrice = response.finalPrice + item.listingPrice;
+                        response.cancelledPrice = 0;
+                        response.totalPrice = response.totalPrice + item.totalPrice;
+                        response.discount = response.discount + item.totalDiscount;
+                        item.discount = item.totalDiscount;
+                        item.finalPrice = item.totalPrice;
+                        item.cancelledPrice = 0;
+                    }
                     response.totalServices = response.totalServices + 1;
-                    item.cancelledPrice = item.totalPrice - item.finalPrice;
+
                     item.appointmentDate = Convert.ToDateTime(item.appointmentDate).ToString(@"dd-MM-yyyy");
                 }
                 response.bookedServices = bookedServices;
@@ -2003,13 +2019,15 @@ namespace BeautyHubAPI.Controllers
                                     }
 
                                 }
-                                bookedService.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
-                                bookedService.FinalPrice = bookedService.FinalPrice - bookedService.ListingPrice;
-                                bookedService.Discount = bookedService.Discount - bookedService.Discount;
-
                                 appointmentDetail.FinalPrice = appointmentDetail.FinalPrice - bookedService.ListingPrice;
                                 appointmentDetail.Discount = appointmentDetail.Discount - bookedService.Discount;
 
+                                bookedService.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
+                                bookedService.FinalPrice = bookedService.FinalPrice - bookedService.ListingPrice;
+                                bookedService.CancelledPrice = bookedService.ListingPrice + bookedService.Discount;
+                                bookedService.Discount = bookedService.Discount - bookedService.Discount;
+
+                                appointmentDetail.CancelledPrice = appointmentDetail.CancelledPrice + bookedService.CancelledPrice;
                                 _context.Update(bookedService);
                                 await _context.SaveChangesAsync();
 
@@ -2031,6 +2049,7 @@ namespace BeautyHubAPI.Controllers
                         {
                             double? finalPrice = 0;
                             double? discount = 0;
+                            double? cancelledPrice = 0;
                             foreach (var booked in bookedServices)
                             {
                                 var timeSlot = await _context.TimeSlot.Where(u => u.SlotId == booked.SlotId).FirstOrDefaultAsync();
@@ -2042,20 +2061,22 @@ namespace BeautyHubAPI.Controllers
                                 _context.Update(timeSlot);
                                 await _context.SaveChangesAsync();
 
+                                finalPrice = finalPrice + booked.ListingPrice;
+                                discount = discount + booked.Discount;
+                                cancelledPrice = booked.ListingPrice + booked.Discount;
                                 booked.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
                                 booked.FinalPrice = booked.FinalPrice - booked.ListingPrice;
+                                booked.CancelledPrice = booked.ListingPrice + booked.Discount;
                                 booked.Discount = booked.Discount - booked.Discount;
-
-                                finalPrice = finalPrice + booked.FinalPrice;
-                                discount = discount + booked.Discount;
 
                                 _context.Update(booked);
                                 await _context.SaveChangesAsync();
                             }
 
                             appointmentDetail.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
-                            appointmentDetail.FinalPrice = finalPrice;
-                            appointmentDetail.Discount = discount;
+                            appointmentDetail.FinalPrice = appointmentDetail.FinalPrice - finalPrice;
+                            appointmentDetail.Discount = appointmentDetail.Discount - discount;
+                            appointmentDetail.CancelledPrice = appointmentDetail.CancelledPrice + cancelledPrice;
 
                             _context.Update(appointmentDetail);
                             await _context.SaveChangesAsync();

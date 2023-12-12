@@ -1508,7 +1508,7 @@ namespace BeautyHubAPI.Controllers
                                     }
                                     else
                                     {
-                                        existingTimeSlotDetails.Status = false;
+                                        existingTimeSlotDetails.Status = true;
                                         _context.Update(existingTimeSlotDetails);
                                         await _context.SaveChangesAsync();
                                     }
