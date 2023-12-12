@@ -1967,6 +1967,13 @@ namespace BeautyHubAPI.Controllers
                     _response.Messages = "User not found.";
                     return Ok(_response);
                 }
+                if (model.paymentMethod != PaymentMethod.InCash.ToString())
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Payment Status Unpaid";
+                    return Ok(_response);
+                }
 
                 if (string.IsNullOrEmpty(userDetail.FirstName))
                 {
