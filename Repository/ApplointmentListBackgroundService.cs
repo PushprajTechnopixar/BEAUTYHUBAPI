@@ -86,7 +86,7 @@ public class ApplointmentListBackgroundService : BackgroundService
         foreach (var item in appointmentList)
         {
             var bookedServices = await _context.BookedService.Where(u => u.AppointmentId == item.AppointmentId && u.AppointmentStatus == "Scheduled").OrderByDescending(u => u.AppointmentDate).ToListAsync();
-
+            DateTime BookedDateTime = new DateTime();
             int serviceId = 0;
             int timeValue = 0;
             foreach (var item2 in bookedServices)
@@ -96,6 +96,7 @@ public class ApplointmentListBackgroundService : BackgroundService
                 string appointmentDate = item2.AppointmentDate.ToString("dd-MM-yyyy");
                 DateTime appointmentDateTime = DateTime.ParseExact(appointmentDate, "dd-MM-yyyy", CultureInfo.InvariantCulture);
                 appointmentDateTime = appointmentDateTime.Add(appointmentFromTime);
+                BookedDateTime = appointmentDateTime;
                 TimeSpan timeSpan = convrtedZoneDate - appointmentDateTime;
                 int difference = Convert.ToInt32(timeSpan.TotalMinutes);
                 if (difference > 5)
@@ -103,30 +104,33 @@ public class ApplointmentListBackgroundService : BackgroundService
                     item2.AppointmentStatus = "Cancelled";
                 }
             }
-            _context.UpdateRange(bookedServices);
-            _context.SaveChanges();
-            var checBookedServices = await _context.BookedService.Where(u => u.AppointmentId == item.AppointmentId && u.AppointmentStatus == "Completed").FirstOrDefaultAsync();
-            if (checBookedServices == null)
+            if (BookedDateTime.Date > convrtedZoneDate.Date)
             {
-                foreach (var item3 in bookedServices)
-                {
-                    item3.FinalPrice = 0;
-                    item3.Discount = 0;
-                    item3.AppointmentStatus = "Cancelled";
-                    item3.CancelledPrice = item3.TotalPrice;
-                }
                 _context.UpdateRange(bookedServices);
                 _context.SaveChanges();
-
+                var checBookedServices = await _context.BookedService.Where(u => u.AppointmentId == item.AppointmentId && u.AppointmentStatus == "Completed").FirstOrDefaultAsync();
+                if (checBookedServices == null)
                 {
-                    item.FinalPrice = 0;
-                    item.Discount = 0;
-                    item.AppointmentStatus = "Cancelled";
-                    item.CancelledPrice = item.TotalPrice;
-                }
+                    foreach (var item3 in bookedServices)
+                    {
+                        item3.FinalPrice = 0;
+                        item3.Discount = 0;
+                        item3.AppointmentStatus = "Cancelled";
+                        item3.CancelledPrice = item3.TotalPrice;
+                    }
+                    _context.UpdateRange(bookedServices);
+                    _context.SaveChanges();
 
-                _context.Update(item);
-                _context.SaveChangesAsync();
+                    {
+                        item.FinalPrice = 0;
+                        item.Discount = 0;
+                        item.AppointmentStatus = "Cancelled";
+                        item.CancelledPrice = item.TotalPrice;
+                    }
+
+                    _context.Update(item);
+                    _context.SaveChangesAsync();
+                }
             }
         }
 
