@@ -151,13 +151,13 @@ public class EverydayMidnightService : BackgroundService
             }
 
             var ctz = TZConvert.GetTimeZoneInfo("India Standard Time");
-            var convrtedZoneDate = TimeZoneInfo.ConvertTimeFromUtc(Convert.ToDateTime(DateTime.UtcNow), ctz);
+            var convrtedZoneDate = TimeZoneInfo.ConvertTimeFromUtc(Convert.ToDateTime(DateTime.UtcNow), ctz).AddHours(1);
 
             // update timeslots according to schedule
-            var services = await dbContext.SalonService.Where(u => u.SalonId == SalonScheduleDays.SalonId).ToListAsync();
+            var services = await dbContext.SalonService.Where(u => u.SalonId == SalonScheduleDays.SalonId && u.IsDeleted != true).ToListAsync();
             foreach (var item in services)
             {
-                var deleteTimeSlot = await dbContext.TimeSlot.Where(u => u.ServiceId == item.ServiceId).ToListAsync();
+                var deleteTimeSlot = await dbContext.TimeSlot.Where(u => u.ServiceId == item.ServiceId && u.Status != false).ToListAsync();
 
                 foreach (var item3 in deleteTimeSlot)
                 {
@@ -272,53 +272,75 @@ public class EverydayMidnightService : BackgroundService
                 }
             }
 
-            var backDateTimeSlots = dbContext.TimeSlot
-                    .Where(t => t.SlotDate.Date < convrtedZoneDate.Date && t.Status != false)
-                    .ToList();
+            var backDateTimeSlots = dbContext.BookedService
+                                 .Where(u => u.AppointmentDate.Date < convrtedZoneDate.Date &&
+                                             (u.AppointmentStatus != "Completed" || u.AppointmentStatus != "Cancelled"))
+                                 .ToList();
+            // var backDateTimeSlots = dbContext.TimeSlot
+            //         .Where(t => t.SlotDate.Date <= convrtedZoneDate.Date && t.SlotDate.Date > convrtedZoneDate.Date.AddDays(-1) && t.Status != false)
+            //         .ToList().ToList();
 
             foreach (var timeSlot in backDateTimeSlots)
             {
-                timeSlot.Status = false;
+                var timeSlotDetail = dbContext.TimeSlot.Where(u => u.SlotId == timeSlot.SlotId).FirstOrDefault();
+
+                timeSlotDetail.Status = false;
+
+                dbContext.UpdateRange(timeSlotDetail);
+                await dbContext.SaveChangesAsync();
 
                 var backDateBookedService = dbContext.BookedService
-                    .Where(u => u.AppointmentDate.Date == timeSlot.SlotDate.Date &&
-                                (u.AppointmentStatus != "Completed" || u.AppointmentStatus != "Cancelled"))
-                    .ToList();
+                    .Where(u => u.SlotId == timeSlot.SlotId &&
+                                (u.AppointmentStatus == "Scheduled"))
+                    .FirstOrDefault();
 
-                foreach (var bookedService in backDateBookedService)
+                if (backDateBookedService != null)
                 {
-                    bookedService.AppointmentStatus = "Cancelled";
+                    backDateBookedService.AppointmentStatus = "Cancelled";
+                    backDateBookedService.CancelledPrice = backDateBookedService.TotalPrice;
+                    backDateBookedService.FinalPrice = 0;
+                    backDateBookedService.Discount = 0;
 
-                    var backAppointmentService = dbContext.Appointment
-                        .Where(u => u.AppointmentId == bookedService.AppointmentId &&
-                                    (u.AppointmentStatus != "Completed" || u.AppointmentStatus != "Cancelled"))
-                        .ToList(); // Materialize the result set
-
-                    foreach (var appointmentService in backAppointmentService)
+                    dbContext.Update(backDateBookedService);
+                    await dbContext.SaveChangesAsync();
+                    var checkScheduledAppointment = dbContext.BookedService
+                                        .Where(u => u.AppointmentId == timeSlot.AppointmentId &&
+                                                    (u.AppointmentStatus == "Scheduled"))
+                                        .FirstOrDefault();
+                    if (checkScheduledAppointment == null)
                     {
-                        appointmentService.AppointmentStatus = "Cancelled";
-                    }
+                        var backAppointmentService = dbContext.Appointment
+                            .Where(u => u.AppointmentId == backDateBookedService.AppointmentId &&
+                                        (u.AppointmentStatus == "Scheduled"))
+                            .FirstOrDefault();
 
-                    dbContext.UpdateRange(backAppointmentService);
+                        if (backAppointmentService != null)
+                        {
+                            {
+                                backAppointmentService.FinalPrice = 0;
+                                backAppointmentService.Discount = 0;
+                                backAppointmentService.AppointmentStatus = "Cancelled";
+                                backAppointmentService.CancelledPrice = backAppointmentService.TotalPrice;
+                            }
+
+                            dbContext.Update(backAppointmentService);
+                            await dbContext.SaveChangesAsync();
+                        }
+                    }
+                }
+            }
+            // Remove product from cart
+            var cartServices = dbContext.Cart.ToList();
+            foreach (var item in cartServices)
+            {
+                var timeSlotDate = dbContext.TimeSlot.Where(u => u.SlotId == item.SlotId).FirstOrDefault();
+                if (timeSlotDate.SlotDate.Date < convrtedZoneDate.Date)
+                {
+                    dbContext.RemoveRange(cartServices);
                     await dbContext.SaveChangesAsync();
                 }
-
-                dbContext.UpdateRange(backDateBookedService);
-                await dbContext.SaveChangesAsync();
-
-                // Remove product from cart
-                var cartServices = dbContext.Cart
-                    .Where(u => u.SlotId == timeSlot.SlotId)
-                    .ToList();
-
-                dbContext.RemoveRange(cartServices);
-                await dbContext.SaveChangesAsync();
             }
-
-            dbContext.UpdateRange(backDateTimeSlots);
-            await dbContext.SaveChangesAsync();
-
+            _logger.LogInformation("Status updated.");
         }
-        _logger.LogInformation("Status updated.");
     }
 }

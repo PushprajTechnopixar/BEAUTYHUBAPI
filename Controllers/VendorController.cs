@@ -1685,7 +1685,7 @@ namespace BeautyHubAPI.Controllers
                     }
                 }
 
-                foreach (var item in orderList.Where(x => x.appointmentStatus == "Cancelled"))
+                foreach (var item in orderList.Where(x => x.appointmentStatus == "Cancelled" && x.cancelledPrice == x.basePrice))
                 {
                     item.finalPrice = item.totalPrice;
                 }
@@ -1790,14 +1790,7 @@ namespace BeautyHubAPI.Controllers
                 foreach (var item in bookedServices)
                 {
                     response.basePrice = response.basePrice + item.basePrice;
-                    if (response.appointmentStatus != "Cancelled")
-                    {
-                        response.finalPrice = response.finalPrice + item.finalPrice;
-                        response.totalPrice = response.totalPrice + item.totalPrice;
-                        response.discount = response.discount + item.discount;
-                        response.totalDiscount = response.totalDiscount + item.totalDiscount;
-                    }
-                    else
+                    if (response.appointmentStatus == "Cancelled" && item.cancelledPrice == item.basePrice)
                     {
                         response.finalPrice = response.finalPrice + item.listingPrice;
                         response.cancelledPrice = 0;
@@ -1806,6 +1799,13 @@ namespace BeautyHubAPI.Controllers
                         item.discount = item.totalDiscount;
                         item.finalPrice = item.totalPrice;
                         item.cancelledPrice = 0;
+                    }
+                    else
+                    {
+                        response.finalPrice = response.finalPrice + item.finalPrice;
+                        response.totalPrice = response.totalPrice + item.totalPrice;
+                        response.discount = response.discount + item.discount;
+                        response.totalDiscount = response.totalDiscount + item.totalDiscount;
                     }
                     response.totalServices = response.totalServices + 1;
 

@@ -155,6 +155,7 @@ namespace BeautyHubAPI.Models.Dtos
         public string? paymentMethod { get; set; }
         public string? paymentStatus { get; set; }
         public double? finalPrice { get; set; }
+        public double? basePrice { get; set; }
         public double? totalPrice { get; set; }
         public double? cancelledPrice { get; set; }
         public double? totalDiscount { get; set; }
@@ -176,6 +177,7 @@ namespace BeautyHubAPI.Models.Dtos
         public string? paymentStatus { get; set; }
         public double? totalPrice { get; set; }
         public double? finalPrice { get; set; }
+        public double? basePrice { get; set; }
         public double? cancelledPrice { get; set; }
         public double? totalDiscount { get; set; }
         public string appointmentDate { get; set; }

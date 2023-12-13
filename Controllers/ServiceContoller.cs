@@ -49,6 +49,7 @@ namespace BeautyHubAPI.Controllers
         private readonly IMembershipRecordRepository _membershipRecordRepository;
         private readonly IWebHostEnvironment _hostingEnvironment;
         private readonly MyBackgroundService _backgroundService;
+        private readonly ApplointmentListBackgroundService _applointmentListBackgroundService;
 
         public ServiceController(IMapper mapper,
         IUploadRepository uploadRepository,
@@ -57,7 +58,8 @@ namespace BeautyHubAPI.Controllers
         IMembershipRecordRepository membershipRecordRepository,
 
         IWebHostEnvironment hostingEnvironment,
-        MyBackgroundService backgroundService
+        MyBackgroundService backgroundService,
+        ApplointmentListBackgroundService applointmentListBackgroundService
         )
         {
             _mapper = mapper;
@@ -68,6 +70,7 @@ namespace BeautyHubAPI.Controllers
             _membershipRecordRepository = membershipRecordRepository;
             httpClient = new HttpClient();
             _backgroundService = backgroundService;
+            _applointmentListBackgroundService = applointmentListBackgroundService;
         }
 
         #region addUpdateSalonSchedule
@@ -871,6 +874,8 @@ namespace BeautyHubAPI.Controllers
             obj.nextPage = nextPage;
             obj.searchQuery = string.IsNullOrEmpty(model.searchQuery) ? "no parameter passed" : model.searchQuery;
             obj.dataList = items.ToList();
+
+            _applointmentListBackgroundService.StartService();
 
             if (obj == null)
             {

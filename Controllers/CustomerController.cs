@@ -2454,7 +2454,7 @@ namespace BeautyHubAPI.Controllers
                     .ThenByDescending(u => u.appointmentDateTime)
                     .ToList();
 
-                foreach (var item in response.Where(x => x.appointmentStatus == "Cancelled"))
+                foreach (var item in response.Where(x => x.appointmentStatus == "Cancelled" && x.cancelledPrice == x.basePrice))
                 {
                     item.finalPrice = item.totalPrice;
                 }
@@ -2619,7 +2619,7 @@ namespace BeautyHubAPI.Controllers
                         service.createDate = item1.CreateDate.ToString(@"dd-MM-yyyy");
                         bookedServicePerShop.salonName = salonDetails.SalonName;
                         bookedServicePerShop.basePrice = bookedServicePerShop.basePrice + service.basePrice;
-                        if (orderDetail.AppointmentStatus == "Cancelled")
+                        if (orderDetail.AppointmentStatus == "Cancelled" && orderDetail.CancelledPrice == orderDetail.BasePrice)
                         {
                             bookedServicePerShop.finalPrice = bookedServicePerShop.finalPrice + service.listingPrice;
                             bookedServicePerShop.cancelledPrice = 0;
