@@ -60,7 +60,7 @@ public class EverydayMidnightService : BackgroundService
         var now = DateTimeOffset.UtcNow;
         var ctz = TZConvert.GetTimeZoneInfo("India Standard Time");
         var convrtedZoneDate = TimeZoneInfo.ConvertTimeFromUtc(now.DateTime, ctz);
-        var nextRunTime = now.Date.AddDays(1).AddHours(0); // 12:00 AM
+        var nextRunTime = now.Date.AddDays(1).AddHours(1); // 12:00 AM
 
         // Calculate the delay until the next run
         var delay = nextRunTime - now;
@@ -78,7 +78,7 @@ public class EverydayMidnightService : BackgroundService
             using (var scope = _serviceProvider.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
+                //todo
                 await UpdateSchedule(dbContext);
             }
             // Delay for a certain duration before checking the flag again
@@ -119,6 +119,10 @@ public class EverydayMidnightService : BackgroundService
         var salonScheduleList = await dbContext.SalonSchedule.Where(u => u.IsDeleted != true).ToListAsync();
         foreach (var SalonScheduleDays in salonScheduleList)
         {
+            SalonScheduleDays.UpdateStatus = false;
+            dbContext.Update(SalonScheduleDays);
+            await dbContext.SaveChangesAsync();
+
             SalonScheduleDays.Status = true;
             var scheduledDaysList = new List<string>();
             if (SalonScheduleDays.Monday == true)
@@ -340,6 +344,10 @@ public class EverydayMidnightService : BackgroundService
                     await dbContext.SaveChangesAsync();
                 }
             }
+            SalonScheduleDays.UpdateStatus = true;
+            dbContext.Update(SalonScheduleDays);
+            await dbContext.SaveChangesAsync();
+
             _logger.LogInformation("Status updated.");
         }
     }

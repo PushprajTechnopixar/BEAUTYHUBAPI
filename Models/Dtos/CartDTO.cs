@@ -61,9 +61,12 @@ namespace BeautyHubAPI.Models.Dtos
         public string slotDate { get; set; }
         public string fromTime { get; set; }
         public string toTime { get; set; }
+        public string? serviceType { get; set; }
         public string? statusDisplay { get; set; }
         public bool favoritesStatus { get; set; }
         public bool slotStatus { get; set; }
+        public int? isSlotAvailable { get; set; }
+
     }
 
 }

@@ -1131,59 +1131,62 @@ namespace BeautyHubAPI.Controllers
                     }
                 }
 
-
                 Cart? cartDeatil;
                 CartServicesDTO? response;
                 string responseMessage;
 
-                if (checkServiceDetail.TotalCountPerDuration != null)
+                var getCartDetail = await _context.Cart.Where(u => (u.ServiceId == model.serviceId) && (u.SlotId == model.slotId) && (u.CustomerUserId == currentUserId)).FirstOrDefaultAsync();
+                if (getCartDetail != null)
                 {
-                    var getCartCount = _context.Cart.Where(a => a.ServiceId == model.serviceId && a.CustomerUserId == currentUserId && a.SlotId == model.slotId && a.SalonId == checkServiceDetail.SalonId).Sum(a => a.ServiceCountInCart);
-                    if (getCartCount <= checkServiceDetail.TotalCountPerDuration)
+                    getCartDetail.ServiceCountInCart = getCartDetail.ServiceCountInCart + 1;
+                    if (checkTimeSlot.SlotCount < getCartDetail.ServiceCountInCart)
                     {
-                        var getCartDetail = await _context.Cart.Where(u => (u.ServiceId == model.serviceId) && (u.SlotId == model.slotId) && (u.CustomerUserId == currentUserId)).FirstOrDefaultAsync();
-                        if (getCartDetail != null)
-                        {
-                            getCartDetail.ServiceCountInCart = getCartDetail.ServiceCountInCart + 1;
-
-                            _context.Update(getCartDetail);
-                            await _context.SaveChangesAsync();
-
-                            response = _mapper.Map<CartServicesDTO>(getCartDetail);
-                        }
-                        else
-                        {
-                            cartDeatil = _mapper.Map<Cart>(model);
-                            cartDeatil.CustomerUserId = currentUserId;
-                            cartDeatil.ServiceCountInCart = 1;
-                            cartDeatil.SalonId = checkServiceDetail.SalonId;
-
-                            await _context.AddAsync(cartDeatil);
-                            await _context.SaveChangesAsync();
-
-                            response = _mapper.Map<CartServicesDTO>(cartDeatil);
-                        }
-
-                        if (checkServiceDetail != null)
-                        {
-                            _mapper.Map(checkServiceDetail, response);
-                            _mapper.Map(checkTimeSlot, response);
-                            response.serviceImage = checkServiceDetail.ServiceIconImage;
-                            response.slotDate = Convert.ToDateTime(response.slotDate).ToString(@"dd-MM-yyy");
-                        }
-
                         _response.StatusCode = HttpStatusCode.OK;
-                        _response.IsSuccess = true;
-                        _response.Data = response;
-                        _response.Messages = "Service added to cart successfully.";
+                        _response.IsSuccess = false;
+                        _response.Messages = "Slot is unavailable.";
                         return Ok(_response);
-
                     }
+                    else
+                    {
+                        _context.Update(getCartDetail);
+                        await _context.SaveChangesAsync();
+                    }
+
+                    response = _mapper.Map<CartServicesDTO>(getCartDetail);
+                }
+                else
+                {
+                    cartDeatil = _mapper.Map<Cart>(model);
+                    cartDeatil.CustomerUserId = currentUserId;
+                    cartDeatil.ServiceCountInCart = 1;
+                    cartDeatil.SalonId = checkServiceDetail.SalonId;
+                    if (checkTimeSlot.SlotCount < cartDeatil.ServiceCountInCart)
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Messages = "Slot is unavailable.";
+                        return Ok(_response);
+                    }
+                    else
+                    {
+                        await _context.AddAsync(cartDeatil);
+                        await _context.SaveChangesAsync();
+                    }
+                    response = _mapper.Map<CartServicesDTO>(cartDeatil);
+                }
+
+                if (checkServiceDetail != null)
+                {
+                    _mapper.Map(checkServiceDetail, response);
+                    _mapper.Map(checkTimeSlot, response);
+                    response.serviceImage = checkServiceDetail.ServiceIconImage;
+                    response.slotDate = Convert.ToDateTime(response.slotDate).ToString(@"dd-MM-yyy");
                 }
 
                 _response.StatusCode = HttpStatusCode.OK;
-                _response.IsSuccess = false;
-                _response.Messages = "Can't more than add more service";
+                _response.IsSuccess = true;
+                _response.Data = response;
+                _response.Messages = "Service added to cart successfully.";
                 return Ok(_response);
             }
             catch (Exception ex)
@@ -1203,7 +1206,7 @@ namespace BeautyHubAPI.Controllers
         [HttpGet("GetServiceListFromCart")]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        // [Authorize(Roles = "Customer")]
+        [Authorize(Roles = "Customer")]
         public async Task<IActionResult> GetServiceListFromCart(string? availableService, int? liveLocation)
         {
             try
@@ -1227,34 +1230,43 @@ namespace BeautyHubAPI.Controllers
                     return Ok(_response);
                 }
 
-                CartDetailDTO cartDetail = new CartDetailDTO();
-                var CartDetailPerSalonList = new List<CartDetailPerSalonDTO>();
                 var getCartSalonIdList = await _context.Cart.Where(u => (u.CustomerUserId == currentUserId)).Select(u => u.SalonId).Distinct().ToListAsync();
-
                 foreach (var item in getCartSalonIdList)
                 {
                     var getCartDetail = await _context.Cart.Where(u => (u.CustomerUserId == currentUserId) && (u.SalonId == item.Value)).ToListAsync();
-                    List<CartServicesDTO>? cartServiceList = new List<CartServicesDTO>();
-                    if (!string.IsNullOrEmpty(availableService))
+                    List<string> servideIds = new List<string>();
+                    foreach (var item1 in getCartDetail)
                     {
+                        var ServiceDetail = await _context.SalonService.Where(u => u.ServiceId == item1.ServiceId && u.Status == 1).FirstOrDefaultAsync();
+                        if (ServiceDetail == null)
+                        {
+                            servideIds.Add((item1.ServiceId).ToString());
+                        }
+                    }
+                    foreach (var id in servideIds)
+                    {
+                        var serviceId = Convert.ToInt32(id);
+                        var getCartService = await _context.Cart.Where(u => (u.CustomerUserId == currentUserId) && (u.SalonId == item.Value) && (u.ServiceId == serviceId)).FirstOrDefaultAsync();
+                        _context.Remove(getCartService);
+                        await _context.SaveChangesAsync();
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(availableService))
+                {
+                    getCartSalonIdList = await _context.Cart.Where(u => (u.CustomerUserId == currentUserId)).Select(u => u.SalonId).Distinct().ToListAsync();
+                    //remove service
+                    foreach (var item in getCartSalonIdList)
+                    {
+                        var getCartDetail = await _context.Cart.Where(u => (u.CustomerUserId == currentUserId) && (u.SalonId == item.Value)).ToListAsync();
                         foreach (var Service in getCartDetail)
                         {
                             var ServiceDetail = await _context.SalonService.Where(u => u.ServiceId == Service.ServiceId && u.Status == 1).FirstOrDefaultAsync();
 
                             if (ServiceDetail != null)
                             {
-                                var mappedData = _mapper.Map<CartServicesDTO>(Service);
-                                mappedData.serviceImage = ServiceDetail.ServiceIconImage;
                                 var timeSlot = await _context.TimeSlot.Where(u => u.SlotId == Service.SlotId).FirstOrDefaultAsync();
-                                mappedData.slotDate = timeSlot.SlotDate.ToString(@"dd-MM-yyyy");
-                                mappedData.fromTime = timeSlot.FromTime;
-                                mappedData.toTime = timeSlot.ToTime;
-                                mappedData.slotStatus = timeSlot.Status;
-                                if (mappedData.slotStatus == true && timeSlot.SlotCount >= mappedData.ServiceCountInCart)
-                                {
-                                    cartServiceList.Add(mappedData);
-                                }
-                                else
+                                if (timeSlot.Status == false || timeSlot.SlotCount < Service.ServiceCountInCart)
                                 {
                                     _context.Cart.Remove(Service);
                                     await _context.SaveChangesAsync();
@@ -1267,8 +1279,15 @@ namespace BeautyHubAPI.Controllers
                             }
                         }
                     }
-                    else
+
+                    getCartSalonIdList = await _context.Cart.Where(u => (u.CustomerUserId == currentUserId)).Select(u => u.SalonId).Distinct().ToListAsync();
+                    CartDetailDTO cartDetail = new CartDetailDTO();
+                    var CartDetailPerSalonList = new List<CartDetailPerSalonDTO>();
+                    foreach (var item in getCartSalonIdList)
                     {
+                        var getCartDetail = await _context.Cart.Where(u => (u.CustomerUserId == currentUserId) && (u.SalonId == item.Value)).ToListAsync();
+                        List<CartServicesDTO>? cartServiceList = new List<CartServicesDTO>();
+
                         cartServiceList = _mapper.Map<List<CartServicesDTO>>(getCartDetail);
                         foreach (var cartService in cartServiceList)
                         {
@@ -1279,80 +1298,200 @@ namespace BeautyHubAPI.Controllers
                             cartService.toTime = timeSlot.ToTime;
                             cartService.slotStatus = timeSlot.Status;
                             cartService.serviceImage = ServiceDetail.ServiceIconImage;
+                            cartService.isSlotAvailable = timeSlot.SlotCount;
                         }
-                    }
-                    foreach (var item2 in cartServiceList)
-                    {
-                        var getServiceDetail = await _context.SalonService.Where(u => (u.ServiceId == item2.serviceId)).FirstOrDefaultAsync();
 
-                        if (getServiceDetail != null)
+                        foreach (var item2 in cartServiceList)
                         {
-                            _mapper.Map(getServiceDetail, item2);
-                            item2.statusDisplay = ((ServiceStatus)getServiceDetail.Status).ToString();
-                            item2.serviceImage = getServiceDetail.ServiceIconImage;
-                            item2.basePrice = item2.basePrice * item2.ServiceCountInCart;
-                            item2.listingPrice = item2.listingPrice * item2.ServiceCountInCart;
-                            item2.discount = item2.discount * item2.ServiceCountInCart;
-                            item2.serviceId = getServiceDetail.ServiceId;
+                            var getServiceDetail = await _context.SalonService.Where(u => (u.ServiceId == item2.serviceId)).FirstOrDefaultAsync();
+
+                            if (getServiceDetail != null)
+                            {
+                                _mapper.Map(getServiceDetail, item2);
+                                item2.statusDisplay = ((ServiceStatus)getServiceDetail.Status).ToString();
+                                item2.serviceImage = getServiceDetail.ServiceIconImage;
+                                double basePrice = (double)item2.basePrice;
+                                item2.basePrice = double.Parse((basePrice * item2.ServiceCountInCart).ToString("0.00"));
+                                item2.listingPrice = double.Parse((item2.listingPrice * item2.ServiceCountInCart).ToString("0.00"));
+                                item2.discount = double.Parse((cartDetail.totalMrp - cartDetail.totalSellingPrice).ToString("0.00"));
+                                item2.serviceId = getServiceDetail.ServiceId;
+                            }
+                            var favoritesStatus = await _context.FavouriteService.Where(u => u.ServiceId == item2.serviceId && u.CustomerUserId == currentUserId).FirstOrDefaultAsync();
+                            item2.favoritesStatus = favoritesStatus != null ? true : false;
                         }
-                        var favoritesStatus = await _context.FavouriteService.Where(u => u.ServiceId == item2.serviceId && u.CustomerUserId == currentUserId).FirstOrDefaultAsync();
-                        item2.favoritesStatus = favoritesStatus != null ? true : false;
-                    }
-                    // add to per Salon record
-                    var CartDetailPerSalon = new CartDetailPerSalonDTO();
-                    foreach (var item1 in cartServiceList)
-                    {
-                        CartDetailPerSalon.salonTotalItem = CartDetailPerSalon.salonTotalItem + 1;
-                        CartDetailPerSalon.salonTotalMrp = (double)(CartDetailPerSalon.salonTotalMrp + item1.basePrice);
-                        CartDetailPerSalon.salonTotalSellingPrice = CartDetailPerSalon.salonTotalSellingPrice + item1.listingPrice;
-                        CartDetailPerSalon.salonTotalDiscountAmount = double.Parse((CartDetailPerSalon.salonTotalMrp - CartDetailPerSalon.salonTotalSellingPrice).ToString("0.00"));//CartDetailPerSalon.SalonTotalMrp - CartDetailPerSalon.SalonTotalSellingPrice;
-                        CartDetailPerSalon.salonTotalDiscount = double.Parse(((CartDetailPerSalon.salonTotalDiscountAmount * 100) / CartDetailPerSalon.salonTotalMrp).ToString("0.00"));//(CartDetailPerSalon.SalonTotalDiscountAmount * 100) / CartDetailPerSalon.SalonTotalMrp;
-                    }
-                    CartDetailPerSalon.cartServices = cartServiceList;
-                    var SalonDetail = await _context.SalonDetail.Where(u => u.SalonId == item.Value).FirstOrDefaultAsync();
-                    CartDetailPerSalon.salonId = SalonDetail.SalonId;
-                    CartDetailPerSalon.salonName = SalonDetail.SalonName;
-                    var customerAdress = await _context.CustomerAddress.Where(u => u.CustomerUserId == currentUserId && u.Status == true).FirstOrDefaultAsync();
-                    double startLong = 0;
-                    double startLat = 0;
-                    if (customerAdress != null)
-                    {
-                        startLat = Convert.ToDouble(customerAdress.AddressLatitude != null ? customerAdress.AddressLatitude : "0");
-                        startLong = Convert.ToDouble(customerAdress.AddressLongitude != null ? customerAdress.AddressLongitude : "0");
-                    }
-                    if (liveLocation == 1)
-                    {
-                        startLat = Convert.ToDouble(userProfileDetail.AddressLatitude != null ? userProfileDetail.AddressLatitude : "0");
-                        startLong = Convert.ToDouble(userProfileDetail.AddressLongitude != null ? userProfileDetail.AddressLongitude : "0");
-                    }
-                    double endLat = Convert.ToDouble(SalonDetail.AddressLatitude != null ? SalonDetail.AddressLatitude : "0");
-                    double endLong = Convert.ToDouble(SalonDetail.AddressLongitude != null ? SalonDetail.AddressLongitude : "0");
 
-                    if (startLat != 0 && startLong != 0 && endLat != 0 && endLong != 0)
-                    {
-                        var APIResponse = CommonMethod.GoogleDistanceMatrixAPILatLonAsync(startLat, startLong, endLat, endLong).GetAwaiter().GetResult();
-                        CartDetailPerSalon.distance = APIResponse.distance;
-                        CartDetailPerSalon.duration = APIResponse.duration;
+                        // add to per Salon record
+                        var CartDetailPerSalon = new CartDetailPerSalonDTO();
+                        foreach (var item1 in cartServiceList)
+                        {
+                            CartDetailPerSalon.salonTotalItem = CartDetailPerSalon.salonTotalItem + 1;
+                            CartDetailPerSalon.salonTotalMrp = (double)(CartDetailPerSalon.salonTotalMrp + item1.basePrice);
+                            CartDetailPerSalon.salonTotalSellingPrice = double.Parse((CartDetailPerSalon.salonTotalSellingPrice + item1.listingPrice).ToString("0.00")); ;
+                            CartDetailPerSalon.salonTotalDiscountAmount = double.Parse((CartDetailPerSalon.salonTotalMrp - CartDetailPerSalon.salonTotalSellingPrice).ToString("0.00"));//CartDetailPerSalon.SalonTotalMrp - CartDetailPerSalon.SalonTotalSellingPrice;
+                            CartDetailPerSalon.salonTotalDiscount = double.Parse(((CartDetailPerSalon.salonTotalDiscountAmount * 100) / CartDetailPerSalon.salonTotalMrp).ToString("0.00"));//(CartDetailPerSalon.SalonTotalDiscountAmount * 100) / CartDetailPerSalon.SalonTotalMrp;
+                        }
+                        CartDetailPerSalon.cartServices = cartServiceList;
+                        var SalonDetail = await _context.SalonDetail.Where(u => u.SalonId == item.Value).FirstOrDefaultAsync();
+                        CartDetailPerSalon.salonId = SalonDetail.SalonId;
+                        CartDetailPerSalon.salonName = SalonDetail.SalonName;
+                        var customerAdress = await _context.CustomerAddress.Where(u => u.CustomerUserId == currentUserId && u.Status == true).FirstOrDefaultAsync();
+                        double startLong = 0;
+                        double startLat = 0;
+                        if (customerAdress != null)
+                        {
+                            startLat = Convert.ToDouble(customerAdress.AddressLatitude != null ? customerAdress.AddressLatitude : "0");
+                            startLong = Convert.ToDouble(customerAdress.AddressLongitude != null ? customerAdress.AddressLongitude : "0");
+                        }
+                        if (liveLocation == 1)
+                        {
+                            startLat = Convert.ToDouble(userProfileDetail.AddressLatitude != null ? userProfileDetail.AddressLatitude : "0");
+                            startLong = Convert.ToDouble(userProfileDetail.AddressLongitude != null ? userProfileDetail.AddressLongitude : "0");
+                        }
+                        double endLat = Convert.ToDouble(SalonDetail.AddressLatitude != null ? SalonDetail.AddressLatitude : "0");
+                        double endLong = Convert.ToDouble(SalonDetail.AddressLongitude != null ? SalonDetail.AddressLongitude : "0");
+
+                        if (startLat != 0 && startLong != 0 && endLat != 0 && endLong != 0)
+                        {
+                            var APIResponse = CommonMethod.GoogleDistanceMatrixAPILatLonAsync(startLat, startLong, endLat, endLong).GetAwaiter().GetResult();
+                            CartDetailPerSalon.distance = APIResponse.distance;
+                            CartDetailPerSalon.duration = APIResponse.duration;
+                        }
+                        CartDetailPerSalonList.Add(CartDetailPerSalon);
                     }
-                    CartDetailPerSalonList.Add(CartDetailPerSalon);
+
+                    foreach (var item3 in CartDetailPerSalonList)
+                    {
+                        cartDetail.totalItem = cartDetail.totalItem + item3.salonTotalItem;
+                        cartDetail.totalMrp = double.Parse((cartDetail.totalMrp + item3.salonTotalMrp).ToString("0.00"));
+                        cartDetail.totalSellingPrice = double.Parse((cartDetail.totalSellingPrice + item3.salonTotalSellingPrice).ToString("0.00")); ;
+                        cartDetail.totalDiscountAmount = double.Parse((cartDetail.totalMrp - cartDetail.totalSellingPrice).ToString("0.00"));
+                        cartDetail.totalDiscount = double.Parse(((cartDetail.totalDiscountAmount * 100) / cartDetail.totalMrp).ToString("0.00"));//(cartDetail.totalDiscountAmount * 100) / cartDetail.totalMrp
+                    }
+                    cartDetail.allCartServices = CartDetailPerSalonList;
+                    cartDetail.salonCount = getCartSalonIdList.Count;
+
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = true;
+                    _response.Data = cartDetail;
+                    _response.Messages = "Cart Services shown successfully.";
+                    return Ok(_response);
                 }
-
-                foreach (var item3 in CartDetailPerSalonList)
+                else
                 {
-                    cartDetail.totalItem = cartDetail.totalItem + item3.salonTotalItem;
-                    cartDetail.totalMrp = cartDetail.totalMrp + item3.salonTotalMrp;
-                    cartDetail.totalSellingPrice = cartDetail.totalSellingPrice + item3.salonTotalSellingPrice;
-                    cartDetail.totalDiscountAmount = double.Parse((cartDetail.totalMrp - cartDetail.totalSellingPrice).ToString("0.00"));
-                    cartDetail.totalDiscount = double.Parse(((cartDetail.totalDiscountAmount * 100) / cartDetail.totalMrp).ToString("0.00"));//(cartDetail.totalDiscountAmount * 100) / cartDetail.totalMrp
-                }
-                cartDetail.allCartServices = CartDetailPerSalonList;
-                cartDetail.salonCount = getCartSalonIdList.Count;
+                    CartDetailDTO cartDetail = new CartDetailDTO();
+                    var CartDetailPerSalonList = new List<CartDetailPerSalonDTO>();
+                    getCartSalonIdList = await _context.Cart.Where(u => (u.CustomerUserId == currentUserId)).Select(u => u.SalonId).Distinct().ToListAsync();
 
-                _response.StatusCode = HttpStatusCode.OK;
-                _response.IsSuccess = true;
-                _response.Data = cartDetail;
-                _response.Messages = "Cart Services shown successfully.";
-                return Ok(_response);
+                    foreach (var item in getCartSalonIdList)
+                    {
+                        var getCartDetail = await _context.Cart.Where(u => (u.CustomerUserId == currentUserId) && (u.SalonId == item.Value)).ToListAsync();
+                        List<string> servideIds = new List<string>();
+                        foreach (var item1 in getCartDetail)
+                        {
+                            var ServiceDetail = await _context.SalonService.Where(u => u.ServiceId == item1.ServiceId && u.Status == 1).FirstOrDefaultAsync();
+                            if (ServiceDetail == null)
+                            {
+                                servideIds.Add((item1.ServiceId).ToString());
+                            }
+                        }
+                        foreach (var id in servideIds)
+                        {
+                            var serviceId = Convert.ToInt32(id);
+                            var getCartService = await _context.Cart.Where(u => (u.CustomerUserId == currentUserId) && (u.SalonId == item.Value) && (u.ServiceId == serviceId)).FirstOrDefaultAsync();
+                            _context.Remove(getCartService);
+                            await _context.SaveChangesAsync();
+                        }
+                        getCartDetail = await _context.Cart.Where(u => (u.CustomerUserId == currentUserId) && (u.SalonId == item.Value)).ToListAsync();
+                        List<CartServicesDTO>? cartServiceList = new List<CartServicesDTO>();
+
+                        cartServiceList = _mapper.Map<List<CartServicesDTO>>(getCartDetail);
+                        foreach (var cartService in cartServiceList)
+                        {
+                            var ServiceDetail = await _context.SalonService.Where(u => u.ServiceId == cartService.serviceId && u.Status == 1).FirstOrDefaultAsync();
+                            var timeSlot = await _context.TimeSlot.Where(u => u.SlotId == cartService.slotId).FirstOrDefaultAsync();
+                            cartService.slotDate = timeSlot.SlotDate.ToString(@"dd-MM-yyyy");
+                            cartService.fromTime = timeSlot.FromTime;
+                            cartService.toTime = timeSlot.ToTime;//todocart
+
+                            cartService.slotStatus = timeSlot.Status;
+                            cartService.serviceImage = ServiceDetail.ServiceIconImage;//todocart
+                            cartService.isSlotAvailable = timeSlot.SlotCount;
+                        }
+
+                        foreach (var item2 in cartServiceList)
+                        {
+                            var getServiceDetail = await _context.SalonService.Where(u => (u.ServiceId == item2.serviceId)).FirstOrDefaultAsync();
+
+                            if (getServiceDetail != null)
+                            {
+                                _mapper.Map(getServiceDetail, item2);
+                                item2.statusDisplay = ((ServiceStatus)getServiceDetail.Status).ToString();
+                                item2.serviceImage = getServiceDetail.ServiceIconImage;
+                                double basePrice = (double)item2.basePrice;
+                                item2.basePrice = double.Parse((basePrice * item2.ServiceCountInCart).ToString("0.00"));
+                                item2.listingPrice = double.Parse((item2.listingPrice * item2.ServiceCountInCart).ToString("0.00"));
+                                item2.discount = double.Parse((cartDetail.totalMrp - cartDetail.totalSellingPrice).ToString("0.00"));
+                                item2.serviceId = getServiceDetail.ServiceId;
+                            }
+                            var favoritesStatus = await _context.FavouriteService.Where(u => u.ServiceId == item2.serviceId && u.CustomerUserId == currentUserId).FirstOrDefaultAsync();
+                            item2.favoritesStatus = favoritesStatus != null ? true : false;
+                        }
+                        // add to per Salon record
+                        var CartDetailPerSalon = new CartDetailPerSalonDTO();
+                        foreach (var item1 in cartServiceList)
+                        {
+                            CartDetailPerSalon.salonTotalItem = CartDetailPerSalon.salonTotalItem + 1;
+                            CartDetailPerSalon.salonTotalMrp = (double)(CartDetailPerSalon.salonTotalMrp + item1.basePrice);
+                            CartDetailPerSalon.salonTotalSellingPrice = double.Parse((CartDetailPerSalon.salonTotalSellingPrice + item1.listingPrice).ToString("0.00")); ;
+                            CartDetailPerSalon.salonTotalDiscountAmount = double.Parse((CartDetailPerSalon.salonTotalMrp - CartDetailPerSalon.salonTotalSellingPrice).ToString("0.00"));//CartDetailPerSalon.SalonTotalMrp - CartDetailPerSalon.SalonTotalSellingPrice;
+                            CartDetailPerSalon.salonTotalDiscount = double.Parse(((CartDetailPerSalon.salonTotalDiscountAmount * 100) / CartDetailPerSalon.salonTotalMrp).ToString("0.00"));//(CartDetailPerSalon.SalonTotalDiscountAmount * 100) / CartDetailPerSalon.SalonTotalMrp;
+                        }
+                        CartDetailPerSalon.cartServices = cartServiceList;
+                        var SalonDetail = await _context.SalonDetail.Where(u => u.SalonId == item.Value).FirstOrDefaultAsync();
+                        CartDetailPerSalon.salonId = SalonDetail.SalonId;
+                        CartDetailPerSalon.salonName = SalonDetail.SalonName;
+                        var customerAdress = await _context.CustomerAddress.Where(u => u.CustomerUserId == currentUserId && u.Status == true).FirstOrDefaultAsync();
+                        double startLong = 0;
+                        double startLat = 0;
+                        if (customerAdress != null)
+                        {
+                            startLat = Convert.ToDouble(customerAdress.AddressLatitude != null ? customerAdress.AddressLatitude : "0");
+                            startLong = Convert.ToDouble(customerAdress.AddressLongitude != null ? customerAdress.AddressLongitude : "0");
+                        }
+                        if (liveLocation == 1)
+                        {
+                            startLat = Convert.ToDouble(userProfileDetail.AddressLatitude != null ? userProfileDetail.AddressLatitude : "0");
+                            startLong = Convert.ToDouble(userProfileDetail.AddressLongitude != null ? userProfileDetail.AddressLongitude : "0");
+                        }
+                        double endLat = Convert.ToDouble(SalonDetail.AddressLatitude != null ? SalonDetail.AddressLatitude : "0");
+                        double endLong = Convert.ToDouble(SalonDetail.AddressLongitude != null ? SalonDetail.AddressLongitude : "0");
+
+                        if (startLat != 0 && startLong != 0 && endLat != 0 && endLong != 0)
+                        {
+                            var APIResponse = CommonMethod.GoogleDistanceMatrixAPILatLonAsync(startLat, startLong, endLat, endLong).GetAwaiter().GetResult();
+                            CartDetailPerSalon.distance = APIResponse.distance;
+                            CartDetailPerSalon.duration = APIResponse.duration;
+                        }
+                        CartDetailPerSalonList.Add(CartDetailPerSalon);
+                    }
+
+                    foreach (var item3 in CartDetailPerSalonList)
+                    {
+                        cartDetail.totalItem = cartDetail.totalItem + item3.salonTotalItem;
+                        cartDetail.totalMrp = double.Parse((cartDetail.totalMrp + item3.salonTotalMrp).ToString("0.00"));
+                        cartDetail.totalSellingPrice = double.Parse((cartDetail.totalSellingPrice + item3.salonTotalSellingPrice).ToString("0.00")); ;
+                        cartDetail.totalDiscountAmount = double.Parse((cartDetail.totalMrp - cartDetail.totalSellingPrice).ToString("0.00"));
+                        cartDetail.totalDiscount = double.Parse(((cartDetail.totalDiscountAmount * 100) / cartDetail.totalMrp).ToString("0.00"));//(cartDetail.totalDiscountAmount * 100) / cartDetail.totalMrp
+                    }
+                    cartDetail.allCartServices = CartDetailPerSalonList;
+                    cartDetail.salonCount = getCartSalonIdList.Count;
+
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = true;
+                    _response.Data = cartDetail;
+                    _response.Messages = "Cart Services shown successfully.";
+                    return Ok(_response);
+                }
             }
             catch (Exception ex)
             {
@@ -1440,6 +1579,7 @@ namespace BeautyHubAPI.Controllers
                             var serviceDetail = await _context.SalonService.Where(u => u.ServiceId == cart.ServiceId).FirstOrDefaultAsync();
                             var mappedData = _mapper.Map<CartServicesDTO>(cart);
                             _mapper.Map(serviceDetail, mappedData);
+                            mappedData.serviceImage = serviceDetail.ServiceIconImage;
                             var timeSlot = await _context.TimeSlot.Where(u => u.SlotId == cart.SlotId).FirstOrDefaultAsync();
                             mappedData.slotDate = timeSlot.SlotDate.ToString(@"dd-MM-yyyy");
                             mappedData.fromTime = timeSlot.FromTime;
@@ -1620,6 +1760,7 @@ namespace BeautyHubAPI.Controllers
                         double? finalPrice = 0;
                         double? discount = 0;
                         double? cancelledPrice = 0;
+                        bookedServices = bookedServices.Where(u => u.AppointmentStatus == "Scheduled").ToList();
                         foreach (var booked in bookedServices)
                         {
                             var timeSlot = await _context.TimeSlot.Where(u => u.SlotId == booked.SlotId).FirstOrDefaultAsync();
@@ -2000,6 +2141,30 @@ namespace BeautyHubAPI.Controllers
                 var customerAddress = await _context.CustomerAddress.Where(u => u.CustomerUserId == currentUserId && u.Status == true).FirstOrDefaultAsync();
                 // get all cart Services
 
+                //Remove service from cart if service is unavailable
+                var getCartSalonIdList = await _context.Cart.Where(u => (u.CustomerUserId == currentUserId)).Select(u => u.SalonId).Distinct().ToListAsync();
+                foreach (var item in getCartSalonIdList)
+                {
+                    var getCartDetail = await _context.Cart.Where(u => (u.CustomerUserId == currentUserId) && (u.SalonId == item.Value)).ToListAsync();
+                    List<string> servideIds = new List<string>();
+                    foreach (var item1 in getCartDetail)
+                    {
+                        var ServiceDetail = await _context.SalonService.Where(u => u.ServiceId == item1.ServiceId && u.Status == 1).FirstOrDefaultAsync();
+                        if (ServiceDetail == null)
+                        {
+                            servideIds.Add((item1.ServiceId).ToString());
+                        }
+                    }
+                    foreach (var id in servideIds)
+                    {
+                        var serviceId = Convert.ToInt32(id);
+                        var getCartService = await _context.Cart.Where(u => (u.CustomerUserId == currentUserId) && (u.SalonId == item.Value) && (u.ServiceId == serviceId)).FirstOrDefaultAsync();
+                        _context.Remove(getCartService);
+                        await _context.SaveChangesAsync();
+                    }
+                }
+
+                // get cart detail for booking
                 var cartDetail = new List<Cart>();
                 cartDetail = await _context.Cart.Where(u => u.CustomerUserId == currentUserId).ToListAsync();
                 if (cartDetail.Count < 1)
@@ -2013,18 +2178,51 @@ namespace BeautyHubAPI.Controllers
                 // delete unavailable service
                 foreach (var item in cartDetail)
                 {
-                    var timeSlot = await _context.TimeSlot.Where(u => (u.ServiceId == item.ServiceId) && (u.SlotId == item.SlotId) && (u.Status != true)).FirstOrDefaultAsync();
-                    var ServiceDetail = await _context.SalonService.Where(u => (u.ServiceId == item.ServiceId) && (u.Status != Convert.ToInt32(ServiceStatus.Active))).FirstOrDefaultAsync();
-                    if (ServiceDetail != null || timeSlot != null)
+                    var timeSlot = await _context.TimeSlot.Where(u => (u.ServiceId == item.ServiceId) && (u.SlotId == item.SlotId) && (u.Status == true)).FirstOrDefaultAsync();
+                    var ServiceDetail = await _context.SalonService.Where(u => (u.ServiceId == item.ServiceId) && (u.Status == Convert.ToInt32(ServiceStatus.Active))).FirstOrDefaultAsync();
+                    if (ServiceDetail != null)
                     {
-                        _context.Remove(item);
-                        await _context.SaveChangesAsync();
+                        if (timeSlot != null)
+                        {
+                            if (timeSlot.SlotCount < item.ServiceCountInCart)
+                            {
+                                _context.Remove(item);
+                                await _context.SaveChangesAsync();
+                                // _response.StatusCode = HttpStatusCode.OK;
+                                // _response.IsSuccess = false;
+                                // _response.Messages = "Slot unavailable.";
+                                // return Ok(_response);
+                            }
+                        }
+                        if (timeSlot == null)
+                        {
+                            _context.Remove(item);
+                            await _context.SaveChangesAsync();
+                            // _response.StatusCode = HttpStatusCode.OK;
+                            // _response.IsSuccess = false;
+                            // _response.Messages = "Slot unavailable.";
+                            // return Ok(_response);
+                        }
+                    }
+                    else
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Messages = "Not found any service.";
+                        return Ok(_response);
                     }
                 }
 
                 //get available service
                 var inStockCartServices = await _context.Cart.Where(u => u.CustomerUserId == currentUserId).ToListAsync();
 
+                if (inStockCartServices.Count < 1)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Service unavailable.";
+                    return Ok(_response);
+                }
                 int totalServices = 0;
                 double totalDiscount = 0;
                 double finalPrice = 0;
@@ -2124,7 +2322,6 @@ namespace BeautyHubAPI.Controllers
                     vendorId = salonDetail.VendorId;
                     bookedService.SlotId = item.SlotId;
                     bookedService.ServiceCountInCart = item.ServiceCountInCart;
-
 
                     await _context.BookedService.AddAsync(bookedService);
                     await _context.SaveChangesAsync();
@@ -2456,7 +2653,7 @@ namespace BeautyHubAPI.Controllers
 
                 foreach (var item in response.Where(x => x.appointmentStatus == "Cancelled" && x.cancelledPrice == x.basePrice))
                 {
-                    item.finalPrice = item.totalPrice;
+                    item.finalPrice = (item.totalPrice);
                 }
 
                 int appointmentId = 0;

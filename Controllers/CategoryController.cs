@@ -136,7 +136,7 @@ namespace BeautyHubAPI.Controllers
                         await _context.AddAsync(mainsCategory);
                         await _context.SaveChangesAsync();
                     }
-                    else 
+                    else
                     {
                         if (model.categoryType != mainCategoryType)
                         {
@@ -145,7 +145,7 @@ namespace BeautyHubAPI.Controllers
                             _response.Messages = "Please select valid Category type";
                             return Ok(_response);
                         }
-                        
+
                     }
                     if (roles[0].ToString() == "SuperAdmin")
                     {
@@ -172,7 +172,7 @@ namespace BeautyHubAPI.Controllers
                                 vendorCategory.Male = true;
                                 vendorCategory.Female = true;
                             }
-                           
+
                             await _context.AddAsync(vendorCategory);
                             await _context.SaveChangesAsync();
                         }
@@ -247,11 +247,11 @@ namespace BeautyHubAPI.Controllers
                             await _context.AddAsync(vendorCategory);
                             await _context.SaveChangesAsync();
                         }
-                       
+
                     }
-                    CategoryDetail = _mapper.Map<CategoryDTO>(categoryDetail); 
+                    CategoryDetail = _mapper.Map<CategoryDTO>(categoryDetail);
                 }
-               
+
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
                 _response.Data = CategoryDetail;
@@ -298,38 +298,78 @@ namespace BeautyHubAPI.Controllers
                 }
                 var roles = await _userManager.GetRolesAsync(currentUserDetail);
 
+                SubCategory? subCategoryDetail = new SubCategory();
+                MainCategory? mainCategoryDetail = new MainCategory();
+                int mainCategoryType = 0;
+                int subCategoryType = 0;
+
+                if (model.subCategoryId > 0)
+                {
+                    subCategoryDetail = await _context.SubCategory.Where(u => (u.SubCategoryId == model.subCategoryId)).FirstOrDefaultAsync();
+                    mainCategoryDetail = await _context.MainCategory.Where(u => (u.MainCategoryId == subCategoryDetail.MainCategoryId)).FirstOrDefaultAsync();
+                }
+                if (model.mainCategoryId > 0)
+                {
+                    mainCategoryDetail = await _context.MainCategory.Where(u => (u.MainCategoryId == model.mainCategoryId)).FirstOrDefaultAsync();
+                }
+
+                if (mainCategoryDetail != null)
+                {
+                    if (mainCategoryDetail.Male == true && mainCategoryDetail.Female != true)
+                    {
+                        mainCategoryType = 1;
+                    }
+                    if (mainCategoryDetail.Male == false && mainCategoryDetail.Female == true)
+                    {
+                        mainCategoryType = 2;
+                    }
+                    if (mainCategoryDetail.Male == true && mainCategoryDetail.Female == true)
+                    {
+                        mainCategoryType = 3;
+                    }
+                }
+
+                if (subCategoryDetail != null)
+                {
+                    if (subCategoryDetail.Male == true && subCategoryDetail.Female != true)
+                    {
+                        subCategoryType = 1;
+                    }
+                    if (subCategoryDetail.Male == false && subCategoryDetail.Female == true)
+                    {
+                        subCategoryType = 2;
+                    }
+                    if (subCategoryDetail.Male == true && subCategoryDetail.Female == true)
+                    {
+                        subCategoryType = 3;
+                    }
+                }
 
                 var CategoryDetail = new CategoryDTO();
                 if (model.subCategoryId > 0)
                 {
-                    var categoryDetail = await _context.SubCategory.Where(u => (u.SubCategoryId == model.subCategoryId)).FirstOrDefaultAsync();
-                    if (categoryDetail == null)
+                    if (subCategoryDetail == null)
                     {
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = false;
                         _response.Messages = "Record not found.";
                         return Ok(_response);
                     }
-                    if (categoryDetail.Male == true && categoryDetail.Female != true)
+                    if (mainCategoryType == 1 && model.categoryType == 2)
                     {
-                        if (model.categoryType == 2)
-                        {
-                            _response.StatusCode = HttpStatusCode.OK;
-                            _response.IsSuccess = false;
-                            _response.Messages = "Please enter valid category type.";
-                            return Ok(_response);
-                        }
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Messages = "Please enter valid category type.";
+                        return Ok(_response);
                     }
-                    if (categoryDetail.Female == true && categoryDetail.Male != true)
+                    if (mainCategoryType == 2 && model.categoryType == 1)
                     {
-                        if (model.categoryType == 1)
-                        {
-                            _response.StatusCode = HttpStatusCode.OK;
-                            _response.IsSuccess = false;
-                            _response.Messages = "Please enter valid category type.";
-                            return Ok(_response);
-                        }
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Messages = "Please enter valid category type.";
+                        return Ok(_response);
                     }
+
                     var checkCategoryName = await _context.SubCategory.Where(u => (u.CategoryName.ToLower() == model.categoryName.ToLower()) && (u.SubCategoryId != model.subCategoryId)).FirstOrDefaultAsync();
 
                     if (checkCategoryName != null)
@@ -339,34 +379,34 @@ namespace BeautyHubAPI.Controllers
                         _response.Messages = "Category name already exists.";
                         return Ok(_response);
                     }
-                    categoryDetail.CategoryName = model.categoryName;
-                    categoryDetail.CategoryDescription = model.categoryDescription;
-                    categoryDetail.ModifiedBy = currentUserId;
+                    subCategoryDetail.CategoryName = model.categoryName;
+                    subCategoryDetail.CategoryDescription = model.categoryDescription;
+                    subCategoryDetail.ModifiedBy = currentUserId;
                     if (roles[0].ToString() == "SuperAdmin")
                     {
-                        categoryDetail.CategoryStatus = Convert.ToInt32(Status.Approved);
+                        subCategoryDetail.CategoryStatus = Convert.ToInt32(Status.Approved);
                     }
                     else
                     {
-                        categoryDetail.CategoryStatus = Convert.ToInt32(Status.Pending);
+                        subCategoryDetail.CategoryStatus = Convert.ToInt32(Status.Pending);
                     }
                     if (model.categoryType == 1)
                     {
-                        categoryDetail.Male = true;
-                        categoryDetail.Female = false;
+                        subCategoryDetail.Male = true;
+                        subCategoryDetail.Female = false;
                     }
                     if (model.categoryType == 2)
                     {
-                        categoryDetail.Male = false;
-                        categoryDetail.Female = true;
+                        subCategoryDetail.Male = false;
+                        subCategoryDetail.Female = true;
                     }
                     if (model.categoryType == 3)
                     {
-                        categoryDetail.Male = true;
-                        categoryDetail.Female = true;
+                        subCategoryDetail.Male = true;
+                        subCategoryDetail.Female = true;
                     }
 
-                    _context.Update(categoryDetail);
+                    _context.Update(subCategoryDetail);
                     await _context.SaveChangesAsync();
                     // if (roles[0].ToString() == "SuperAdmin")
                     // {
@@ -383,13 +423,12 @@ namespace BeautyHubAPI.Controllers
                     //         await _vendorCategoryRepository.CreateEntity(vendorCategory);
                     //     }
                     // }
-                    CategoryDetail = _mapper.Map<CategoryDTO>(categoryDetail);
+                    CategoryDetail = _mapper.Map<CategoryDTO>(subCategoryDetail);
 
                 }
                 else
                 {
-                    var categoryDetail = await _context.MainCategory.Where(u => u.MainCategoryId == model.mainCategoryId).FirstOrDefaultAsync();
-                    if (categoryDetail == null)
+                    if (mainCategoryDetail == null)
                     {
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = false;
@@ -405,64 +444,65 @@ namespace BeautyHubAPI.Controllers
                         _response.Messages = "Category name already exists.";
                         return Ok(_response);
                     }
-                    var subCategory = await _context.MainCategory.FirstOrDefaultAsync(x => x.MainCategoryId == model.mainCategoryId);
-                    int subCategoryType = 0;
-                    if (subCategory.Male == true && subCategory.Female == true)
+                    if (model.categoryType != 3)
                     {
-                        subCategoryType = 3;
-                    }
-                    else if (subCategory.Male == false && subCategory.Female == true)
-                    {
-                        subCategoryType = 1;
-                    }
-                    else
-                    {
-                        subCategoryType = 2;
-                    }
-                    if (subCategoryType == 3)
-                    {
-                        _context.Update(subCategory);
-                        await _context.SaveChangesAsync();
+                        if (model.categoryType == 1)
+                        {
+                            var maleSubCategory = await _context.SubCategory.FirstOrDefaultAsync(x => x.MainCategoryId == model.mainCategoryId && x.Female == true);
+                            if (maleSubCategory != null)
+                            {
+                                _response.StatusCode = HttpStatusCode.OK;
+                                _response.IsSuccess = false;
+                                _response.Messages = "Main category update not allowed if female subcategory is present.";
+                                return Ok(_response);
+                            }
+                        }
+                        if (model.categoryType == 2)
+                        {
+                            var maleSubCategory = await _context.SubCategory.FirstOrDefaultAsync(x => x.MainCategoryId == model.mainCategoryId && x.Male == true);
+                            if (maleSubCategory != null)
+                            {
+                                _response.StatusCode = HttpStatusCode.OK;
+                                _response.IsSuccess = false;
+                                _response.Messages = "Main category update not allowed if male subcategory is present.";
+                                return Ok(_response);
+                            }
+                        }
                     }
 
-                   if (model.categoryType == subCategoryType)
-                   {
-                       _response.StatusCode = HttpStatusCode.OK;
-                       _response.IsSuccess = false;
-                       _response.Messages = "Updating the primary category is restricted when a subcategory under the category exists into Main category update not allowed if subcategories are present.";
-                       return Ok(_response);
-                   }
+                    _context.Update(mainCategoryDetail);
+                    await _context.SaveChangesAsync();
 
-                    categoryDetail.CategoryName = model.categoryName;
-                    categoryDetail.CategoryDescription = model.categoryDescription;
-                    categoryDetail.ModifiedBy = currentUserId;
+                    mainCategoryDetail.CategoryName = model.categoryName;
+                    mainCategoryDetail.CategoryDescription = model.categoryDescription;
+                    mainCategoryDetail.ModifiedBy = currentUserId;
+
                     if (roles[0].ToString() == "SuperAdmin")
                     {
-                        categoryDetail.CategoryStatus = Convert.ToInt32(Status.Approved);
+                        mainCategoryDetail.CategoryStatus = Convert.ToInt32(Status.Approved);
                     }
                     else
                     {
-                        categoryDetail.CategoryStatus = Convert.ToInt32(Status.Pending);
+                        mainCategoryDetail.CategoryStatus = Convert.ToInt32(Status.Pending);
                     }
+
                     if (model.categoryType == 1)
                     {
-                        categoryDetail.Male = true;
-                        categoryDetail.Female = false;
+                        mainCategoryDetail.Male = true;
+                        mainCategoryDetail.Female = false;
                     }
                     if (model.categoryType == 2)
                     {
-                        categoryDetail.Male = false;
-                        categoryDetail.Female = true;
+                        mainCategoryDetail.Male = false;
+                        mainCategoryDetail.Female = true;
                     }
                     if (model.categoryType == 3)
                     {
-                        categoryDetail.Male = true;
-                        categoryDetail.Female = true;
+                        mainCategoryDetail.Male = true;
+                        mainCategoryDetail.Female = true;
                     }
 
-                  
-
-                    _context.Update(categoryDetail);
+                    _context.Update(mainCategoryDetail);
                     await _context.SaveChangesAsync();
 
                     // if (roles[0].ToString() == "SuperAdmin")
@@ -480,7 +520,7 @@ namespace BeautyHubAPI.Controllers
                     //         await _vendorCategoryRepository.CreateEntity(vendorCategory);
                     //     }
                     // }
-                    CategoryDetail = _mapper.Map<CategoryDTO>(categoryDetail);
+                    CategoryDetail = _mapper.Map<CategoryDTO>(mainCategoryDetail);
                 }
 
                 _response.StatusCode = HttpStatusCode.OK;
@@ -542,13 +582,13 @@ namespace BeautyHubAPI.Controllers
                     {
                         mainCategoryType = 2;
                     }
-                  
+
 
                     _response.StatusCode = HttpStatusCode.OK;
-                     _response.IsSuccess = true;
-                    _response.Data = new  {mainCategoryType =mainCategoryType };
+                    _response.IsSuccess = true;
+                    _response.Data = new { mainCategoryType = mainCategoryType };
                     _response.Messages = "Category type shown successfully.";
-                     return Ok(_response);
+                    return Ok(_response);
 
                 }
                 _response.StatusCode = HttpStatusCode.OK;
@@ -570,7 +610,7 @@ namespace BeautyHubAPI.Controllers
 
         #region GetCategoryList
         /// <summary>
-        ///  Get  category list.
+        ///  Get category list.
         /// </summary>
         [HttpGet("GetCategoryList")]
         [Authorize]
@@ -609,32 +649,23 @@ namespace BeautyHubAPI.Controllers
                 {
                     if (model.salonId > 0)
                     {
-                        var categoryDetail = new List<SubCategory>();
-                        if (model.categoryType == 0)
-                        {
-                            categoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == model.mainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
+                        var categoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == model.mainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
 
-                        }
-                        else if (model.categoryType == 1)
+                        if (model.categoryType == 1)
                         {
-                            categoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == model.mainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)
-                           && (u.Male == true)
-                           //    && (u.Female == false)
-                           ).ToListAsync();
+                            categoryDetail = categoryDetail.Where(u => u.Male == true).ToList();
                         }
                         else if (model.categoryType == 2)
                         {
-                            categoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == model.mainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)
-                           //    && (u.Male == false)
-                           && (u.Female == true)
-                           ).ToListAsync();
+                            categoryDetail = categoryDetail.Where(u => u.Female == true).ToList();
+                        }
+                        else if (model.categoryType == 3)
+                        {
+                            categoryDetail = categoryDetail.Where(u => u.Female == true && u.Male == true).ToList();
                         }
                         else
                         {
-                            categoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == model.mainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)
-                           && (u.Male == true)
-                           && (u.Female == true)
-                           ).ToListAsync();
+                            categoryDetail = categoryDetail;
                         }
                         Categories = _mapper.Map<List<CategoryDTO>>(categoryDetail);
                         foreach (var item in Categories)
@@ -703,32 +734,23 @@ namespace BeautyHubAPI.Controllers
                     }
                     else
                     {
-                        var categoryDetail = new List<SubCategory>();
-                        if (model.categoryType == 0)
-                        {
-                            categoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == model.mainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
+                        var categoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == model.mainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
 
-                        }
-                        else if (model.categoryType == 1)
+                        if (model.categoryType == 1)
                         {
-                            categoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == model.mainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)
-                           && (u.Male == true)
-                           //    && (u.Female == false)
-                           ).ToListAsync();
+                            categoryDetail = categoryDetail.Where(u => u.Male == true).ToList();
                         }
                         else if (model.categoryType == 2)
                         {
-                            categoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == model.mainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)
-                           //    && (u.Male == false)
-                           && (u.Female == true)
-                           ).ToListAsync();
+                            categoryDetail = categoryDetail.Where(u => u.Female == true).ToList();
+                        }
+                        else if (model.categoryType == 3)
+                        {
+                            categoryDetail = categoryDetail.Where(u => u.Female == true && u.Female == true).ToList();
                         }
                         else
                         {
-                            categoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == model.mainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)
-                           && (u.Male == true)
-                           && (u.Female == true)
-                           ).ToListAsync();
+                            categoryDetail = categoryDetail;
                         }
                         Categories = new List<CategoryDTO>();
                         foreach (var item in categoryDetail)
@@ -762,66 +784,36 @@ namespace BeautyHubAPI.Controllers
                 {
                     if (model.salonId > 0)
                     {
-                        var categoryDetail = new List<MainCategory>();
-                        if (model.categoryType == 0)
+                        var categoryDetail = await _context.MainCategory.Where(u => u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
+
+                        if (model.categoryType == 1)
                         {
-                            categoryDetail = await _context.MainCategory.Where(u => u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
-                        }
-                        else if (model.categoryType == 1)
-                        {
-                            categoryDetail = await _context.MainCategory.Where(u => u.CategoryStatus == Convert.ToInt32(Status.Approved)
-                           && (u.Male == true)
-                           //    && (u.Female == false)
-                           ).ToListAsync();
+                            categoryDetail = categoryDetail.Where(u => u.Male == true).ToList();
                         }
                         else if (model.categoryType == 2)
                         {
-                            categoryDetail = await _context.MainCategory.Where(u => u.CategoryStatus == Convert.ToInt32(Status.Approved)
-                           //    && (u.Male == false)
-                           && (u.Female == true)
-                           ).ToListAsync();
+                            categoryDetail = categoryDetail.Where(u => u.Male == true).ToList();
+                        }
+                        else if (model.categoryType == 3)
+                        {
+                            categoryDetail = categoryDetail.Where(u => u.Male == true && u.Female == true).ToList();
                         }
                         else
                         {
-                            categoryDetail = await _context.MainCategory.Where(u => u.CategoryStatus == Convert.ToInt32(Status.Approved)
-                           && (u.Male == true)
-                           && (u.Female == true)
-                           ).ToListAsync();
+                            categoryDetail = categoryDetail;
                         }
                         Categories = new List<CategoryDTO>();
                         foreach (var item in categoryDetail)
                         {
                             var mappedData = _mapper.Map<CategoryDTO>(item);
                             var subCategoryDetail = new List<SubCategory>();
-                            if (model.categoryType == 0)
-                            {
-                                subCategoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == item.MainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
 
-                            }
-                            else if (model.categoryType == 1)
-                            {
-                                subCategoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == item.MainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)
-                               && (u.Male == true)
-                               && (u.Female == false)
-                               ).ToListAsync();
-                            }
-                            else if (model.categoryType == 2)
-                            {
-                                subCategoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == item.MainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)
-                               && (u.Male == false)
-                               && (u.Female == true)
-                               ).ToListAsync();
-                            }
-                            else
-                            {
-                                subCategoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == item.MainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)
-                               && (u.Male == true)
-                               && (u.Female == true)
-                               ).ToListAsync();
-                            }
+                            subCategoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == item.MainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
+
                             mappedData.isNext = subCategoryDetail.Count > 0 ? true : false;
                             mappedData.createDate = item.CreateDate.ToString(@"dd-MM-yyyy");
                             mappedData.status = true;
+
                             if (item.Male == true && item.Female == true)
                             {
                                 mappedData.categoryType = 3;
@@ -878,32 +870,22 @@ namespace BeautyHubAPI.Controllers
                     }
                     else
                     {
-                        var categoryDetail = new List<MainCategory>();
-                        if (model.categoryType == 0)
+                        var categoryDetail = await _context.MainCategory.Where(u => u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
+                        if (model.categoryType == 1)
                         {
-                            categoryDetail = await _context.MainCategory.Where(u => u.CategoryStatus == Convert.ToInt32(Status.Approved)
-                           ).ToListAsync();
-                        }
-                        else if (model.categoryType == 1)
-                        {
-                            categoryDetail = await _context.MainCategory.Where(u => u.CategoryStatus == Convert.ToInt32(Status.Approved)
-                           && (u.Male == true)
-                           //    && (u.Female == false)
-                           ).ToListAsync();
+                            categoryDetail = categoryDetail.Where(u => u.Male == true).ToList();
                         }
                         else if (model.categoryType == 2)
                         {
-                            categoryDetail = await _context.MainCategory.Where(u => u.CategoryStatus == Convert.ToInt32(Status.Approved)
-                           //    && (u.Male == false)
-                           && (u.Female == true)
-                           ).ToListAsync();
+                            categoryDetail = categoryDetail.Where(u => u.Female == true).ToList();
+                        }
+                        else if (model.categoryType == 3)
+                        {
+                            categoryDetail = categoryDetail.Where(u => u.Male == true && u.Female == true).ToList();
                         }
                         else
                         {
-                            categoryDetail = await _context.MainCategory.Where(u => u.CategoryStatus == Convert.ToInt32(Status.Approved)
-                           && (u.Male == true)
-                           && (u.Female == true)
-                           ).ToListAsync();
+                            categoryDetail = categoryDetail;
                         }
                         // Categories = (_mapper.Map<List<CategoryDTO>>(categoryDetail));
                         Categories = new List<CategoryDTO>();
@@ -933,31 +915,8 @@ namespace BeautyHubAPI.Controllers
                         foreach (var item in Categories)
                         {
                             var subCategoryDetail = new List<SubCategory>();
-                            if (model.categoryType == 0)
-                            {
-                                subCategoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == item.mainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
-                            }
-                            else if (model.categoryType == 1)
-                            {
-                                subCategoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == item.mainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)
-                               //    && (u.Male == true)
-                               && (u.Female == false)
-                               ).ToListAsync();
-                            }
-                            else if (model.categoryType == 2)
-                            {
-                                subCategoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == item.mainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)
-                               //    && (u.Male == false)
-                               && (u.Female == true)
-                               ).ToListAsync();
-                            }
-                            else
-                            {
-                                subCategoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == item.mainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)
-                               && (u.Male == true)
-                               && (u.Female == true)
-                               ).ToListAsync();
-                            }
+
+                            subCategoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == item.mainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
 
                             item.isNext = subCategoryDetail.Count > 0 ? true : false;
                             item.status = true;
@@ -1262,6 +1221,7 @@ namespace BeautyHubAPI.Controllers
                 foreach (var item in subCategories)
                 {
                     var subCategory = new CategoryRequestDTO();
+                    subCategory.mainCategoryId = item.MainCategoryId;
                     subCategory.subCategoryId = item.SubCategoryId;
                     subCategory.subcategoryName = item.CategoryName;
                     subCategory.categorystatus = item.CategoryStatus;

@@ -161,7 +161,7 @@ namespace BeautyHubAPI.Controllers
             try
             {
                 // var resp1 = await _mobileMessagingClient.SendNotificationAsync(
-                //     "f4pu4fv37pQDgSIcCOE4g4:APA91bF_9iZz9LN_TDDRaYCx9m0CW9Pvp6BQ8_z2uwCBe25jUwjcblrUJ-E5O7WFLUlClLwsPjI1BcIf9DJHYOLhKiHYFq7WMsDjpwrjFO8YoJ1LR33WDP2tAF-jgq3QLumuEPrewL40",
+                //     "cagk8ZlDQBq-wphrbaC4Dx:APA91bGbxFqIckWSxleF88kVBpWJq7nBgGydLGCdexWmDBu22sdPVL5l6qdDqNDy-u-vJrGOUEKoxcbiZjAd7FvPNZHiZKENIo6rUbEWP-fWgB4aSt7CrcI0s1sP3x6Ia4gjpi73B35H",
                 //     "Test",
                 //     "Test Notification");
 

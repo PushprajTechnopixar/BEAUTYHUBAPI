@@ -35,6 +35,7 @@ public class MyBackgroundService : BackgroundService
                 {
                     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
+                    //todo
                     await UpdateSchedule(dbContext);
                     StopServiceOnce();
                 }
@@ -87,6 +88,10 @@ public class MyBackgroundService : BackgroundService
         var salonScheduleList = await dbContext.SalonSchedule.Where(u => u.IsDeleted != true && u.Status != false).ToListAsync();
         foreach (var SalonScheduleDays in salonScheduleList)
         {
+            SalonScheduleDays.UpdateStatus = false;
+            dbContext.Update(SalonScheduleDays);
+            await dbContext.SaveChangesAsync();
+
             SalonScheduleDays.Status = true;
             var scheduledDaysList = new List<string>();
             if (SalonScheduleDays.Monday == true)
@@ -238,6 +243,10 @@ public class MyBackgroundService : BackgroundService
                     addDay++;
                 }
             }
+
+            SalonScheduleDays.UpdateStatus = true;
+            dbContext.Update(SalonScheduleDays);
+            await dbContext.SaveChangesAsync();
         }
         _logger.LogInformation("Status updated.");
     }
