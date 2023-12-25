@@ -92,7 +92,6 @@ builder.Services.AddScoped<EverydayMidnightService>();
 builder.Services.AddHostedService<ApplointmentListBackgroundService>();
 builder.Services.AddScoped<ApplointmentListBackgroundService>();
 
-
 //Inject EmailSettings
 builder.Services.AddOptions();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));

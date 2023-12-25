@@ -607,6 +607,14 @@ namespace BeautyHubAPI.Controllers
                     return Ok(_response);
                 }
 
+                if (model.salonServiceIconImage.Length < 10)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Image quality is very poor.";
+                    return Ok(_response);
+                }
+
                 // Delete previous file
                 if (!string.IsNullOrEmpty(serviceDetail.ServiceIconImage))
                 {

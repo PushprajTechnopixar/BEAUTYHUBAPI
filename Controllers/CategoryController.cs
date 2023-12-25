@@ -746,7 +746,7 @@ namespace BeautyHubAPI.Controllers
                         }
                         else if (model.categoryType == 3)
                         {
-                            categoryDetail = categoryDetail.Where(u => u.Female == true && u.Female == true).ToList();
+                            categoryDetail = categoryDetail.Where(u => u.Female == true && u.Male == true).ToList();
                         }
                         else
                         {
@@ -792,7 +792,7 @@ namespace BeautyHubAPI.Controllers
                         }
                         else if (model.categoryType == 2)
                         {
-                            categoryDetail = categoryDetail.Where(u => u.Male == true).ToList();
+                            categoryDetail = categoryDetail.Where(u => u.Female == true).ToList();
                         }
                         else if (model.categoryType == 3)
                         {

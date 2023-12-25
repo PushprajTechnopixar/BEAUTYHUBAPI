@@ -1654,8 +1654,7 @@ namespace BeautyHubAPI.Controllers
 
                 if (!string.IsNullOrEmpty(model.paymentStatus))
                 {
-                    orderList = orderList.Where(x => (x.paymentStatus?.IndexOf(model.paymentStatus, StringComparison.OrdinalIgnoreCase) >= 0)
-                    ).ToList();
+                    orderList = orderList.Where(x => (x.paymentStatus == model.paymentStatus)).ToList();
                 }
                 if (!string.IsNullOrEmpty(model.appointmentStatus))
                 {
