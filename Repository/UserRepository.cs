@@ -92,6 +92,11 @@ namespace BeautyHubAPI.Repository
                 return new LoginResponseDTO();
             }
 
+            user.SecurityStamp = CommonMethod.RandomString(20);
+
+            _context.Update(user);
+            await _context.SaveChangesAsync();
+
             // var userDetail = await _context.UserDetail.Where(u => u.UserId == user.Id).FirstOrDefaultAsync();
 
             //if user was found generate JWT Token

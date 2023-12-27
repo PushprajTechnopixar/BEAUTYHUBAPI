@@ -23,6 +23,14 @@
         public string? genderPreferences { get; set; }
         public string? ageRestrictions { get; set; }
         public string? serviceType { get; set; }
+        public bool categoryWise { get; set; }
+    }
+
+    public class CategoryWiseServiceFilterationListDTO
+    {
+        public int salonId { get; set; }
+        public string? genderPreferences { get; set; }
+        public string? ageRestrictions { get; set; }
     }
     public class InventoryProductFilterationListDTO
     {

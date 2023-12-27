@@ -52,6 +52,7 @@ namespace BeautyHubAPI.Controllers
         /// <returns></returns>
         [HttpPost]
         [Route("Login")]
+        [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] LoginRequestDTO model)
         {
             // var applicationUser = await _userRepo.IsValidUser(model.emailOrPhone);
@@ -96,6 +97,7 @@ namespace BeautyHubAPI.Controllers
         /// <returns></returns>
         [HttpPost]
         [Route("Register")]
+        [AllowAnonymous]
         public async Task<IActionResult> Register([FromBody] RegisterationRequestDTO model)
         {
             bool ifUserNameUnique = _userRepo.IsUniqueUser(model.email, model.phoneNumber);

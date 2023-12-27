@@ -24,6 +24,7 @@ using Amazon.S3.Model;
 using System.Net;
 using BeautyHubAPI.Models.Helper;
 using Newtonsoft.Json;
+using Microsoft.AspNetCore.Authorization;
 
 // public partial class Program
 // {
@@ -177,18 +178,25 @@ builder.Services
         {
             OnTokenValidated = async context =>
             {
-                var userService = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
-                string securityStamp = context.Principal.Claims.FirstOrDefault(claim => claim.Type == "SecurityStamp")?.Value;
-                var userId = context.Principal.Claims.FirstOrDefault().Value.ToString();
-                var user = await userService.Users.Where(u => u.Id == userId).FirstOrDefaultAsync();
-                if (user == null)
-                {
-                    context.Fail("Unauthorized");
-                }
+                var endpoint = context.HttpContext.GetEndpoint();
 
+                // Check if the endpoint allows anonymous access
+                var allowAnonymous = endpoint?.Metadata?.GetMetadata<IAllowAnonymous>() != null;
 
-                if (user != null)
+                if (!allowAnonymous)
                 {
+                    var userService = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
+                    string securityStamp = context.Principal.Claims.FirstOrDefault(claim => claim.Type == "SecurityStamp")?.Value;
+                    var userId = context.Principal.Claims.FirstOrDefault().Value.ToString();
+                    var user = await userService.Users.Where(u => u.Id == userId).FirstOrDefaultAsync();
+
+                    if (user == null)
+                    {
+                        context.Fail("Unauthorized");
+                        return;
+                    }
+
+                    // Perform additional checks
                     if (user.SecurityStamp != securityStamp && user.PhoneNumber.Length < 11)
                     {
                         context.Fail("Unauthorized");
@@ -210,11 +218,7 @@ builder.Services
                         return;
                     }
                 }
-                else
-                    await Task.Delay(0);
-                return;
             }
-
         };
 
     });

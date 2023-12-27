@@ -884,11 +884,88 @@ namespace BeautyHubAPI.Controllers
                 _response.Messages = "Something went wrong.";
                 return Ok(_response);
             }
-            _response.StatusCode = HttpStatusCode.OK;
-            _response.IsSuccess = true;
-            _response.Data = obj;
-            _response.Messages = "List shown successfully.";
-            return Ok(_response);
+
+            if (model.categoryWise == false)
+            {
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = true;
+                _response.Data = obj;
+                _response.Messages = "List shown successfully.";
+                return Ok(_response);
+            }
+            else
+            {
+                var result = query
+                        .Where(service => service.status == 1)
+                        .OrderByDescending(service => service.mainCategoryId)
+                        .AsEnumerable() // Explicitly load into memory
+                        .GroupBy(service => service.mainCategoryName)
+                        .Select(groupedServices => new
+                        {
+                            MainCategoryName = groupedServices.Key,
+                            Services = groupedServices.Select(service => new SalonServiceListDTO
+                            {
+                                serviceName = service.serviceName,
+                                serviceId = service.serviceId,
+                                vendorId = service.vendorId,
+                                salonId = service.salonId,
+                                // ... (other properties)
+                            })
+                        })
+                    .ToList();
+
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = true;
+                _response.Data = result;
+                _response.Messages = "List shown successfully.";
+                return Ok(_response);
+
+                // var result = from service in query
+                //              join t2 in query on service.mainCategoryId equals t2.mainCategoryId
+                //              where service.status == 1
+                //              orderby service.mainCategoryId descending
+
+                //              group service by t2.mainCategoryName into groupedServices
+                //              select new
+                //              {
+                //                  MainCategoryName = groupedServices.Key,
+                //                  Services = from service in groupedServices
+                //                                 //    where (customerSalonIds.Contains(service.SalonId))
+                //                             select new SalonServiceListDTO
+                //                             {
+                //                                 serviceName = service.serviceName,
+                //                                 serviceId = service.serviceId,
+                //                                 vendorId = service.vendorId,
+                //                                 salonId = service.salonId,
+                //                                 salonName = service.salonName,
+                //                                 mainCategoryId = service.mainCategoryId,
+                //                                 mainCategoryName = service.mainCategoryName,
+                //                                 subCategoryId = service.subCategoryId,
+                //                                 subCategoryName = service.subCategoryName,
+                //                                 serviceDescription = service.serviceDescription,
+                //                                 serviceImage = service.serviceImage,
+                //                                 listingPrice = service.listingPrice,
+                //                                 basePrice = service.basePrice,
+                //                                 favoritesStatus = service.favoritesStatus,
+                //                                 discount = service.discount,
+                //                                 genderPreferences = service.genderPreferences,
+                //                                 ageRestrictions = service.ageRestrictions,
+                //                                 ServiceType = service.ServiceType,
+                //                                 totalCountPerDuration = service.totalCountPerDuration,
+                //                                 durationInMinutes = service.durationInMinutes,
+                //                                 status = service.status,
+                //                                 isSlotAvailable = service.isSlotAvailable,
+                //                                 serviceCountInCart = service.serviceCountInCart,
+                //                                 // Additional properties from other tables
+                //                             }
+                //              };
+                // _response.StatusCode = HttpStatusCode.OK;
+                // _response.IsSuccess = true;
+                // _response.Data = result;
+                // _response.Messages = "List shown successfully.";
+                // return Ok(_response);
+            }
+
         }
         #endregion
 
