@@ -25,6 +25,7 @@ using System.Net;
 using BeautyHubAPI.Models.Helper;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 // public partial class Program
 // {
@@ -186,36 +187,41 @@ builder.Services
                 if (!allowAnonymous)
                 {
                     var userService = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
-                    string securityStamp = context.Principal.Claims.FirstOrDefault(claim => claim.Type == "SecurityStamp")?.Value;
-                    var userId = context.Principal.Claims.FirstOrDefault().Value.ToString();
-                    var user = await userService.Users.Where(u => u.Id == userId).FirstOrDefaultAsync();
+                    var roleClaim = context.Principal.Claims.FirstOrDefault(claim => claim.Type == ClaimsIdentity.DefaultRoleClaimType)?.Value;
 
-                    if (user == null)
+                    if (roleClaim == "Customer")
                     {
-                        context.Fail("Unauthorized");
-                        return;
-                    }
+                        string securityStamp = context.Principal.Claims.FirstOrDefault(claim => claim.Type == "SecurityStamp")?.Value;
+                        var userId = context.Principal.Claims.FirstOrDefault().Value.ToString();
+                        var user = await userService.Users.Where(u => u.Id == userId).FirstOrDefaultAsync();
 
-                    // Perform additional checks
-                    if (user.SecurityStamp != securityStamp && user.PhoneNumber.Length < 11)
-                    {
-                        context.Fail("Unauthorized");
-
-                        var response = new
+                        if (user == null)
                         {
-                            isSuccess = false,
-                            statusCode = HttpStatusCode.Unauthorized,
-                            messages = "Access denied. You are not authorized to perform this action."
-                        };
+                            context.Fail("Unauthorized");
+                            return;
+                        }
 
-                        var jsonResponse = JsonConvert.SerializeObject(response);
+                        // Perform additional checks
+                        if (user.SecurityStamp != securityStamp && user.PhoneNumber.Length < 11)
+                        {
+                            context.Fail("Unauthorized");
 
-                        context.Response.ContentType = "application/json";
-                        context.Response.StatusCode = 401;
+                            var response = new
+                            {
+                                isSuccess = false,
+                                statusCode = HttpStatusCode.Unauthorized,
+                                messages = "Access denied. You are not authorized to perform this action."
+                            };
 
-                        await context.Response.WriteAsync(jsonResponse);
+                            var jsonResponse = JsonConvert.SerializeObject(response);
 
-                        return;
+                            context.Response.ContentType = "application/json";
+                            context.Response.StatusCode = 401;
+
+                            await context.Response.WriteAsync(jsonResponse);
+
+                            return;
+                        }
                     }
                 }
             }
