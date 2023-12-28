@@ -8,7 +8,7 @@ namespace BeautyHubAPI.Models
         public int BookedServiceId { get; set; }
         public int? CouponId { get; set; }
         public int AppointmentId { get; set; }
-        public int? ServiceId { get; set; }
+        public int ServiceId { get; set; }
         public string? ServiceName { get; set; }
         public string? ServiceImage { get; set; }
         public double? BasePrice { get; set; }

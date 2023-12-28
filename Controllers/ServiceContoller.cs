@@ -2189,5 +2189,125 @@ namespace BeautyHubAPI.Controllers
         }
         #endregion
 
+        #region UpComingSchedule
+        /// <summary>
+        /// Get UpComing Schedule .
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Authorize(Roles = "Vendor")]
+        [Route("UpComingSchedule")]
+        public async Task<IActionResult> UpComingSchedule(int salonId)
+        {
+            try
+            {
+                string currentUserId = (HttpContext.User.Claims.First().Value);
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Token expired.";
+                    return Ok(_response);
+                }
+                var salon = await _context.SalonDetail.FirstOrDefaultAsync(a => a.SalonId == salonId);
+                if (salon == null)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Not found any Salon.";
+                    return Ok(_response);
+                }
+
+                List<upcomingScheduleDTO> bookServices = await _context.BookedService.Where(a => a.SalonId == salon.SalonId && a.AppointmentStatus == "Scheduled")
+                                                           .GroupBy(a => new { a.AppointmentDate })
+                                                           .Select(y => new upcomingScheduleDTO
+                                                           {
+                                                               date = y.Key.AppointmentDate.Date.ToString(),
+                                                              // serviceName = y.Key.ServiceName,
+                                                               slotCount = y.Count(),
+                                                               day = y.Key.AppointmentDate.DayOfWeek.ToString(),
+                                                           }).ToListAsync();
+
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = bookServices.Count == 0 ? false : true;
+                _response.Messages = bookServices.Count == 0 ? "Not found any record." : "Upcoming slot found successfully";
+                _response.Data = bookServices;
+                return Ok(_response);
+
+
+
+
+            }
+            catch (Exception ex)
+            {
+                _response.StatusCode = HttpStatusCode.InternalServerError;
+                _response.IsSuccess = false;
+                _response.Data = new { };
+                _response.Messages = ResponseMessages.msgSomethingWentWrong + ex.Message;
+                return Ok(_response);
+            }
+        }
+        #endregion
+
+        #region UpComingScheduleDetail
+        /// <summary>
+        /// Get UpComing Schedule .
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Authorize(Roles = "Vendor")]
+        [Route("UpComingScheduleDetail")]
+        public async Task<IActionResult> UpComingScheduleDetail(int salonId)
+        {
+            try
+            {
+                string currentUserId = (HttpContext.User.Claims.First().Value);
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Token expired.";
+                    return Ok(_response);
+                }
+                var salon = await _context.SalonDetail.FirstOrDefaultAsync(a => a.SalonId == salonId);
+                if (salon == null)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Not found any Salon.";
+                    return Ok(_response);
+                }
+
+                List<upcomingScheduleDetailDTO> bookServices = await _context.BookedService.Where(a => a.SalonId == salon.SalonId && a.AppointmentStatus == "Scheduled")
+                                                           .GroupBy(a => new { a.AppointmentDate,a.ServiceName,a.ServiceId })
+                                                           .Select(y => new upcomingScheduleDetailDTO
+                                                           {
+                                                               date = y.Key.AppointmentDate.Date.ToString(),
+                                                               serviceName = y.Key.ServiceName,
+                                                               slotCount = y.Count(),
+                                                               serviceId = y.Key.ServiceId,
+                                                               day = y.Key.AppointmentDate.DayOfWeek.ToString(),
+                                                           }).ToListAsync();
+
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = bookServices.Count == 0 ? false : true;
+                _response.Messages = bookServices.Count == 0 ? "Not found any record." : "Upcoming schedule details found successfully";
+                _response.Data = bookServices;
+                return Ok(_response);
+
+
+
+
+            }
+            catch (Exception ex)
+            {
+                _response.StatusCode = HttpStatusCode.InternalServerError;
+                _response.IsSuccess = false;
+                _response.Data = new { };
+                _response.Messages = ResponseMessages.msgSomethingWentWrong + ex.Message;
+                return Ok(_response);
+            }
+        }
+        #endregion
     }
 }

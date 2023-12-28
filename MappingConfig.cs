@@ -97,6 +97,9 @@ namespace BeautyHubAPI
             CreateMap<VendorAppointmentDetailDTO, Appointment>().ReverseMap();
             CreateMap<VendorAppointmentDetailDTO, BookedService>().ReverseMap();
             CreateMap<SalonService, IncludeServiceDTO>().ReverseMap();
+            CreateMap<upcomingScheduleDTO, TimeSlot>().ReverseMap();
+            CreateMap<upcomingScheduleDTO, BookedService>().ReverseMap();
+            CreateMap<upcomingScheduleDetailDTO, BookedService>().ReverseMap();
             // CreateMap<UploadCategoryImageDTO, MainCategory>().ReverseMap();
             // CreateMap<UploadCategoryImageDTO, SubCategory>().ReverseMap();
         }

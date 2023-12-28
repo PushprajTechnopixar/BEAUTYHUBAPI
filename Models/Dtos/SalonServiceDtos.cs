@@ -147,6 +147,8 @@
         public double basePrice { get; set; }
         public double? discount { get; set; }
         public double listingPrice { get; set; }
+        public string? genderPreferences { get; set; }
+
     }
 
     public class ServiceImageDTO
@@ -168,5 +170,29 @@
     {
         public int serviceId { get; set; }
         public int status { get; set; }
+    }
+
+    public class upcomingScheduleDTO
+    {
+        public string date { get; set; }
+        public string day { get; set; }
+        public int slotCount { get; set; }
+        public int serviceId { get; set; }
+    }
+    public class upcomingScheduleDetailDTO
+    {
+        public int serviceId { get; set; }
+        public string date { get; set; }
+        public string day { get; set; }
+        public string serviceName { get; set; }
+        public int slotCount { get; set; }
+       
+       
+    }
+    public class cancelUpcomingScheduleDTO
+    {
+        public int serviceId { get; set; }
+        public string appointmentDate { get; set; }
+        public bool cancelAllAppointments { get; set; }
     }
 }
