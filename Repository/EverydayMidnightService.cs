@@ -63,7 +63,7 @@ public class EverydayMidnightService : BackgroundService
         var nextRunTime = now.Date.AddDays(1).AddHours(1); // 12:00 AM
 
         // Calculate the delay until the next run
-        var delay = nextRunTime - now;
+        var delay = nextRunTime - convrtedZoneDate;
 
         if (delay < TimeSpan.Zero)
         {
@@ -71,14 +71,14 @@ public class EverydayMidnightService : BackgroundService
             delay = TimeSpan.FromHours(24) + delay;
         }
 
-        // delay = TimeSpan.FromSeconds(10);
+        // delay = TimeSpan.FromSeconds(10); 
 
         while (!stoppingToken.IsCancellationRequested)
         {
             using (var scope = _serviceProvider.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                //todo
+                // todo                
                 await UpdateSchedule(dbContext);
             }
             // Delay for a certain duration before checking the flag again
@@ -158,7 +158,7 @@ public class EverydayMidnightService : BackgroundService
             var convrtedZoneDate = TimeZoneInfo.ConvertTimeFromUtc(Convert.ToDateTime(DateTime.UtcNow), ctz).AddHours(1);
 
             // update timeslots according to schedule
-            var services = await dbContext.SalonService.Where(u => u.SalonId == SalonScheduleDays.SalonId && u.IsDeleted != true).ToListAsync();
+            var services = await dbContext.SalonService.Where(u => u.SalonId == SalonScheduleDays.SalonId && u.IsDeleted == false).ToListAsync();
             foreach (var item in services)
             {
                 var deleteTimeSlot = await dbContext.TimeSlot.Where(u => u.ServiceId == item.ServiceId && u.Status != false).ToListAsync();

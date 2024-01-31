@@ -68,6 +68,13 @@
             Others,
             NA
         }
+        public enum bannerCategoryType
+        {
+            Male = 1,
+            Female,
+            Male_and_Female,
+            NA
+        }
         public enum ProductFilter
         {
             Grocery = 1,

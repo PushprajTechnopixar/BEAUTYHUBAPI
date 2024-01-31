@@ -339,8 +339,14 @@ namespace BeautyHubAPI.Controllers
                     _response.Messages = "Token expired.";
                     return Ok(_response);
                 }
-
-                var categoryDetails = new CategoryDTO();
+                if (model.CategoryImageMale == null && model.CategoryImageFemale == null)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Please upload image.";
+                    return Ok(_response);
+                }
+                var categoryDetails = new VendorCategoryDTO();
 
                 if (model.subCategoryId > 0)
                 {
@@ -353,28 +359,52 @@ namespace BeautyHubAPI.Controllers
                         return Ok(_response);
                     }
 
-                    // Delete previous file
-                    if (!string.IsNullOrEmpty(categoryDetail.CategoryImage))
+                    if (model.CategoryImageMale != null)
                     {
-                        var chk = await _uploadRepository.DeleteFilesFromServer("FileToSave/" + categoryDetail.CategoryImage);
+                        // Delete previous file
+                        if (!string.IsNullOrEmpty(categoryDetail.CategoryImageMale))
+                        {
+                            var chk = await _uploadRepository.DeleteFilesFromServer("FileToSave/" + categoryDetail.CategoryImageMale);
+                        }
+                        var documentFile = ContentDispositionHeaderValue.Parse(model.CategoryImageMale.ContentDisposition).FileName.Trim('"');
+                        documentFile = CommonMethod.EnsureCorrectFilename(documentFile);
+                        documentFile = CommonMethod.RenameFileName(documentFile);
+
+                        var documentPath = categoryImageContainer + documentFile;
+
+                        bool uploadStatus = await _uploadRepository.UploadFilesToServer(
+                                model.CategoryImageMale,
+                                categoryImageContainer,
+                                documentFile
+                            );
+
+                        categoryDetail.ModifiedBy = currentUserId;
+                        categoryDetail.CategoryImageMale = documentPath;
                     }
-                    var documentFile = ContentDispositionHeaderValue.Parse(model.categoryImage.ContentDisposition).FileName.Trim('"');
-                    documentFile = CommonMethod.EnsureCorrectFilename(documentFile);
-                    documentFile = CommonMethod.RenameFileName(documentFile);
+                    if (model.CategoryImageFemale != null)
+                    {
+                        if (!string.IsNullOrEmpty(categoryDetail.CategoryImageFemale))
+                        {
+                            var chk = await _uploadRepository.DeleteFilesFromServer("FileToSave/" + categoryDetail.CategoryImageFemale);
+                        }
+                        var documentFile = ContentDispositionHeaderValue.Parse(model.CategoryImageFemale.ContentDisposition).FileName.Trim('"');
+                        documentFile = CommonMethod.EnsureCorrectFilename(documentFile);
+                        documentFile = CommonMethod.RenameFileName(documentFile);
 
-                    var documentPath = categoryImageContainer + documentFile;
+                        var documentPath = categoryImageContainer + documentFile;
 
-                    bool uploadStatus = await _uploadRepository.UploadFilesToServer(
-                            model.categoryImage,
-                            categoryImageContainer,
-                            documentFile
-                        );
+                        bool uploadStatus = await _uploadRepository.UploadFilesToServer(
+                                model.CategoryImageFemale,
+                                categoryImageContainer,
+                                documentFile
+                            );
 
-                    categoryDetail.ModifiedBy = currentUserId;
-                    categoryDetail.CategoryImage = documentPath;
+                        categoryDetail.ModifiedBy = currentUserId;
+                        categoryDetail.CategoryImageFemale = documentPath;
+                    }
                     _context.Update(categoryDetail);
                     _context.SaveChanges();
-                    categoryDetails = _mapper.Map<CategoryDTO>(categoryDetail);
+                    categoryDetails = _mapper.Map<VendorCategoryDTO>(categoryDetail);
 
                 }
                 else
@@ -388,28 +418,52 @@ namespace BeautyHubAPI.Controllers
                         return Ok(_response);
                     }
 
-                    // Delete previous file
-                    if (!string.IsNullOrEmpty(categoryDetail.CategoryImage))
+                    if (model.CategoryImageMale != null)
                     {
-                        var chk = await _uploadRepository.DeleteFilesFromServer("FileToSave/" + categoryDetail.CategoryImage);
+                        // Delete previous file
+                        if (!string.IsNullOrEmpty(categoryDetail.CategoryImageMale))
+                        {
+                            var chk = await _uploadRepository.DeleteFilesFromServer("FileToSave/" + categoryDetail.CategoryImageMale);
+                        }
+                        var documentFile = ContentDispositionHeaderValue.Parse(model.CategoryImageMale.ContentDisposition).FileName.Trim('"');
+                        documentFile = CommonMethod.EnsureCorrectFilename(documentFile);
+                        documentFile = CommonMethod.RenameFileName(documentFile);
+
+                        var documentPath = categoryImageContainer + documentFile;
+
+                        bool uploadStatus = await _uploadRepository.UploadFilesToServer(
+                                model.CategoryImageMale,
+                                categoryImageContainer,
+                                documentFile
+                            );
+
+                        categoryDetail.ModifiedBy = currentUserId;
+                        categoryDetail.CategoryImageMale = documentPath;
                     }
-                    var documentFile = ContentDispositionHeaderValue.Parse(model.categoryImage.ContentDisposition).FileName.Trim('"');
-                    documentFile = CommonMethod.EnsureCorrectFilename(documentFile);
-                    documentFile = CommonMethod.RenameFileName(documentFile);
+                    if (model.CategoryImageFemale != null)
+                    {
+                        if (!string.IsNullOrEmpty(categoryDetail.CategoryImageFemale))
+                        {
+                            var chk = await _uploadRepository.DeleteFilesFromServer("FileToSave/" + categoryDetail.CategoryImageFemale);
+                        }
+                        var documentFile = ContentDispositionHeaderValue.Parse(model.CategoryImageFemale.ContentDisposition).FileName.Trim('"');
+                        documentFile = CommonMethod.EnsureCorrectFilename(documentFile);
+                        documentFile = CommonMethod.RenameFileName(documentFile);
 
-                    var documentPath = categoryImageContainer + documentFile;
+                        var documentPath = categoryImageContainer + documentFile;
 
-                    bool uploadStatus = await _uploadRepository.UploadFilesToServer(
-                            model.categoryImage,
-                            categoryImageContainer,
-                            documentFile
-                        );
+                        bool uploadStatus = await _uploadRepository.UploadFilesToServer(
+                                model.CategoryImageFemale,
+                                categoryImageContainer,
+                                documentFile
+                            );
 
-                    categoryDetail.ModifiedBy = currentUserId;
-                    categoryDetail.CategoryImage = documentPath;
+                        categoryDetail.ModifiedBy = currentUserId;
+                        categoryDetail.CategoryImageFemale = documentPath;
+                    }
                     _context.Update(categoryDetail);
                     _context.SaveChanges();
-                    categoryDetails = _mapper.Map<CategoryDTO>(categoryDetail);
+                    categoryDetails = _mapper.Map<VendorCategoryDTO>(categoryDetail);
                 }
 
                 _response.StatusCode = HttpStatusCode.OK;

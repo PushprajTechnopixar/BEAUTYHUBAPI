@@ -93,6 +93,7 @@ builder.Services.AddHostedService<EverydayMidnightService>();
 builder.Services.AddScoped<EverydayMidnightService>();
 builder.Services.AddHostedService<ApplointmentListBackgroundService>();
 builder.Services.AddScoped<ApplointmentListBackgroundService>();
+// builder.Services.AddTransient<ApplicationDbContext>();
 
 //Inject EmailSettings
 builder.Services.AddOptions();

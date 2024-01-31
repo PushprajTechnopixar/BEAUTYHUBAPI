@@ -19,8 +19,6 @@ public class ApplointmentListBackgroundService : BackgroundService
     private bool _shouldRun = true;
     protected APIResponse _response;
 
-
-
     public ApplointmentListBackgroundService(ILogger<ApplointmentListBackgroundService> logger, IMapper mapper, IServiceProvider serviceProvider)
     {
         _logger = logger;
@@ -83,7 +81,7 @@ public class ApplointmentListBackgroundService : BackgroundService
         int difference = 0;
         // int totalServices = 0;
 
-        appointmentList = _context.Appointment.Where(x => x.AppointmentStatus == "Scheduled").ToList();
+        appointmentList = await _context.Appointment.Where(x => x.AppointmentStatus == "Scheduled").ToListAsync();
 
         foreach (var item in appointmentList)
         {
@@ -96,7 +94,7 @@ public class ApplointmentListBackgroundService : BackgroundService
                 double? finalPrice;
                 double? discount;
 
-                var slotDetail = _context.TimeSlot.Where(u => u.SlotId == item2.SlotId).FirstOrDefault();
+                var slotDetail = await _context.TimeSlot.Where(u => u.SlotId == item2.SlotId).FirstOrDefaultAsync();
                 TimeSpan appointmentFromTime = Convert.ToDateTime(slotDetail.FromTime).TimeOfDay;
                 string appointmentDate = item2.AppointmentDate.ToString("dd-MM-yyyy");
                 DateTime appointmentDateTime = DateTime.ParseExact(appointmentDate, "dd-MM-yyyy", CultureInfo.InvariantCulture);
@@ -115,7 +113,7 @@ public class ApplointmentListBackgroundService : BackgroundService
                     item2.CancelledPrice = item2.CancelledPrice + item2.BasePrice;
 
                     _context.Update(item2);
-                    _context.SaveChanges();
+                    await _context.SaveChangesAsync();
 
                     var checBookedServices = await _context.BookedService.Where(u => u.AppointmentId == item.AppointmentId && (u.AppointmentStatus == "Completed" || u.AppointmentStatus == "Scheduled")).FirstOrDefaultAsync();
                     if (checBookedServices == null)
@@ -137,7 +135,7 @@ public class ApplointmentListBackgroundService : BackgroundService
                             item.CancelledPrice = item.CancelledPrice + item2.BasePrice;
                         }
                         _context.Update(item);
-                        _context.SaveChangesAsync();
+                        await _context.SaveChangesAsync();
                     }
                 }
             }

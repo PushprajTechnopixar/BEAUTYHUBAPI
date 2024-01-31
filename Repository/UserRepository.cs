@@ -150,6 +150,7 @@ namespace BeautyHubAPI.Repository
 
             return loginResponseDTO;
         }
+
         public async Task<LoginResponseDTO> Register(RegisterationRequestDTO registerationRequestDTO)
         {
             ApplicationUser user = new()
@@ -213,6 +214,7 @@ namespace BeautyHubAPI.Repository
                 user.FirstName = "";
                 user.LastName = "";
                 user.PhoneNumber = model.PhoneNumber;
+                user.UserName = model.PhoneNumber;
                 user.PasswordHash = Crypto.HashPassword("123456");
 
                 await _context.AddAsync(user);
@@ -222,7 +224,7 @@ namespace BeautyHubAPI.Repository
                 {
                     await _roleManager.CreateAsync(new IdentityRole(model.role));
                 }
-                await _userManager.AddToRoleAsync(user, model.role);
+                var dd = await _userManager.AddToRoleAsync(user, model.role);
 
                 var userDetail = new UserDetail();
                 userDetail.UserId = user.Id;
@@ -247,7 +249,8 @@ namespace BeautyHubAPI.Repository
             var roles = await _userManager.GetRolesAsync(user);
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(secretKey);
-
+            user.SecurityStamp = user.SecurityStamp == null ? secretKey : user.SecurityStamp;
+            // roles.FirstOrDefault() = user.SecurityStamp == null ? secretKey : user.SecurityStamp;
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new Claim[]

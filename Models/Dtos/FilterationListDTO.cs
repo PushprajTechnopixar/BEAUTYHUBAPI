@@ -24,6 +24,8 @@
         public string? ageRestrictions { get; set; }
         public string? serviceType { get; set; }
         public bool categoryWise { get; set; }
+        public double? Discount { get; set; }
+        public string? MaxOrMinDiscount { get; set; }
     }
 
     public class CategoryWiseServiceFilterationListDTO

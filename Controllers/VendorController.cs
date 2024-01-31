@@ -303,7 +303,7 @@ namespace BeautyHubAPI.Controllers
                     return Ok(_response);
                 }
                 model.categoryType = model.categoryType == null ? 0 : model.categoryType;
-                List<CategoryDTO> Categories = new List<CategoryDTO>();
+                List<VendorCategoryDTO> Categories = new List<VendorCategoryDTO>();
 
                 if (model.mainCategoryId > 0)
                 {
@@ -340,10 +340,10 @@ namespace BeautyHubAPI.Controllers
                            && (u.Female == true)
                            ).ToListAsync();
                         }
-                        Categories = new List<CategoryDTO>();
+                        Categories = new List<VendorCategoryDTO>();
                         foreach (var item in categoryDetail)
                         {
-                            var mappedData = _mapper.Map<CategoryDTO>(item);
+                            var mappedData = _mapper.Map<VendorCategoryDTO>(item);
                             if (item.Male == true && item.Female == true)
                             {
                                 mappedData.categoryType = 3;
@@ -411,10 +411,10 @@ namespace BeautyHubAPI.Controllers
                            && (u.Female == true)
                            ).ToListAsync();
                         }
-                        Categories = new List<CategoryDTO>();
+                        Categories = new List<VendorCategoryDTO>();
                         foreach (var item in categoryDetail)
                         {
-                            var mappedData = _mapper.Map<CategoryDTO>(item);
+                            var mappedData = _mapper.Map<VendorCategoryDTO>(item);
                             if (item.Male == true && item.Female == true)
                             {
                                 mappedData.categoryType = 3;
@@ -481,10 +481,10 @@ namespace BeautyHubAPI.Controllers
                            && (u.Female == true)
                            ).ToListAsync();
                         }
-                        Categories = new List<CategoryDTO>();
+                        Categories = new List<VendorCategoryDTO>();
                         foreach (var item in categoryDetail)
                         {
-                            var mappedData = _mapper.Map<CategoryDTO>(item);
+                            var mappedData = _mapper.Map<VendorCategoryDTO>(item);
                             mappedData.createDate = (Convert.ToDateTime(item.CreateDate)).ToString(@"dd-MM-yyyy");
 
                             var subCategoryDetail = new List<SubCategory>();
@@ -603,10 +603,10 @@ namespace BeautyHubAPI.Controllers
                            && (u.Female == true)
                            ).ToListAsync();
                         }
-                        Categories = new List<CategoryDTO>();
+                        Categories = new List<VendorCategoryDTO>();
                         foreach (var item in categoryDetail)
                         {
-                            var mappedData = _mapper.Map<CategoryDTO>(item);
+                            var mappedData = _mapper.Map<VendorCategoryDTO>(item);
                             mappedData.createDate = (Convert.ToDateTime(item.CreateDate)).ToString(@"dd-MM-yyyy");
 
                             var subCategoryDetail = new List<SubCategory>();
@@ -659,6 +659,22 @@ namespace BeautyHubAPI.Controllers
                 }
 
                 Categories = Categories.Where(u => u.mainCategoryId != 53).ToList();
+                foreach (var item in Categories)
+                {
+                    // item.categoryTypeName = 
+                    if (item.categoryType == 1)
+                    {
+                        item.categoryTypeName = "Male";
+                    }
+                    else if (item.categoryType == 2)
+                    {
+                        item.categoryTypeName = "Female";
+                    }
+                    else
+                    {
+                        item.categoryTypeName = "Male & Female";
+                    }
+                }
 
                 if (Categories.Count > 0)
                 {
@@ -1095,6 +1111,33 @@ namespace BeautyHubAPI.Controllers
                         _response.Messages = "Category not found.";
                         return Ok(_response);
                     }
+                    else
+                    {
+                        var categoryType = 0;
+                        if (getCategoryDetail.Male == true && getCategoryDetail.Female == false)
+                        {
+                            categoryType = 1;
+                        }
+                        if (getCategoryDetail.Male == false && getCategoryDetail.Female == true)
+                        {
+                            categoryType = 2;
+                        }
+                        else
+                        {
+                            categoryType = 3;
+                        }
+                        if (categoryType != 3)
+                        {
+                            if (model.categoryType != categoryType)
+                            {
+                                _response.StatusCode = HttpStatusCode.OK;
+                                _response.IsSuccess = false;
+                                _response.Messages = "Please enter valid category type.";
+                                return Ok(_response);
+                            }
+                        }
+
+                    }
                 }
                 else
                 {
@@ -1110,6 +1153,33 @@ namespace BeautyHubAPI.Controllers
                         _response.Messages = "Category not found.";
                         return Ok(_response);
                     }
+                    else
+                    {
+                        var categoryType = 0;
+                        if (getCategoryDetail.Male == true && getCategoryDetail.Female == false)
+                        {
+                            categoryType = 1;
+                        }
+                        if (getCategoryDetail.Male == false && getCategoryDetail.Female == true)
+                        {
+                            categoryType = 2;
+                        }
+                        else
+                        {
+                            categoryType = 3;
+                        }
+                        if (categoryType != 3)
+                        {
+                            if (model.categoryType != categoryType)
+                            {
+                                _response.StatusCode = HttpStatusCode.OK;
+                                _response.IsSuccess = false;
+                                _response.Messages = "Please enter valid category type.";
+                                return Ok(_response);
+                            }
+                        }
+
+                    }
                 }
                 else
                 {
@@ -1117,6 +1187,21 @@ namespace BeautyHubAPI.Controllers
                 }
 
                 var SalonBanner = _mapper.Map<SalonBanner>(model);
+                if (model.categoryType == 1)
+                {
+                    SalonBanner.Male = true;
+                    SalonBanner.Female = false;
+                }
+                else if (model.categoryType == 2)
+                {
+                    SalonBanner.Female = true;
+                    SalonBanner.Male = false;
+                }
+                else
+                {
+                    SalonBanner.Male = true;
+                    SalonBanner.Female = true;
+                }
 
                 var documentFile = ContentDispositionHeaderValue.Parse(model.bannerImage.ContentDisposition).FileName.Trim('"');
                 documentFile = CommonMethod.EnsureCorrectFilename(documentFile);
@@ -1188,8 +1273,6 @@ namespace BeautyHubAPI.Controllers
                 model.mainCategoryId = model.mainCategoryId == null ? model.mainCategoryId = 0 : model.mainCategoryId;
                 model.subCategoryId = model.subCategoryId == null ? model.subCategoryId = 0 : model.subCategoryId;
 
-
-
                 if (model.bannerType != BannerType.SalonBanner.ToString() && model.bannerType != BannerType.SalonCategoryBanner.ToString())
                 {
                     _response.StatusCode = HttpStatusCode.OK;
@@ -1226,6 +1309,33 @@ namespace BeautyHubAPI.Controllers
                         _response.Messages = "Category not found.";
                         return Ok(_response);
                     }
+                    else
+                    {
+                        var categoryType = 0;
+                        if (getCategoryDetail.Male == true && getCategoryDetail.Female == false)
+                        {
+                            categoryType = 1;
+                        }
+                        else if (getCategoryDetail.Male == false && getCategoryDetail.Female == true)
+                        {
+                            categoryType = 2;
+                        }
+                        else
+                        {
+                            categoryType = 3;
+                        }
+                        if (categoryType != 3)
+                        {
+                            if (model.categoryType != categoryType)
+                            {
+                                _response.StatusCode = HttpStatusCode.OK;
+                                _response.IsSuccess = false;
+                                _response.Messages = "Please enter valid category type.";
+                                return Ok(_response);
+                            }
+                        }
+
+                    }
                 }
                 else
                 {
@@ -1241,6 +1351,32 @@ namespace BeautyHubAPI.Controllers
                         _response.Messages = "Category not found.";
                         return Ok(_response);
                     }
+                    else
+                    {
+                        var categoryType = 0;
+                        if (getCategoryDetail.Male == true && getCategoryDetail.Female == false)
+                        {
+                            categoryType = 1;
+                        }
+                        else if (getCategoryDetail.Male == false && getCategoryDetail.Female == true)
+                        {
+                            categoryType = 2;
+                        }
+                        else
+                        {
+                            categoryType = 3;
+                        }
+                        if (categoryType != 3)
+                        {
+                            if (model.categoryType != categoryType)
+                            {
+                                _response.StatusCode = HttpStatusCode.OK;
+                                _response.IsSuccess = false;
+                                _response.Messages = "Please enter valid category type.";
+                                return Ok(_response);
+                            }
+                        }
+                    }
                 }
                 else
                 {
@@ -1250,6 +1386,23 @@ namespace BeautyHubAPI.Controllers
                 var updteSalonBanner = await _context.SalonBanner.FirstOrDefaultAsync(u => u.SalonBannerId == model.salonBannerId);
                 var oldBannerImage = updteSalonBanner.BannerImage;
                 _mapper.Map(model, updteSalonBanner);
+
+                if (model.categoryType == 1)
+                {
+                    updteSalonBanner.Male = true;
+                    updteSalonBanner.Female = false;
+                }
+                else if (model.categoryType == 2)
+                {
+                    updteSalonBanner.Female = true;
+                    updteSalonBanner.Male = false;
+                }
+                else
+                {
+                    updteSalonBanner.Male = true;
+                    updteSalonBanner.Female = true;
+                }
+
                 if (model.bannerImage != null)
                 {
                     // Delete previous file
@@ -1279,6 +1432,18 @@ namespace BeautyHubAPI.Controllers
                 if (updteSalonBanner != null)
                 {
                     var SalonBannerDetail = _mapper.Map<GetSalonBannerDTO>(updteSalonBanner);
+                    if (SalonBannerDetail.male == true && SalonBannerDetail.female == false)
+                    {
+                        SalonBannerDetail.categoryType = 1;
+                    }
+                    else if (SalonBannerDetail.male == false && SalonBannerDetail.female == true)
+                    {
+                        SalonBannerDetail.categoryType = 2;
+                    }
+                    else
+                    {
+                        SalonBannerDetail.categoryType = 3;
+                    }
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = true;
                     _response.Data = SalonBannerDetail;
@@ -1384,6 +1549,18 @@ namespace BeautyHubAPI.Controllers
                 if (getSalonBanner != null)
                 {
                     var SalonBannerDetail = _mapper.Map<GetSalonBannerDTO>(getSalonBanner);
+                    if (SalonBannerDetail.male == true && SalonBannerDetail.female == false)
+                    {
+                        SalonBannerDetail.categoryType = 1;
+                    }
+                    else if (SalonBannerDetail.male == false && SalonBannerDetail.female == true)
+                    {
+                        SalonBannerDetail.categoryType = 2;
+                    }
+                    else
+                    {
+                        SalonBannerDetail.categoryType = 3;
+                    }
                     if (SalonBannerDetail.subCategoryId > 0)
                     {
                         var categoryDetail = await _context.SubCategory.FirstOrDefaultAsync(u => u.SubCategoryId == SalonBannerDetail.subCategoryId);
@@ -1510,6 +1687,34 @@ namespace BeautyHubAPI.Controllers
                     if (item.bannerType == BannerType.SalonCategoryBanner.ToString())
                     {
                         item.bannerTypeName = "Salon Category Banner";
+                    }
+                }
+
+                if (model.categoryType > 0)
+                {
+                    if (model.categoryType == 1)
+                    {
+                        SalonBannerList = SalonBannerList.Where(u => u.male == true && u.female == false).ToList();
+                    }
+                    if (model.categoryType == 2)
+                    {
+                        SalonBannerList = SalonBannerList.Where(u => u.male == false && u.female == true).ToList();
+                    }
+                }
+
+                foreach (var item in SalonBannerList)
+                {
+                    if (item.male == true && item.female == false)
+                    {
+                        item.categoryType = 1;
+                    }
+                    else if (item.male == false && item.female == true)
+                    {
+                        item.categoryType = 2;
+                    }
+                    else
+                    {
+                        item.categoryType = 3;
                     }
                 }
 
@@ -2303,6 +2508,141 @@ namespace BeautyHubAPI.Controllers
             }
         }
         #endregion
+
+        #region UpComingSchedule
+        /// <summary>
+        /// Get UpComing Schedule .
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Authorize(Roles = "Vendor")]
+        [Route("UpComingSchedule")]
+        public async Task<IActionResult> UpComingSchedule(int salonId)
+        {
+            try
+            {
+                string currentUserId = (HttpContext.User.Claims.First().Value);
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Token expired.";
+                    return Ok(_response);
+                }
+                var salon = await _context.SalonDetail.FirstOrDefaultAsync(a => a.SalonId == salonId);
+                if (salon == null)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Not found any Salon.";
+                    return Ok(_response);
+                }
+
+                List<upcomingScheduleDTO> bookServices = await _context.BookedService.Where(a => a.SalonId == salon.SalonId && a.AppointmentStatus == "Scheduled")
+                                                           .GroupBy(a => new { a.AppointmentDate })
+                                                           .Select(y => new upcomingScheduleDTO
+                                                           {
+                                                               date = y.Key.AppointmentDate.Date.ToString(@"dd-MM-yyyy"),
+                                                               // serviceName = y.Key.ServiceName,
+                                                               slotCount = y.Count(),
+                                                               day = y.Key.AppointmentDate.DayOfWeek.ToString(),
+                                                           }).ToListAsync();
+
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = bookServices.Count == 0 ? false : true;
+                _response.Messages = bookServices.Count == 0 ? "Not found any record." : "Upcoming slot found successfully";
+                _response.Data = bookServices;
+                return Ok(_response);
+
+
+
+
+            }
+            catch (Exception ex)
+            {
+                _response.StatusCode = HttpStatusCode.InternalServerError;
+                _response.IsSuccess = false;
+                _response.Data = new { };
+                _response.Messages = ResponseMessages.msgSomethingWentWrong + ex.Message;
+                return Ok(_response);
+            }
+        }
+        #endregion
+
+        #region UpComingScheduleDetail
+        /// <summary>
+        /// Get UpComing Schedule .
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Authorize(Roles = "Vendor")]
+        [Route("UpComingScheduleDetail")]
+        public async Task<IActionResult> UpComingScheduleDetail(string queryDate)
+        {
+            try
+            {
+                string currentUserId = (HttpContext.User.Claims.First().Value);
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Token expired.";
+                    return Ok(_response);
+                }
+
+                string format = "dd-MM-yyyy";
+                DateTime searchDate = new DateTime();
+
+                try
+                {
+                    // Parse the string into a DateTime object using the specified format
+                    searchDate = DateTime.ParseExact(queryDate, format, null);
+                }
+                catch (FormatException)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Invalid date format.";
+                    return Ok(_response);
+                }
+
+                var bookServices = await _context.BookedService
+                .Where(a => a.AppointmentStatus == "Scheduled" && a.AppointmentDate.Date == searchDate.Date).ToListAsync();
+                List<UpcomingScheduleDetailDTO> upcomingScheduleDetailDTO = new List<UpcomingScheduleDetailDTO>();
+                foreach (var item in bookServices)
+                {
+                    UpcomingScheduleDetailDTO upcomingScheduleDetail = new UpcomingScheduleDetailDTO();
+                    upcomingScheduleDetail.serviceId = item.ServiceId;
+                    upcomingScheduleDetail.serviceName = item.ServiceName;
+                    upcomingScheduleDetail.serviceCountInCart = (int)item.ServiceCountInCart;
+                    // var slotDetail = await _context.TimeSlot.Where(u => u.SlotId == item.SlotId).FirstOrDefaultAsync();
+                    upcomingScheduleDetail.fromTime = item.FromTime;
+                    upcomingScheduleDetail.toTime = item.ToTime;
+                    upcomingScheduleDetail.listingPrice = (double)item.ListingPrice;
+                    upcomingScheduleDetail.serviceImage = item.ServiceImage;
+                    upcomingScheduleDetail.slotId = (int)item.SlotId;
+                    upcomingScheduleDetail.appointmentDate = item.AppointmentDate.ToString(@"dd-MM-yyyy");
+
+                    upcomingScheduleDetailDTO.Add(upcomingScheduleDetail);
+                }
+
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = upcomingScheduleDetailDTO.Count == 0 ? false : true;
+                _response.Messages = upcomingScheduleDetailDTO.Count == 0 ? "Not found any record." : "Upcoming schedule details found successfully";
+                _response.Data = upcomingScheduleDetailDTO;
+                return Ok(_response);
+            }
+            catch (Exception ex)
+            {
+                _response.StatusCode = HttpStatusCode.InternalServerError;
+                _response.IsSuccess = false;
+                _response.Data = new { };
+                _response.Messages = ResponseMessages.msgSomethingWentWrong + ex.Message;
+                return Ok(_response);
+            }
+        }
+        #endregion
+
     }
 }
 

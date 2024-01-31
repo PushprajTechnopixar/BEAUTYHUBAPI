@@ -1,0 +1,21 @@
+
+{
+    "region" : "ap-south-1",
+    "profile" : "salonnearmr",
+    "configuration" : "Release",
+    "framework"     : "net6.0",
+    "function-name" : "salonnearme-dev",
+    "function-description" : "",
+    "package-type"         : "Zip",
+    "function-handler"     : "BeautyHubAPI",
+    "function-memory-size" : 1024,
+    "function-role"        : "arn:aws:iam::704634561884:role/LambdaAllowBehalfOfServer",
+    "function-timeout"     : 60,
+    "function-runtime"     : "dotnet6",
+    "function-architecture" : "x86_64",
+    "function-subnets"      : "",
+    "function-security-groups" : "",
+    "tracing-mode"             : "PassThrough",
+    "environment-variables"    : "",
+    "image-tag"                : ""
+}

@@ -16,7 +16,8 @@ namespace BeautyHubAPI.Models
         public int MainCategoryId { get; set; }
         public string CategoryName { get; set; } = null!;
         public string CategoryDescription { get; set; } = null!;
-        public string? CategoryImage { get; set; }
+        public string? CategoryImageMale { get; set; }
+        public string? CategoryImageFemale { get; set; }
         public int? CategoryStatus { get; set; }
         public string CreatedBy { get; set; } = null!;
         public string? ModifiedBy { get; set; }

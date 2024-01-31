@@ -18,6 +18,8 @@ namespace BeautyHubAPI.Models
             VendorCategory = new HashSet<VendorCategory>();
             NotificationSent = new HashSet<NotificationSent>();
             FavouriteSalon = new HashSet<FavouriteSalon>();
+            CustomerSearchRecord = new HashSet<CustomerSearchRecord>();
+
         }
 
         public string UserId { get; set; } = null!;
@@ -49,5 +51,7 @@ namespace BeautyHubAPI.Models
         public virtual ICollection<VendorCategory> VendorCategory { get; set; }
         public virtual ICollection<NotificationSent> NotificationSent { get; set; }
         public virtual ICollection<FavouriteSalon> FavouriteSalon { get; set; }
+        public virtual ICollection<CustomerSearchRecord> CustomerSearchRecord { get; set; }
+
     }
 }

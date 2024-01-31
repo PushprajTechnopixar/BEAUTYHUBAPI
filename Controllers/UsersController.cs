@@ -617,6 +617,7 @@ namespace BeautyHubAPI.Controllers
             var userStateDetail = await _context.StateMaster.Where(u => u.StateId == userProfileDetail.StateId).FirstOrDefaultAsync();
             mappedData.countryName = userCountryDetail != null ? userCountryDetail.CountryName : null;
             mappedData.stateName = userStateDetail != null ? userStateDetail.StateName : null;
+            mappedData.gender = mappedData.gender == Gender.Others.ToString() ? "Other" : mappedData.gender;
 
             _response.StatusCode = HttpStatusCode.OK;
             _response.IsSuccess = true;
@@ -831,6 +832,7 @@ namespace BeautyHubAPI.Controllers
         /// </summary>
         [HttpPost]
         [Route("Logout")]
+        [Authorize]
         public async Task<IActionResult> Logout()
         {
             string currentUserId = (HttpContext.User.Claims.First().Value);

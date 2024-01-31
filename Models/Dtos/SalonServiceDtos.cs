@@ -77,6 +77,7 @@
         public string? ageRestrictions { get; set; }
         public bool favoritesStatus { get; set; }
         public string? ServiceType { get; set; }
+        public double? discountInPercentage { get; set; }
         // public List<SalonPackageServiceListDTO> package { get; set; }
     }
 
@@ -104,6 +105,7 @@
     //     public string? ageRestrictions { get; set; }
     //     public bool favoritesStatus { get; set; }
     // }
+
 
     public class serviceDetailDTO
     {
@@ -139,6 +141,29 @@
 
     }
 
+    public class ServiceFilterationListDTO
+    {
+        public int? salonId { get; set; }
+        public int? mainCategoryId { get; set; }
+        public int? subCategoryId { get; set; }
+        public int? brandId { get; set; }
+        public double? Discount { get; set; }
+        public string? DiscountType { get; set; }
+        public string? MaxOrMinDiscount { get; set; }
+        public string? genderPreferences { get; set; }
+        public string? ageRestrictions { get; set; }
+        public string? serviceType { get; set; }
+        public bool categoryWise { get; set; }
+        public string? searchQuery { get; set; }
+    }
+
+    public class DashboardServiceFilterationListDTO
+    {
+        public int? salonId { get; set; }
+        public string? genderPreferences { get; set; }
+        public string? ageRestrictions { get; set; }
+    }
+
     public class IncludeServiceDTO
     {
         public int serviceId { get; set; }
@@ -166,6 +191,11 @@
         public int salonId { get; set; }
         public bool status { get; set; }
     }
+    public class SetFavouriteService
+    {
+        public int serviceId { get; set; }
+        public bool status { get; set; }
+    }
     public class SetServiceStatusDTO
     {
         public int serviceId { get; set; }
@@ -177,17 +207,19 @@
         public string date { get; set; }
         public string day { get; set; }
         public int slotCount { get; set; }
-        public int serviceId { get; set; }
     }
-    public class upcomingScheduleDetailDTO
+    public class UpcomingScheduleDetailDTO
     {
         public int serviceId { get; set; }
-        public string date { get; set; }
-        public string day { get; set; }
+        public string appointmentDate { get; set; }
         public string serviceName { get; set; }
-        public int slotCount { get; set; }
-       
-       
+        public int serviceCountInCart { get; set; }
+        public string fromTime { get; set; }
+        public string toTime { get; set; }
+        public int slotId { get; set; }
+        public double listingPrice { get; set; }
+        public string serviceImage { get; set; }
+
     }
     public class cancelUpcomingScheduleDTO
     {
@@ -195,4 +227,98 @@
         public string appointmentDate { get; set; }
         public bool cancelAllAppointments { get; set; }
     }
+
+    public partial class DashboardSalonServiceCategoryDTO
+    {
+        public int MainCategoryId { get; set; }
+        public int SubCategoryId { get; set; }
+        public int SubSubCategoryId { get; set; }
+        public string CategoryName { get; set; }
+        public string CategoryImage { get; set; }
+        public double? Discount { get; set; }
+        public string? MaxOrMinDiscount { get; set; }
+
+    }
+
+    public class CustomerDashboardServiceCategoryrDTO
+    {
+        public string? name { get; set; }
+        public string? description { get; set; }
+        public string? type { get; set; }
+        public int MainCategoryId { get; set; }
+        public int SubCategoryId { get; set; }
+        public List<DashboardSalonServiceCategoryDTO> dashboarCategory { get; set; }
+
+    }
+
+    public class CustomerDashboardBannerDTO
+    {
+        public string? name { get; set; }
+        public string? description { get; set; }
+        public string? type { get; set; }
+        public List<GetDashboardSalonBannerDTO> dashboardSalonBanner { get; set; }
+
+    }
+
+    public partial class GetDashboardSalonBannerDTO
+    {
+        public int salonBannerId { get; set; }
+        public int? salonId { get; set; }
+        public int? mainCategoryId { get; set; }
+        public int? subCategoryId { get; set; }
+        // public int? brandId { get; set; }
+        public string? mainCategoryName { get; set; }
+        public string? subCategoryName { get; set; }
+        // public string? brandName { get; set; }
+        public string? bannerType { get; set; }
+        public bool? male { get; set; }
+        public bool? female { get; set; }
+        public string? bannerTypeName { get; set; }
+        public string? bannerImage { get; set; }
+        public string? createDate { get; set; }
+    }
+
+
+    public class CustomerDashboardViewModel
+    {
+        public CustomerDashboardServiceCategoryrDTO mainCategoryList { get; set; }
+        public CustomerDashboardSalonServiceDTO bestPackages { get; set; }
+        public CustomerDashboardSalonServiceDTO maxServiceOffer { get; set; }
+        public CustomerDashboardSalonServiceDTO minServiceOffer { get; set; }
+        public CustomerDashboardSalonServiceDTO categoryWiseServices1 { get; set; }
+        public CustomerDashboardSalonServiceDTO categoryWiseServices2 { get; set; }
+        public CustomerDashboardSalonServiceDTO recommendedForYou { get; set; }
+        public CustomerDashboardSalonServiceDTO categoryWiseServices3 { get; set; }
+        public CustomerDashboardSalonServiceDTO categoryWiseServices4 { get; set; }
+        public CustomerDashboardSalonServiceDTO suggestedForYou { get; set; }
+        public CustomerDashboardSalonServiceDTO youMayLike { get; set; }
+        public CustomerDashboardSalonServiceDTO categoryWiseServices5 { get; set; }
+        public CustomerDashboardSalonServiceDTO categoryWiseServices6 { get; set; }
+        public CustomerDashboardSalonServiceDTO categoryWiseServices7 { get; set; }
+        public CustomerDashboardServiceCategoryrDTO subCategoriesOfferMin { get; set; }
+        public CustomerDashboardSalonServiceDTO servicesInYourCart { get; set; }
+        public CustomerDashboardServiceCategoryrDTO mainCategoriesOfferMin { get; set; }
+        public CustomerDashboardSalonServiceDTO newlyLaunched { get; set; }
+        public CustomerDashboardBannerDTO categoryBanner1 { get; set; }
+        public CustomerDashboardBannerDTO categoryBanner2 { get; set; }
+        public CustomerDashboardSalonServiceDTO favourites { get; set; }
+        public CustomerDashboardBannerDTO categoryBanner3 { get; set; }
+        public CustomerDashboardSalonServiceDTO RecentlyViewed { get; set; }
+        public CustomerDashboardBannerDTO categoryBanner4 { get; set; }
+        public CustomerDashboardBannerDTO categoryBanner5 { get; set; }
+        public CustomerDashboardBannerDTO salonBanner { get; set; }
+    }
+
+    public class CustomerDashboardSalonServiceDTO
+    {
+        public string? name { get; set; }
+        public string? description { get; set; }
+        public string? type { get; set; }
+        public int MainCategoryId { get; set; }
+        public int SubCategoryId { get; set; }
+        public double? Discount { get; set; }
+        public string? MaxOrMinDiscount { get; set; }
+        public List<SalonServiceListDTO>? serviceListDTO { get; set; }
+    }
+
 }

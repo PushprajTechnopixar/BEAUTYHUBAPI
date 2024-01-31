@@ -28,6 +28,23 @@ namespace BeautyHubAPI.Models
         public string CategoryImage { get; set; }
         public string categoryDescription { get; set; }
         public int? categoryType { get; set; }
+        public string? categoryTypeName { get; set; }
+        public bool isNext { get; set; } = false;
+        public string createDate { get; set; }
+        public bool status { get; set; }
+
+    }
+
+    public partial class VendorCategoryDTO
+    {
+        public int mainCategoryId { get; set; }
+        public int SubCategoryId { get; set; }
+        public string categoryName { get; set; }
+        public string? CategoryImageMale { get; set; }
+        public string? CategoryImageFemale { get; set; }
+        public string categoryDescription { get; set; }
+        public int? categoryType { get; set; }
+        public string? categoryTypeName { get; set; }
         public bool isNext { get; set; } = false;
         public string createDate { get; set; }
         public bool status { get; set; }
@@ -40,8 +57,11 @@ namespace BeautyHubAPI.Models
         public string? maincategoryName { get; set; }
         public string? subcategoryName { get; set; }
         public string? subSubcategoryName { get; set; }
+        public string? CategoryImageMale { get; set; }
+        public string? CategoryImageFemale { get; set; }
         public int? categorystatus { get; set; }
         public int? categoryType { get; set; }
+        public string? createDate { get; set; }
     }
 
     public partial class GetCategoryRequestDTO

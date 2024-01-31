@@ -15,6 +15,7 @@ public class MyBackgroundService : BackgroundService
     private bool _shouldStart = true; // Custom flag to control service start
     private CancellationTokenSource _cancellationTokenSource;
     private bool _shouldRun = true;
+    int salonIdToUpdate = 0;
 
 
     public MyBackgroundService(ILogger<MyBackgroundService> logger, IMapper mapper, IServiceProvider serviceProvider)
@@ -36,12 +37,13 @@ public class MyBackgroundService : BackgroundService
                     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
                     //todo
-                  //  await UpdateSchedule(dbContext);
+                    await UpdateSchedule(dbContext);
                     StopServiceOnce();
                 }
 
-                _logger.LogInformation("Regular service completed.");
+                      _logger.LogInformation("Regular service completed.");
             }
+            
             catch (Exception ex)
             {
                 _logger.LogError($"Error running regular service: {ex.Message}");
@@ -57,8 +59,9 @@ public class MyBackgroundService : BackgroundService
     {
         _cancellationTokenSource.Cancel();
     }
-    public void StartService()
+    public void StartService(int salonId)
     {
+        salonIdToUpdate = salonId;
         // Start the background service
         StartAsync(new CancellationToken()).GetAwaiter().GetResult();
     }
@@ -85,13 +88,9 @@ public class MyBackgroundService : BackgroundService
 
     private async Task UpdateSchedule(ApplicationDbContext dbContext)
     {
-        var salonScheduleList = await dbContext.SalonSchedule.Where(u => u.IsDeleted != true && u.Status != false).ToListAsync();
+        var salonScheduleList = await dbContext.SalonSchedule.Where(u => u.IsDeleted != true && u.Status != false && u.UpdateStatus == false && u.SalonId == salonIdToUpdate).ToListAsync();
         foreach (var SalonScheduleDays in salonScheduleList)
         {
-            SalonScheduleDays.UpdateStatus = false;
-            dbContext.Update(SalonScheduleDays);
-            await dbContext.SaveChangesAsync();
-
             SalonScheduleDays.Status = true;
             var scheduledDaysList = new List<string>();
             if (SalonScheduleDays.Monday == true)

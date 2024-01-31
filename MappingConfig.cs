@@ -64,6 +64,8 @@ namespace BeautyHubAPI
             CreateMap<AddCategoryDTO, SubCategory>().ReverseMap();
             CreateMap<CategoryDTO, MainCategory>().ReverseMap();
             CreateMap<CategoryDTO, SubCategory>().ReverseMap();
+            CreateMap<VendorCategoryDTO, MainCategory>().ReverseMap();
+            CreateMap<VendorCategoryDTO, SubCategory>().ReverseMap();
             CreateMap<UpdateCategoryDTO, MainCategory>().ReverseMap();
             CreateMap<UpdateCategoryDTO, SubCategory>().ReverseMap();
             CreateMap<VendorCategoryRequestDTO, VendorCategory>().ReverseMap();
@@ -99,7 +101,8 @@ namespace BeautyHubAPI
             CreateMap<SalonService, IncludeServiceDTO>().ReverseMap();
             CreateMap<upcomingScheduleDTO, TimeSlot>().ReverseMap();
             CreateMap<upcomingScheduleDTO, BookedService>().ReverseMap();
-            CreateMap<upcomingScheduleDetailDTO, BookedService>().ReverseMap();
+            CreateMap<UpcomingScheduleDetailDTO, BookedService>().ReverseMap();
+            CreateMap<BookedServicesDTO, BookedService>().ReverseMap();
             // CreateMap<UploadCategoryImageDTO, MainCategory>().ReverseMap();
             // CreateMap<UploadCategoryImageDTO, SubCategory>().ReverseMap();
         }

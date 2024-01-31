@@ -29,6 +29,7 @@ using System.Timers;
 using Twilio.Http;
 using Amazon.S3.Model;
 using ExpressionEvaluator.Parser.Expressions;
+using GSF.Collections;
 
 namespace BeautyHubAPI.Controllers
 {
@@ -159,6 +160,7 @@ namespace BeautyHubAPI.Controllers
                     _response.Messages = "Token expired.";
                     return Ok(_response);
                 }
+                searchBy = string.IsNullOrEmpty(searchBy) ? null : (searchBy).TrimEnd();
 
                 liveLocation = liveLocation != null ? liveLocation : 0;
 
@@ -1046,7 +1048,7 @@ namespace BeautyHubAPI.Controllers
                 await _context.SaveChangesAsync();
 
                 currentUserDetail.Email = DateTime.Now.Ticks + "deleted" + currentUserDetail.Email;
-                currentUserDetail.UserName = DateTime.Now.Ticks + "deleted" + currentUserDetail.Email;
+                currentUserDetail.UserName = (DateTime.Now.Ticks).ToString();
                 currentUserDetail.NormalizedUserName = DateTime.Now.Ticks + "deleted" + currentUserDetail.Email;
                 currentUserDetail.PhoneNumber = DateTime.Now.Ticks + "001" + currentUserDetail.PhoneNumber;
                 currentUserDetail.SecurityStamp = CommonMethod.RandomString(20);
@@ -1779,7 +1781,7 @@ namespace BeautyHubAPI.Controllers
                             booked.CancelledPrice = booked.ListingPrice + booked.Discount;
                             booked.Discount = booked.Discount - booked.Discount;
 
-                            cancelledPrice = booked.CancelledPrice;
+                            cancelledPrice = cancelledPrice + booked.CancelledPrice;
 
                             booked.AppointmentStatus = AppointmentStatus.Cancelled.ToString();
                             _context.Update(booked);
@@ -2887,6 +2889,683 @@ namespace BeautyHubAPI.Controllers
                 _response.Messages = ex.Message;
                 return Ok(_response);
             }
+        }
+        #endregion
+
+        #region SetFavouriteServiceStatus
+        /// <summary>
+        ///set favourite service status
+        /// </summary>
+        [HttpPost]
+        [Route("SetFavouriteServiceStatus")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [Authorize(Roles = "Customer")]
+        public async Task<IActionResult> SetFavouriteServiceStatus(SetFavouriteService model)
+        {
+            try
+            {
+                string currentUserId = (HttpContext.User.Claims.First().Value);
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Token expired.";
+                    return Ok(_response);
+                }
+
+                var serviceDetail = await _context.SalonService.FirstOrDefaultAsync(u => u.ServiceId == model.serviceId && u.IsDeleted == false);
+                if (serviceDetail == null)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Not found any Service.";
+                    return Ok(_response);
+                }
+
+                var favouriteService = await _context.FavouriteService.FirstOrDefaultAsync(u => u.ServiceId == model.serviceId && u.CustomerUserId == currentUserId);
+                string msg = string.Empty;
+
+                if (favouriteService == null)
+                {
+                    if (model.status == false)
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Messages = "Not found any Service.";
+                        return Ok(_response);
+                    }
+
+                    var addFavouriteService = new FavouriteService();
+                    addFavouriteService.CustomerUserId = currentUserId;
+                    addFavouriteService.ServiceId = model.serviceId;
+
+                    _context.Add(addFavouriteService);
+                    _context.SaveChanges();
+
+                    msg = "Service added to favorite.";
+                }
+                else
+                {
+                    if (model.status == true)
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Messages = "Already added to favourite.";
+                        return Ok(_response);
+                    }
+
+                    var entity = _context.Remove(favouriteService).Entity;
+                    _context.SaveChanges();
+
+                    msg = "Service removed from favorite successfully.";
+                }
+
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = true;
+                _response.Messages = msg;
+                return Ok(_response);
+            }
+            catch (Exception ex)
+            {
+                _response.StatusCode = HttpStatusCode.InternalServerError;
+                _response.IsSuccess = false;
+                _response.Messages = ResponseMessages.msgSomethingWentWrong + ex.Message;
+                return Ok(_response);
+            }
+        }
+        #endregion
+
+        #region GetFavouriteServiceList
+        /// <summary>
+        ///  get service list.
+        /// </summary>
+        [HttpGet("GetFavouriteServiceList")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [Authorize(Roles = "Customer")]
+        public async Task<IActionResult> GetFavouriteServiceList(int salonId)
+        {
+            try
+            {
+                string currentUserId = (HttpContext.User.Claims.First().Value);
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Token expired.";
+                    return Ok(_response);
+                }
+
+                var userProfileDetail = await _context.UserDetail.Where(u => u.UserId == currentUserId).FirstOrDefaultAsync();
+                if (userProfileDetail == null)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "User not found.";
+                    return Ok(_response);
+                }
+
+                var serviceIdList = await _context.FavouriteService.Where(u => u.CustomerUserId == currentUserId).Select(u => u.ServiceId).ToListAsync();
+
+                var query = from t1 in _context.SalonService
+                            join t2 in _context.MainCategory on t1.MainCategoryId equals t2.MainCategoryId
+                            where t1.IsDeleted != true
+                            where t1.Status == 1
+                            where serviceIdList.Contains(t1.ServiceId)
+                            where t1.SalonId == salonId
+                            select new SalonServiceListDTO
+                            {
+                                serviceName = t1.ServiceName,
+                                serviceId = t1.ServiceId,
+                                vendorId = _context.SalonDetail.Where(u => u.SalonId == (t1.SalonId != null ? t1.SalonId : 0)).Select(u => u.VendorId).FirstOrDefault(),
+                                salonId = t1.SalonId,
+                                salonName = _context.SalonDetail.Where(u => u.SalonId == (t1.SalonId != null ? t1.SalonId : 0)).Select(u => u.SalonName).FirstOrDefault(),
+                                mainCategoryId = t1.MainCategoryId,
+                                mainCategoryName = t2.CategoryName,
+                                subCategoryId = t1.SubcategoryId,
+                                subCategoryName = _context.SubCategory.Where(u => u.SubCategoryId == (t1.SubcategoryId != null ? t1.SubcategoryId : 0)).Select(u => u.CategoryName).FirstOrDefault(),
+                                serviceDescription = t1.ServiceDescription,
+                                serviceImage = t1.ServiceIconImage,
+                                listingPrice = t1.ListingPrice,
+                                basePrice = (double)t1.BasePrice,
+                                favoritesStatus = (_context.FavouriteService.Where(u => u.ServiceId == t1.ServiceId && u.CustomerUserId == currentUserId)).FirstOrDefault() != null ? true : false,
+                                discount = t1.Discount,
+                                genderPreferences = t1.GenderPreferences,
+                                ageRestrictions = t1.AgeRestrictions,
+                                ServiceType = t1.ServiceType,
+                                totalCountPerDuration = t1.TotalCountPerDuration,
+                                durationInMinutes = t1.DurationInMinutes,
+                                status = t1.Status,
+                                isSlotAvailable = _context.TimeSlot.Where(a => a.ServiceId == t1.ServiceId && a.Status && a.SlotCount > 0 && !a.IsDeleted)
+                                                            .Select(u => u.SlotDate).Distinct().Count(),
+                                serviceCountInCart = _context.Cart.Where(a => a.ServiceId == t1.ServiceId && a.CustomerUserId == currentUserId).Sum(a => a.ServiceCountInCart),
+                                // Additional properties from other tables
+                            };
+
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = true;
+                _response.Data = query.ToList();
+                _response.Messages = "Favourite service list shown successfully.";
+                return Ok(_response);
+
+            }
+            catch (Exception ex)
+            {
+                _response.StatusCode = HttpStatusCode.InternalServerError;
+                _response.IsSuccess = false;
+                _response.Messages = ex.Message;
+                return Ok(_response);
+            }
+        }
+        #endregion
+
+        #region GetCustomerDashboardData
+        /// <summary>
+        ///  Get customer dashboard data.
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [Authorize(Roles = "Customer")]
+        [Route("GetCustomerDashboardData")]
+        public async Task<IActionResult> GetCustomerDashboardData([FromQuery] DashboardServiceFilterationListDTO model)
+        {
+            string currentUserId = (HttpContext.User.Claims.First().Value);
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = false;
+                _response.Messages = "Token expired.";
+                return Ok(_response);
+            }
+            var currentUserDetail = _userManager.FindByIdAsync(currentUserId).GetAwaiter().GetResult();
+            if (currentUserDetail == null)
+            {
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = false;
+                _response.Messages = "User does not exists.";
+                return Ok(_response);
+            }
+
+            var salonName = "";
+
+            if (model.salonId > 0)
+            {
+                var salon = await _context.SalonDetail.Where(u => u.SalonId == model.salonId).FirstOrDefaultAsync();
+                if (salon == null)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Not found any record.";
+                    return Ok(_response);
+                }
+                if (salon.Status == 0)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Messages = "Not found any record.";
+                    return Ok(_response);
+                }
+                salonName = salon.SalonName;
+            }
+            var roles = await _userManager.GetRolesAsync(currentUserDetail);
+
+            IQueryable<SalonServiceListDTO>? query1;
+
+            query1 = from t1 in _context.SalonService
+                     join t2 in _context.MainCategory on t1.MainCategoryId equals t2.MainCategoryId
+                     where t1.IsDeleted != true && t1.SalonId == model.salonId
+                     where t1.Status == 1
+                     // where t1.ServiceType == (model.mainCategoryId != 53 ? "Single" : "Package")
+                     // where t6.CustomerUserId == currentUserId
+                     orderby t1.CreateDate descending
+                     // Add more joins as needed
+                     select new SalonServiceListDTO
+                     {
+                         serviceName = t1.ServiceName,
+                         serviceId = t1.ServiceId,
+                         vendorId = _context.SalonDetail.Where(u => u.SalonId == (t1.SalonId != null ? t1.SalonId : 0)).Select(u => u.VendorId).FirstOrDefault(),
+                         salonId = t1.SalonId,
+                         salonName = _context.SalonDetail.Where(u => u.SalonId == (t1.SalonId != null ? t1.SalonId : 0)).Select(u => u.SalonName).FirstOrDefault(),
+                         mainCategoryId = t1.MainCategoryId,
+                         mainCategoryName = t2.CategoryName,
+                         subCategoryId = t1.SubcategoryId,
+                         subCategoryName = _context.SubCategory.Where(u => u.SubCategoryId == (t1.SubcategoryId != null ? t1.SubcategoryId : 0)).Select(u => u.CategoryName).FirstOrDefault(),
+                         serviceDescription = t1.ServiceDescription,
+                         serviceImage = t1.ServiceIconImage,
+                         listingPrice = t1.ListingPrice,
+                         basePrice = (double)t1.BasePrice,
+                         favoritesStatus = (_context.FavouriteService.Where(u => u.ServiceId == t1.ServiceId && u.CustomerUserId == currentUserId)).FirstOrDefault() != null ? true : false,
+                         discount = t1.Discount,
+                         genderPreferences = t1.GenderPreferences,
+                         ageRestrictions = t1.AgeRestrictions,
+                         ServiceType = t1.ServiceType,
+                         totalCountPerDuration = t1.TotalCountPerDuration,
+                         durationInMinutes = t1.DurationInMinutes,
+                         status = t1.Status,
+                         // Ensure the discount is non-negative
+                         isSlotAvailable = _context.TimeSlot.Where(a => a.ServiceId == t1.ServiceId && a.Status && a.SlotCount > 0 && !a.IsDeleted)
+                                         .Select(u => u.SlotDate).Distinct().Count(),
+                         serviceCountInCart = _context.Cart.Where(a => a.ServiceId == t1.ServiceId && a.CustomerUserId == currentUserId).Sum(a => a.ServiceCountInCart),
+                         // Additional properties from other tables
+                     };
+
+            var categoryIdsQuery = _context.VendorCategory
+                        .Where(u => u.SalonId == model.salonId && (u.MainCategoryId > 0 || u.SubCategoryId > 0))
+                        .Select(u => new { u.MainCategoryId, u.SubCategoryId });
+
+            var distinctCategoryIds = await categoryIdsQuery.ToListAsync();
+
+            var mainCategoryIDs = distinctCategoryIds.Where(u => u.MainCategoryId > 0).Select(u => u.MainCategoryId).ToList();
+            var subCategoryIDs = distinctCategoryIds.Where(u => u.SubCategoryId > 0).Select(u => u.SubCategoryId).ToList();
+
+            var query = query1
+                .Where(u => !mainCategoryIDs.Contains(u.mainCategoryId) && !subCategoryIDs.Contains(u.subCategoryId))
+                // .Where(mainCategoryIDs.Contains(subCategoryIDs.))
+                .ToList()
+                .Select(item => new SalonServiceListDTO
+                {
+                    serviceName = item.serviceName,
+                    serviceId = item.serviceId,
+                    vendorId = item.vendorId,
+                    salonId = item.salonId,
+                    salonName = item.salonName,
+                    mainCategoryId = item.mainCategoryId,
+                    mainCategoryName = item.mainCategoryName,
+                    subCategoryId = item.subCategoryId,
+                    subCategoryName = item.subCategoryName,
+                    serviceDescription = item.serviceDescription,
+                    serviceImage = item.serviceImage,
+                    listingPrice = item.listingPrice,
+                    basePrice = item.basePrice,
+                    favoritesStatus = item.favoritesStatus,
+                    discount = item.discount,
+                    genderPreferences = item.genderPreferences,
+                    ageRestrictions = item.ageRestrictions,
+                    ServiceType = item.ServiceType,
+                    totalCountPerDuration = item.totalCountPerDuration,
+                    durationInMinutes = item.durationInMinutes,
+                    status = item.status,
+                    isSlotAvailable = item.isSlotAvailable,
+                    serviceCountInCart = item.serviceCountInCart,
+                    discountInPercentage = Math.Max(0, Math.Round(((item.basePrice - item.listingPrice) / item.basePrice) * 100, 2))
+                })
+                .ToList();
+
+            if (!string.IsNullOrEmpty(model.genderPreferences))
+            {
+                query = query.Where(x => (x.genderPreferences == model.genderPreferences)).ToList();
+            }
+            if (!string.IsNullOrEmpty(model.ageRestrictions))
+            {
+                query = query.Where(x => (x.ageRestrictions == model.ageRestrictions)).ToList();
+            }
+
+            var mainCategories = query.Where(u => u.mainCategoryId > 0)
+                                    .Select(t1 => new DashboardSalonServiceCategoryDTO
+                                    {
+                                        MainCategoryId = (int)t1.mainCategoryId,
+                                        CategoryName = t1.mainCategoryName,
+                                        CategoryImage = _context.MainCategory
+                                                            .Where(u => u.MainCategoryId == (t1.mainCategoryId ?? 0))
+                                                            .Select(u => (model.genderPreferences == "Male" ? u.CategoryImageMale : u.CategoryImageFemale))
+                                                            .FirstOrDefault(),
+                                    })
+                                    // .DistinctBy(u => u.MainCategoryId).Take(9)
+                                    .ToList().DistinctBy(u => u.MainCategoryId);
+
+            var subCategories = query.Where(u => u.subCategoryId > 0)
+                                    .Select(t1 => new DashboardSalonServiceCategoryDTO
+                                    {
+                                        SubCategoryId = (int)t1.subCategoryId,
+                                        CategoryName = t1.subCategoryName,
+                                        CategoryImage = _context.SubCategory
+                                                            .Where(u => u.SubCategoryId == (t1.subCategoryId ?? 0))
+                                                            .Select(u => (model.genderPreferences == "Male" ? u.CategoryImageMale : u.CategoryImageFemale))
+                                                            .FirstOrDefault(),
+                                    })
+                                    .ToList().DistinctBy(u => u.SubCategoryId).Take(9);
+
+            var mainCategoriesOfferMinPercentage = query.Where(u => u.mainCategoryId > 0 && u.discountInPercentage < 50 && u.discountInPercentage > 1)
+                                            .Select(t1 => new DashboardSalonServiceCategoryDTO
+                                            {
+                                                MainCategoryId = (int)t1.mainCategoryId,
+                                                MaxOrMinDiscount = "Max",
+                                                Discount = 50,
+                                                CategoryName = t1.mainCategoryName,
+                                                CategoryImage = _context.MainCategory
+                                                                    .Where(u => u.MainCategoryId == (t1.mainCategoryId ?? 0))
+                                                                    .Select(u => (model.genderPreferences == "Male" ? u.CategoryImageMale : u.CategoryImageFemale))
+                                                                    .FirstOrDefault(),
+                                            })
+                                            .ToList().DistinctBy(u => u.MainCategoryId).Take(9);
+
+            var subCategoriesOfferMinPercentage = query.Where(u => u.mainCategoryId > 0 && u.discountInPercentage < 50 && u.discountInPercentage > 1)
+                                    .Select(t1 => new DashboardSalonServiceCategoryDTO
+                                    {
+                                        SubCategoryId = (int)t1.subCategoryId,
+                                        MaxOrMinDiscount = "Max",
+                                        Discount = 50,
+                                        CategoryName = t1.subCategoryName,
+                                        CategoryImage = _context.SubCategory
+                                                            .Where(u => u.SubCategoryId == (t1.subCategoryId ?? 0))
+                                                            .Select(u => (model.genderPreferences == "Male" ? u.CategoryImageMale : u.CategoryImageFemale))
+                                                            .FirstOrDefault(),
+                                    })
+                                    .ToList().DistinctBy(u => u.SubCategoryId).Take(9);
+            string bannerCategoryType = "Male_and_Female";
+            if (model.genderPreferences == "Male")
+            {
+                bannerCategoryType = model.genderPreferences;
+            }
+            if (model.genderPreferences == "Female")
+            {
+                bannerCategoryType = model.genderPreferences;
+            }
+            var shopBanners = _context.SalonBanner.Where(u => (u.SalonId == model.salonId))
+            .Select(t1 => new GetDashboardSalonBannerDTO
+            {
+                mainCategoryId = t1.MainCategoryId,
+                subCategoryId = t1.SubCategoryId,
+                bannerType = t1.BannerType,
+                male = t1.Male,
+                female = t1.Female,
+                bannerImage = t1.BannerImage,
+                mainCategoryName = _context.MainCategory.Where(u => u.MainCategoryId == (t1.MainCategoryId ?? 0))
+                                                                .Select(u => u.CategoryName).FirstOrDefault(),
+                subCategoryName = _context.SubCategory.Where(u => u.SubCategoryId == (t1.SubCategoryId ?? 0))
+                                                                .Select(u => u.CategoryName).FirstOrDefault(),
+            })
+            .ToList();
+
+            if (model.genderPreferences == "Male")
+            {
+                shopBanners = shopBanners.Where(u => u.male == true).ToList();
+            }
+            if (model.genderPreferences == "Female")
+            {
+                shopBanners = shopBanners.Where(u => u.female == true).ToList();
+            }
+
+            var productList = query.ToList();
+
+            var dashboardResponse = new CustomerDashboardViewModel();
+
+            var categorywiseBannerList = shopBanners.Where(u => u.bannerType == BannerType.SalonCategoryBanner.ToString());
+            var salonBannerList = shopBanners.Where(u => u.bannerType == BannerType.SalonBanner.ToString());
+
+            // product list
+            var dashboardCategoryWiseBannerResponse = new CustomerDashboardBannerDTO();
+            dashboardCategoryWiseBannerResponse.name = "Category Banner";
+            dashboardCategoryWiseBannerResponse.type = "Banner";
+            var counter1 = 1;
+            foreach (var item in categorywiseBannerList)
+            {
+                counter1 = counter1 + 1;
+                if (counter1 < 4)
+                {
+                    dashboardCategoryWiseBannerResponse.dashboardSalonBanner = categorywiseBannerList.Take(4).ToList();
+                    dashboardResponse.categoryBanner1 = dashboardCategoryWiseBannerResponse;
+                    dashboardResponse.categoryBanner2 = dashboardCategoryWiseBannerResponse;
+                    dashboardResponse.categoryBanner3 = dashboardCategoryWiseBannerResponse;
+                    dashboardResponse.categoryBanner4 = dashboardCategoryWiseBannerResponse;
+                    dashboardResponse.categoryBanner5 = dashboardCategoryWiseBannerResponse;
+                }
+                if (counter1 > 4 && counter1 < 8)
+                {
+                    dashboardCategoryWiseBannerResponse.dashboardSalonBanner = categorywiseBannerList.Take(8).OrderByDescending(u => u.mainCategoryId).Take(4).ToList();
+                    dashboardResponse.categoryBanner2 = dashboardCategoryWiseBannerResponse;
+                }
+                if (counter1 > 8 && counter1 < 12)
+                {
+                    dashboardCategoryWiseBannerResponse.dashboardSalonBanner = categorywiseBannerList.Take(12).OrderByDescending(u => u.mainCategoryId).Take(4).ToList();
+                    dashboardResponse.categoryBanner3 = dashboardCategoryWiseBannerResponse;
+                }
+                if (counter1 > 12 && counter1 < 16)
+                {
+                    dashboardCategoryWiseBannerResponse.dashboardSalonBanner = categorywiseBannerList.Take(16).OrderByDescending(u => u.mainCategoryId).Take(4).ToList();
+                    dashboardResponse.categoryBanner4 = dashboardCategoryWiseBannerResponse;
+                }
+                if (counter1 > 16 && counter1 < 20)
+                {
+                    dashboardCategoryWiseBannerResponse.dashboardSalonBanner = categorywiseBannerList.OrderByDescending(u => u.mainCategoryId).Take(4).ToList();
+                    dashboardResponse.categoryBanner5 = dashboardCategoryWiseBannerResponse;
+                }
+            }
+
+            // main category list
+            var customerDashboardProductCategoryrDTO = new CustomerDashboardServiceCategoryrDTO();
+            var dashboardProductCategoryList = new List<DashboardSalonServiceCategoryDTO>();
+            foreach (var item in mainCategories)
+            {
+                var dashboardProductCategoryDTO = new DashboardSalonServiceCategoryDTO();
+                dashboardProductCategoryDTO.CategoryName = item.CategoryName;
+                dashboardProductCategoryDTO.CategoryImage = item.CategoryImage;
+                dashboardProductCategoryDTO.MainCategoryId = item.MainCategoryId;
+                dashboardProductCategoryList.Add(item);
+            }
+            customerDashboardProductCategoryrDTO.name = "Service by category";
+            customerDashboardProductCategoryrDTO.type = "Category";
+            customerDashboardProductCategoryrDTO.dashboarCategory = dashboardProductCategoryList;
+            dashboardResponse.mainCategoryList = customerDashboardProductCategoryrDTO;
+
+            // home banner list
+            var dashboardBannerResponse = new CustomerDashboardBannerDTO();
+            var dashboardBannerList = new List<GetDashboardSalonBannerDTO>();
+            foreach (var item in salonBannerList)
+            {
+                var dashboardBannerDTO = new GetDashboardSalonBannerDTO();
+                dashboardBannerDTO.bannerImage = item.bannerImage;
+                dashboardBannerDTO.bannerType = item.bannerType;
+                dashboardBannerList.Add(dashboardBannerDTO);
+            }
+            dashboardBannerResponse.name = "Salon Banner";
+            dashboardBannerResponse.type = "Banner";
+            dashboardBannerResponse.dashboardSalonBanner = dashboardBannerList;
+            dashboardResponse.salonBanner = dashboardBannerResponse;
+
+            // product list
+            var dashboardTopPicksProductResponse = new CustomerDashboardSalonServiceDTO();
+            dashboardTopPicksProductResponse.name = "New Launch";
+            dashboardTopPicksProductResponse.type = "Service";
+            dashboardTopPicksProductResponse.description = "";
+            dashboardTopPicksProductResponse.serviceListDTO = query.Take(15).ToList();
+            dashboardResponse.newlyLaunched = dashboardTopPicksProductResponse;
+
+            // product list
+            var dashboardBestPackageResponse = new CustomerDashboardSalonServiceDTO();
+            dashboardBestPackageResponse.name = "Best Packages";
+            dashboardBestPackageResponse.type = "Service";
+            dashboardBestPackageResponse.description = "";
+            dashboardBestPackageResponse.serviceListDTO = query.Where(u => u.ServiceType == "Package").OrderByDescending(u => u.discount).Take(15).ToList();
+            dashboardResponse.bestPackages = dashboardBestPackageResponse;
+
+            // product list
+            var distinctSubCategories = query.Select(u => u.subCategoryId)
+                                             .Distinct().ToList();
+            var resultList = new List<SalonServiceListDTO>();
+
+            for (int i = 0; i < 9; i++)
+            {
+                if (distinctSubCategories.Count > (i + 1))
+                {
+                    var topProductsForSubCategory = query
+                        .Where(u => u.subCategoryId == distinctSubCategories[i].Value).FirstOrDefault();
+
+                    resultList.Add(topProductsForSubCategory);
+                }
+            }
+
+            var dashboardsugestedProductResponse = new CustomerDashboardSalonServiceDTO();
+            dashboardsugestedProductResponse.name = "Suggested for You";
+            dashboardsugestedProductResponse.type = "Service";
+            dashboardsugestedProductResponse.serviceListDTO = resultList.Take(9).ToList();
+            dashboardResponse.suggestedForYou = dashboardsugestedProductResponse;
+
+            // product list
+            var resultList1 = new List<SalonServiceListDTO>();
+            for (int i = 0; i < 9; i++)
+            {
+                if (distinctSubCategories.Count > (i + 9))
+                {
+                    var topProductsForSubCategory = query
+                        .Where(u => u.subCategoryId == distinctSubCategories[i + 9].Value).FirstOrDefault();
+
+                    resultList.Add(topProductsForSubCategory);
+                }
+            }
+            var dashboardRecommendedProductResponse = new CustomerDashboardSalonServiceDTO();
+            dashboardRecommendedProductResponse.name = "Recommended for You";
+            dashboardRecommendedProductResponse.type = "Service";
+            // Assuming 'query' is an IQueryable collection
+            dashboardRecommendedProductResponse.serviceListDTO = resultList1;
+            dashboardResponse.recommendedForYou = dashboardRecommendedProductResponse;
+
+            // product list
+            var dashboardFavouriteProductResponse = new CustomerDashboardSalonServiceDTO();
+            dashboardFavouriteProductResponse.name = "Your Favourite Services";
+            dashboardFavouriteProductResponse.type = "Service";
+            dashboardFavouriteProductResponse.serviceListDTO = query.Where(u => u.favoritesStatus == true).Take(9).ToList();
+            dashboardResponse.favourites = dashboardFavouriteProductResponse;
+
+            // product list
+            var dashboardCartProductResponse = new CustomerDashboardSalonServiceDTO();
+            dashboardCartProductResponse.name = "Items in Your Cart";
+            dashboardCartProductResponse.type = "Service";
+            dashboardCartProductResponse.serviceListDTO = query.Where(u => u.serviceCountInCart > 0).Take(9).ToList();
+            dashboardResponse.servicesInYourCart = dashboardCartProductResponse;
+
+            // product list
+            var dashboardServiceMaxOfferResponse = new CustomerDashboardSalonServiceDTO();
+            dashboardServiceMaxOfferResponse.name = "Up to 50% off";
+            dashboardServiceMaxOfferResponse.type = "Service";
+            dashboardServiceMaxOfferResponse.Discount = 50;
+            dashboardServiceMaxOfferResponse.type = "Max";
+            dashboardServiceMaxOfferResponse.serviceListDTO = query.Where(u => u.discountInPercentage < 50 && u.discountInPercentage > 0).OrderByDescending(u => u.discountInPercentage).Take(12).ToList();
+            dashboardResponse.maxServiceOffer = dashboardServiceMaxOfferResponse;
+
+            // product list
+            var dashboardServiceMinOfferResponse = new CustomerDashboardSalonServiceDTO();
+            dashboardServiceMinOfferResponse.name = "Minimun 50% off";
+            dashboardServiceMinOfferResponse.type = "Service";
+            dashboardServiceMinOfferResponse.Discount = 50;
+            dashboardServiceMinOfferResponse.type = "Min";
+            dashboardServiceMinOfferResponse.serviceListDTO = query.Where(u => u.discountInPercentage > 50).OrderByDescending(u => u.discountInPercentage).Take(12).ToList();
+            dashboardResponse.minServiceOffer = dashboardServiceMinOfferResponse;
+
+
+            var customerSearchRecord = _context.CustomerSearchRecord.Where(u => u.CustomerUserId == currentUserId).OrderByDescending(u => u.RecordId);
+            // product list
+            var dashboardRecentProductResponse = new CustomerDashboardSalonServiceDTO();
+            dashboardRecentProductResponse.name = "Recently Viewed";
+            dashboardRecentProductResponse.type = "Product";
+
+            var searchQuery = customerSearchRecord.Where(u => !string.IsNullOrEmpty(u.CustomerSearchItem)).FirstOrDefault();
+
+            if (searchQuery != null)
+            {
+                dashboardRecentProductResponse.serviceListDTO = query.Where(x => (x.serviceName?.IndexOf(searchQuery.CustomerSearchItem, StringComparison.OrdinalIgnoreCase) >= 0)
+                || (x.mainCategoryName?.IndexOf(searchQuery.CustomerSearchItem, StringComparison.OrdinalIgnoreCase) >= 0)
+                || (x.subCategoryName?.IndexOf(searchQuery.CustomerSearchItem, StringComparison.OrdinalIgnoreCase) >= 0)
+                ).Take(9).ToList();
+                // dashboardRecentProductResponse.productListDTO = query.Where(u => u.productCountInCart > 0).ToList();
+                dashboardResponse.RecentlyViewed = dashboardRecentProductResponse;
+            }
+
+            // product list
+            var searchSubCategory = customerSearchRecord.Where(u => u.MaincategoryId > 0).FirstOrDefault();
+
+            if (searchSubCategory != null)
+            {
+                var dashboardContinueProductResponse = new CustomerDashboardSalonServiceDTO();
+                dashboardContinueProductResponse.name = "You may like";
+                dashboardContinueProductResponse.type = "Service";
+
+                dashboardContinueProductResponse.serviceListDTO = query.Where(u => u.subCategoryId == searchSubCategory.SubcategoryId).Take(9).ToList();
+
+                // dashboardCartProductResponse.productListDTO = query.Where(u => u.productCountInCart > 0).ToList();
+                dashboardResponse.youMayLike = dashboardContinueProductResponse;
+            }
+
+            var categoryList = query
+                .Select(u => new
+                {
+                    MainCategoryName = u.mainCategoryName,
+                    MainCategoryId = u.mainCategoryId
+                })
+                .ToList().DistinctBy(u => u.MainCategoryId);
+
+            var subCategoryList = await _context.SubCategory.Where(u => u.CategoryStatus == 1).ToListAsync();
+            int counter = 1;
+            foreach (var item2 in categoryList)
+            {
+                // product list
+                var dashboardCategoryWiseResponse = new CustomerDashboardSalonServiceDTO();
+                var description = "";
+                var subcategoryByMain = subCategoryList.Where(u => u.MainCategoryId == item2.MainCategoryId).Take(3).ToList();
+                int coutForSub = 0;
+                foreach (var item in subcategoryByMain)
+                {
+                    description = description + (!string.IsNullOrEmpty(description) ? (", " + subcategoryByMain[coutForSub].CategoryName) : subcategoryByMain[coutForSub].CategoryName);
+                    coutForSub = coutForSub + 1;
+                }
+                dashboardCategoryWiseResponse.name = item2.MainCategoryName;
+                dashboardCategoryWiseResponse.MainCategoryId = (int)item2.MainCategoryId;
+                dashboardCategoryWiseResponse.type = "Service";
+                dashboardCategoryWiseResponse.serviceListDTO = query.Where(u => u.mainCategoryId == item2.MainCategoryId).Take(9).ToList();
+                if (counter == 1)
+                {
+                    dashboardResponse.categoryWiseServices1 = dashboardCategoryWiseResponse;
+                }
+                else if (counter == 2)
+                {
+                    dashboardResponse.categoryWiseServices2 = dashboardCategoryWiseResponse;
+                }
+                else if (counter == 3)
+                {
+                    dashboardResponse.categoryWiseServices3 = dashboardCategoryWiseResponse;
+                }
+                else if (counter == 4)
+                {
+                    dashboardResponse.categoryWiseServices4 = dashboardCategoryWiseResponse;
+                }
+                else if (counter == 5)
+                {
+                    dashboardResponse.categoryWiseServices5 = dashboardCategoryWiseResponse;
+                }
+                else if (counter == 6)
+                {
+                    dashboardResponse.categoryWiseServices6 = dashboardCategoryWiseResponse;
+                }
+                else
+                {
+                    dashboardResponse.categoryWiseServices7 = dashboardCategoryWiseResponse;
+                }
+                counter++;
+            }
+
+            // subSubCategories Offer Max Flat
+            var mainCategoriyOfferList = new CustomerDashboardServiceCategoryrDTO();
+
+            mainCategoriyOfferList.name = "Up to 50% Off";
+            mainCategoriyOfferList.type = "Category";
+            mainCategoriyOfferList.dashboarCategory = mainCategoriesOfferMinPercentage.Take(9).ToList();
+            dashboardResponse.mainCategoriesOfferMin = mainCategoriyOfferList;
+
+            var subCategoriyOfferList = new CustomerDashboardServiceCategoryrDTO();
+
+            subCategoriyOfferList.name = "Up to 50% Off";
+            subCategoriyOfferList.type = "Category";
+            subCategoriyOfferList.dashboarCategory = subCategoriesOfferMinPercentage.Take(9).ToList();
+            dashboardResponse.mainCategoriesOfferMin = subCategoriyOfferList;
+
+            _response.StatusCode = HttpStatusCode.OK;
+            _response.IsSuccess = true;
+            _response.Data = dashboardResponse;
+            _response.Messages = "Dashboard data shown successfully.";
+            return Ok(_response);
         }
         #endregion
 

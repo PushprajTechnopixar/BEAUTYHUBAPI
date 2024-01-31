@@ -77,10 +77,68 @@ namespace BeautyHubAPI.Controllers
                 }
                 var roles = await _userManager.GetRolesAsync(currentUserDetail);
 
-                var CategoryDetail = new CategoryDTO();
+                MainCategory? mainCategoryDetail = new MainCategory();
+                int mainCategoryType = 0;
+                var CategoryResponse = new CategoryDTO();
 
                 if (model.mainCategoryId > 0)
                 {
+                    mainCategoryDetail = await _context.MainCategory.Where(u => (u.MainCategoryId == model.mainCategoryId)).FirstOrDefaultAsync();
+
+                    if (mainCategoryDetail != null)
+                    {
+                        if (mainCategoryDetail.Male == true && mainCategoryDetail.Female == false)
+                        {
+                            mainCategoryType = 1;
+                        }
+                        else if (mainCategoryDetail.Male == false && mainCategoryDetail.Female == true)
+                        {
+                            mainCategoryType = 2;
+                        }
+                        else
+                        {
+                            mainCategoryType = 3;
+                        }
+                    }
+                    else
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Messages = "Not found any record.";
+                        return Ok(_response);
+                    }
+
+                    if (mainCategoryType == 1 && model.categoryType == 2)
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Messages = "Please enter valid category type.";
+                        return Ok(_response);
+                    }
+                    if (mainCategoryType == 2 && model.categoryType == 1)
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Messages = "Please enter valid category type.";
+                        return Ok(_response);
+                    }
+                    if ((mainCategoryType == 1 || mainCategoryType == 2) && model.categoryType == 3)
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Messages = "Please enter valid category type.";
+                        return Ok(_response);
+                    }
+
+                    var checkCategoryName = await _context.SubCategory.Where(u => u.CategoryName.ToLower() == model.categoryName.ToLower()).FirstOrDefaultAsync();
+                    if (checkCategoryName != null)
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Messages = "Category name already exists.";
+                        return Ok(_response);
+                    }
+
                     var categoryDetail = _mapper.Map<SubCategory>(model);
                     categoryDetail.CreatedBy = currentUserId;
                     if (model.categoryType == 1)
@@ -106,47 +164,10 @@ namespace BeautyHubAPI.Controllers
                     {
                         categoryDetail.CategoryStatus = Convert.ToInt32(Status.Pending);
                     }
-                    var checkCategoryName = await _context.SubCategory.Where(u => u.CategoryName.ToLower() == model.categoryName.ToLower()).FirstOrDefaultAsync();
-                    if (checkCategoryName != null)
-                    {
-                        _response.StatusCode = HttpStatusCode.OK;
-                        _response.IsSuccess = false;
-                        _response.Messages = "Category name already exists.";
-                        return Ok(_response);
-                    }
+
                     await _context.AddAsync(categoryDetail);
                     await _context.SaveChangesAsync();
 
-                    var mainsCategory = await _context.MainCategory.FirstOrDefaultAsync(x => x.MainCategoryId == model.mainCategoryId);
-                    int mainCategoryType = 0;
-                    if (mainsCategory.Male == true && mainsCategory.Female == true)
-                    {
-                        mainCategoryType = 3;
-                    }
-                    else if (mainsCategory.Male == true && mainsCategory.Female == false)
-                    {
-                        mainCategoryType = 1;
-                    }
-                    else
-                    {
-                        mainCategoryType = 2;
-                    }
-                    if (mainCategoryType == 3)
-                    {
-                        await _context.AddAsync(mainsCategory);
-                        await _context.SaveChangesAsync();
-                    }
-                    else
-                    {
-                        if (model.categoryType != mainCategoryType)
-                        {
-                            _response.StatusCode = HttpStatusCode.OK;
-                            _response.IsSuccess = false;
-                            _response.Messages = "Please select valid Category type";
-                            return Ok(_response);
-                        }
-
-                    }
                     if (roles[0].ToString() == "SuperAdmin")
                     {
                         var SalonDetail = await _context.SalonDetail.Where(u => u.IsDeleted != true).ToListAsync();
@@ -177,8 +198,7 @@ namespace BeautyHubAPI.Controllers
                             await _context.SaveChangesAsync();
                         }
                     }
-                    CategoryDetail = _mapper.Map<CategoryDTO>(categoryDetail);
-
+                    CategoryResponse = _mapper.Map<CategoryDTO>(categoryDetail);
                 }
                 else
                 {
@@ -249,12 +269,12 @@ namespace BeautyHubAPI.Controllers
                         }
 
                     }
-                    CategoryDetail = _mapper.Map<CategoryDTO>(categoryDetail);
+                    CategoryResponse = _mapper.Map<CategoryDTO>(categoryDetail);
                 }
 
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
-                _response.Data = CategoryDetail;
+                _response.Data = CategoryResponse;
                 _response.Messages = "Category added successfully.";
                 return Ok(_response);
             }
@@ -644,299 +664,586 @@ namespace BeautyHubAPI.Controllers
                     model.salonId = getSalonDetail.FirstOrDefault().SalonId;
                 }
 
-                List<CategoryDTO> Categories = new List<CategoryDTO>();
-                if (model.mainCategoryId > 0)
+                if (roles[0].ToString() == "Customer")
                 {
-                    if (model.salonId > 0)
+                    List<CategoryDTO> Categories = new List<CategoryDTO>();
+                    if (model.mainCategoryId > 0)
                     {
-                        var categoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == model.mainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
-
-                        if (model.categoryType == 1)
+                        if (model.salonId > 0)
                         {
-                            categoryDetail = categoryDetail.Where(u => u.Male == true).ToList();
-                        }
-                        else if (model.categoryType == 2)
-                        {
-                            categoryDetail = categoryDetail.Where(u => u.Female == true).ToList();
-                        }
-                        else if (model.categoryType == 3)
-                        {
-                            categoryDetail = categoryDetail.Where(u => u.Female == true && u.Male == true).ToList();
-                        }
-                        else
-                        {
-                            categoryDetail = categoryDetail;
-                        }
-                        Categories = _mapper.Map<List<CategoryDTO>>(categoryDetail);
-                        foreach (var item in Categories)
-                        {
-                            item.status = true;
-                            item.createDate = (Convert.ToDateTime(item.createDate)).ToString(@"dd-MM-yyyy");
-                        }
-                        Categories = new List<CategoryDTO>();
-                        foreach (var item in categoryDetail)
-                        {
-                            var mappedData = _mapper.Map<CategoryDTO>(item);
-                            if (item.Male == true && item.Female == true)
+                            var categoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == model.mainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
+                            if (model.categoryType == 1)
                             {
-                                mappedData.categoryType = 3;
-                            }
-                            if (item.Male == false && item.Female == false)
-                            {
-                                mappedData.categoryType = 0;
-                            }
-                            if (item.Male == true && item.Female == false)
-                            {
-                                mappedData.categoryType = 1;
-                            }
-                            if (item.Male == false && item.Female == true)
-                            {
-                                mappedData.categoryType = 2;
-                            }
-                            mappedData.createDate = item.CreateDate.ToString(@"dd-MM-yyyy");
-                            mappedData.status = true;
-                            var categoryStatus = new VendorCategory();
-                            if (model.categoryType == 0)
-                            {
-                                categoryStatus = await _context.VendorCategory.Where(u => (u.SalonId == model.salonId)
-                               && (u.SubCategoryId == item.SubCategoryId)
-                               ).FirstOrDefaultAsync();
-                            }
-                            else if (model.categoryType == 1)
-                            {
-                                categoryStatus = await _context.VendorCategory.Where(u => (u.SalonId == model.salonId)
-                               && (u.SubCategoryId == item.SubCategoryId)
-                               && (u.Male == true)
-                               //    && (u.Female == false)
-                               ).FirstOrDefaultAsync();
+                                categoryDetail = categoryDetail.Where(u => u.Male == true).ToList();
                             }
                             else if (model.categoryType == 2)
                             {
-                                categoryStatus = await _context.VendorCategory.Where(u => (u.SalonId == model.salonId)
-                               && (u.SubCategoryId == item.SubCategoryId)
-                               //    && (u.Male == false)
-                               && (u.Female == true)
-                               ).FirstOrDefaultAsync();
+                                categoryDetail = categoryDetail.Where(u => u.Female == true).ToList();
+                            }
+                            else if (model.categoryType == 3)
+                            {
+                                categoryDetail = categoryDetail.Where(u => u.Female == true && u.Male == true).ToList();
                             }
                             else
                             {
-                                categoryStatus = await _context.VendorCategory.Where(u => (u.SalonId == model.salonId)
-                               && (u.SubCategoryId == item.SubCategoryId)
-                               && (u.Male == true)
-                               && (u.Female == true)
-                               ).FirstOrDefaultAsync();
+                                categoryDetail = categoryDetail;
                             }
-                            if (categoryStatus == null)
+                            Categories = new List<CategoryDTO>();
+                            foreach (var item in categoryDetail)
                             {
+                                var mappedData = _mapper.Map<CategoryDTO>(item);
+                                if (model.categoryType > 0)
+                                {
+                                    mappedData.CategoryImage = (model.categoryType == 1 ? item.CategoryImageMale : item.CategoryImageFemale);
+                                }
+                                else
+                                {
+                                    mappedData.CategoryImage = item.CategoryImageMale;
+                                }
+                                if (item.Male == true && item.Female == true)
+                                {
+                                    mappedData.categoryType = 3;
+                                }
+                                if (item.Male == false && item.Female == false)
+                                {
+                                    mappedData.categoryType = 0;
+                                }
+                                if (item.Male == true && item.Female == false)
+                                {
+                                    mappedData.categoryType = 1;
+                                }
+                                if (item.Male == false && item.Female == true)
+                                {
+                                    mappedData.categoryType = 2;
+                                }
+                                mappedData.createDate = item.CreateDate.ToString(@"dd-MM-yyyy");
+                                mappedData.status = true;
+                                var categoryStatus = await _context.VendorCategory.Where(u => (u.SalonId == model.salonId)
+                                   && (u.SubCategoryId == item.SubCategoryId)
+                                   ).FirstOrDefaultAsync();
+
+                                // if (categoryStatus != null)
+                                // {
+                                //     if (model.categoryType == 1)
+                                //     {
+                                //         categoryStatus = categoryStatus.Male == true ? categoryStatus : null;
+                                //     }
+                                //     else if (model.categoryType == 2)
+                                //     {
+                                //         categoryStatus = categoryStatus.Female == true ? categoryStatus : null;
+                                //     }
+                                //     else if (model.categoryType == 3)
+                                //     {
+                                //         categoryStatus = categoryStatus.Male == true && categoryStatus.Female == true ? categoryStatus : null;
+                                //     }
+                                //     else
+                                //     {
+                                //         categoryStatus = categoryStatus;
+                                //     }
+                                // }
+                                if (categoryStatus == null)
+                                {
+                                    Categories.Add(mappedData);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            var categoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == model.mainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
+
+                            if (model.categoryType == 1)
+                            {
+                                categoryDetail = categoryDetail.Where(u => u.Male == true).ToList();
+                            }
+                            else if (model.categoryType == 2)
+                            {
+                                categoryDetail = categoryDetail.Where(u => u.Female == true).ToList();
+                            }
+                            else if (model.categoryType == 3)
+                            {
+                                categoryDetail = categoryDetail.Where(u => u.Female == true && u.Male == true).ToList();
+                            }
+                            else
+                            {
+                                categoryDetail = categoryDetail;
+                            }
+                            Categories = new List<CategoryDTO>();
+                            foreach (var item in categoryDetail)
+                            {
+                                var mappedData = _mapper.Map<CategoryDTO>(item);
+                                if (model.categoryType > 0)
+                                {
+                                    mappedData.CategoryImage = (model.categoryType == 1 ? item.CategoryImageMale : item.CategoryImageFemale);
+                                }
+                                else
+                                {
+                                    mappedData.CategoryImage = item.CategoryImageMale;
+                                }
+                                mappedData.status = true;
+                                // mappedData.createDate = (Convert.ToDateTime(item.CreateDate)).ToString(@"dd-MM-yyyy");
+                                mappedData.createDate = item.CreateDate.ToString(@"dd-MM-yyyy");
+
+                                if (item.Male == true && item.Female == true)
+                                {
+                                    mappedData.categoryType = 3;
+                                }
+                                if (item.Male == false && item.Female == false)
+                                {
+                                    mappedData.categoryType = 0;
+                                }
+                                if (item.Male == true && item.Female == false)
+                                {
+                                    mappedData.categoryType = 1;
+                                }
+                                if (item.Male == false && item.Female == true)
+                                {
+                                    mappedData.categoryType = 2;
+                                }
                                 Categories.Add(mappedData);
                             }
                         }
                     }
                     else
                     {
-                        var categoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == model.mainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
+                        if (model.salonId > 0)
+                        {
+                            var categoryDetail = await _context.MainCategory.Where(u => u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
 
-                        if (model.categoryType == 1)
-                        {
-                            categoryDetail = categoryDetail.Where(u => u.Male == true).ToList();
-                        }
-                        else if (model.categoryType == 2)
-                        {
-                            categoryDetail = categoryDetail.Where(u => u.Female == true).ToList();
-                        }
-                        else if (model.categoryType == 3)
-                        {
-                            categoryDetail = categoryDetail.Where(u => u.Female == true && u.Male == true).ToList();
+                            if (model.categoryType == 1)
+                            {
+                                categoryDetail = categoryDetail.Where(u => u.Male == true).ToList();
+                            }
+                            else if (model.categoryType == 2)
+                            {
+                                categoryDetail = categoryDetail.Where(u => u.Female == true).ToList();
+                            }
+                            else if (model.categoryType == 3)
+                            {
+                                categoryDetail = categoryDetail.Where(u => u.Male == true && u.Female == true).ToList();
+                            }
+                            else
+                            {
+                                categoryDetail = categoryDetail;
+                            }
+                            Categories = new List<CategoryDTO>();
+                            foreach (var item in categoryDetail)
+                            {
+                                var mappedData = _mapper.Map<CategoryDTO>(item);
+                                if (model.categoryType > 0)
+                                {
+                                    mappedData.CategoryImage = (model.categoryType == 1 ? item.CategoryImageMale : item.CategoryImageFemale);
+                                }
+                                else
+                                {
+                                    mappedData.CategoryImage = item.CategoryImageMale;
+                                }
+                                var subCategoryDetail = new List<SubCategory>();
+
+                                subCategoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == item.MainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
+
+                                mappedData.isNext = subCategoryDetail.Count > 0 ? true : false;
+                                mappedData.createDate = item.CreateDate.ToString(@"dd-MM-yyyy");
+                                mappedData.status = true;
+
+                                if (item.Male == true && item.Female == true)
+                                {
+                                    mappedData.categoryType = 3;
+                                }
+                                else if (item.Male == false && item.Female == true)
+                                {
+                                    mappedData.categoryType = 2;
+                                }
+                                else if (item.Male == true && item.Female == false)
+                                {
+                                    mappedData.categoryType = 1;
+                                }
+                                else
+                                {
+                                    mappedData.categoryType = 0;
+                                }
+
+                                var categoryStatus = await _context.VendorCategory.Where(u => (u.SalonId == model.salonId)
+                                   && (u.MainCategoryId == item.MainCategoryId)
+                                   ).FirstOrDefaultAsync();
+
+                                // if (categoryStatus == null)
+                                // {
+                                //     if (model.categoryType == 1)
+                                //     {
+                                //         categoryStatus = categoryStatus.Male == true ? categoryStatus : null;
+                                //     }
+                                //     else if (model.categoryType == 2)
+                                //     {
+                                //         categoryStatus = categoryStatus.Female == true ? categoryStatus : null;
+                                //     }
+                                //     else if (model.categoryType == 3)
+                                //     {
+                                //         categoryStatus = categoryStatus.Male == true && categoryStatus.Female == true ? categoryStatus : null;
+                                //     }
+                                //     else
+                                //     {
+                                //         categoryStatus = categoryStatus;
+                                //     }
+                                // }
+
+                                if (categoryStatus == null)
+                                {
+                                    Categories.Add(mappedData);
+                                }
+                            }
                         }
                         else
                         {
-                            categoryDetail = categoryDetail;
-                        }
-                        Categories = new List<CategoryDTO>();
-                        foreach (var item in categoryDetail)
-                        {
-                            var mappedData = _mapper.Map<CategoryDTO>(item);
-                            mappedData.status = true;
-                            // mappedData.createDate = (Convert.ToDateTime(item.CreateDate)).ToString(@"dd-MM-yyyy");
-                            mappedData.createDate = item.CreateDate.ToString(@"dd-MM-yyyy");
+                            var categoryDetail = await _context.MainCategory.Where(u => u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
+                            if (model.categoryType == 1)
+                            {
+                                categoryDetail = categoryDetail.Where(u => u.Male == true).ToList();
+                            }
+                            else if (model.categoryType == 2)
+                            {
+                                categoryDetail = categoryDetail.Where(u => u.Female == true).ToList();
+                            }
+                            else if (model.categoryType == 3)
+                            {
+                                categoryDetail = categoryDetail.Where(u => u.Male == true && u.Female == true).ToList();
+                            }
+                            else
+                            {
+                                categoryDetail = categoryDetail;
+                            }
+                            // Categories = (_mapper.Map<List<CategoryDTO>>(categoryDetail));
+                            Categories = new List<CategoryDTO>();
+                            foreach (var item in categoryDetail)
+                            {
+                                var mappedData = _mapper.Map<CategoryDTO>(item);
+                                if (model.categoryType > 0)
+                                {
+                                    mappedData.CategoryImage = (model.categoryType == 1 ? item.CategoryImageMale : item.CategoryImageFemale);
+                                }
+                                else
+                                {
+                                    mappedData.CategoryImage = item.CategoryImageMale;
+                                }
+                                mappedData.status = true;
+                                //mappedData.createDate = item.CreateDate.ToString(@"dd-MM-yyyy");
+                                if (item.Male == true && item.Female == true)
+                                {
+                                    mappedData.categoryType = 3;
+                                }
+                                if (item.Male == false && item.Female == false)
+                                {
+                                    mappedData.categoryType = 0;
+                                }
+                                if (item.Male == true && item.Female == false)
+                                {
+                                    mappedData.categoryType = 1;
+                                }
+                                if (item.Male == false && item.Female == true)
+                                {
+                                    mappedData.categoryType = 2;
+                                }
+                                Categories.Add(mappedData);
+                            }
+                            foreach (var item in Categories)
+                            {
+                                var subCategoryDetail = new List<SubCategory>();
 
-                            if (item.Male == true && item.Female == true)
-                            {
-                                mappedData.categoryType = 3;
+                                subCategoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == item.mainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
+
+                                item.isNext = subCategoryDetail.Count > 0 ? true : false;
+                                item.status = true;
+                                item.createDate = (Convert.ToDateTime(item.createDate)).ToString(@"dd-MM-yyyy");
                             }
-                            if (item.Male == false && item.Female == false)
-                            {
-                                mappedData.categoryType = 0;
-                            }
-                            if (item.Male == true && item.Female == false)
-                            {
-                                mappedData.categoryType = 1;
-                            }
-                            if (item.Male == false && item.Female == true)
-                            {
-                                mappedData.categoryType = 2;
-                            }
-                            Categories.Add(mappedData);
                         }
+                    }
+
+                    if (Categories.Count > 0)
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = true;
+                        _response.Data = Categories;
+                        _response.Messages = "Category shown successfully.";
+                        return Ok(_response);
                     }
                 }
                 else
                 {
-                    if (model.salonId > 0)
+                    List<VendorCategoryDTO> Categories = new List<VendorCategoryDTO>();
+                    if (model.mainCategoryId > 0)
                     {
-                        var categoryDetail = await _context.MainCategory.Where(u => u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
-
-                        if (model.categoryType == 1)
+                        if (model.salonId > 0)
                         {
-                            categoryDetail = categoryDetail.Where(u => u.Male == true).ToList();
-                        }
-                        else if (model.categoryType == 2)
-                        {
-                            categoryDetail = categoryDetail.Where(u => u.Female == true).ToList();
-                        }
-                        else if (model.categoryType == 3)
-                        {
-                            categoryDetail = categoryDetail.Where(u => u.Male == true && u.Female == true).ToList();
-                        }
-                        else
-                        {
-                            categoryDetail = categoryDetail;
-                        }
-                        Categories = new List<CategoryDTO>();
-                        foreach (var item in categoryDetail)
-                        {
-                            var mappedData = _mapper.Map<CategoryDTO>(item);
-                            var subCategoryDetail = new List<SubCategory>();
-
-                            subCategoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == item.MainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
-
-                            mappedData.isNext = subCategoryDetail.Count > 0 ? true : false;
-                            mappedData.createDate = item.CreateDate.ToString(@"dd-MM-yyyy");
-                            mappedData.status = true;
-
-                            if (item.Male == true && item.Female == true)
+                            var categoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == model.mainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
+                            if (model.categoryType == 1)
                             {
-                                mappedData.categoryType = 3;
-                            }
-                            if (item.Male == false && item.Female == false)
-                            {
-                                mappedData.categoryType = 0;
-                            }
-                            if (item.Male == true && item.Female == false)
-                            {
-                                mappedData.categoryType = 1;
-                            }
-                            if (item.Male == false && item.Female == true)
-                            {
-                                mappedData.categoryType = 2;
-                            }
-
-                            var categoryStatus = new VendorCategory();
-                            if (model.categoryType == 0)
-                            {
-                                categoryStatus = await _context.VendorCategory.Where(u => (u.SalonId == model.salonId)
-                               && (u.MainCategoryId == item.MainCategoryId)
-                               ).FirstOrDefaultAsync();
-                            }
-                            else if (model.categoryType == 1)
-                            {
-                                categoryStatus = await _context.VendorCategory.Where(u => (u.SalonId == model.salonId)
-                               && (u.MainCategoryId == item.MainCategoryId)
-                               && (u.Male == true)
-                               && (u.Female == false)
-                               ).FirstOrDefaultAsync();
+                                categoryDetail = categoryDetail.Where(u => u.Male == true).ToList();
                             }
                             else if (model.categoryType == 2)
                             {
-                                categoryStatus = await _context.VendorCategory.Where(u => (u.SalonId == model.salonId)
-                               && (u.MainCategoryId == item.MainCategoryId)
-                               && (u.Male == false)
-                               && (u.Female == true)
-                               ).FirstOrDefaultAsync();
+                                categoryDetail = categoryDetail.Where(u => u.Female == true).ToList();
+                            }
+                            else if (model.categoryType == 3)
+                            {
+                                categoryDetail = categoryDetail.Where(u => u.Female == true && u.Male == true).ToList();
                             }
                             else
                             {
-                                categoryStatus = await _context.VendorCategory.Where(u => (u.SalonId == model.salonId)
-                               && (u.MainCategoryId == item.MainCategoryId)
-                               && (u.Male == true)
-                               && (u.Female == true)
-                               ).FirstOrDefaultAsync();
+                                categoryDetail = categoryDetail;
                             }
-                            if (categoryStatus == null)
+                            Categories = new List<VendorCategoryDTO>();
+                            foreach (var item in categoryDetail)
                             {
+                                var mappedData = _mapper.Map<VendorCategoryDTO>(item);
+                                if (item.Male == true && item.Female == true)
+                                {
+                                    mappedData.categoryType = 3;
+                                }
+                                if (item.Male == false && item.Female == false)
+                                {
+                                    mappedData.categoryType = 0;
+                                }
+                                if (item.Male == true && item.Female == false)
+                                {
+                                    mappedData.categoryType = 1;
+                                }
+                                if (item.Male == false && item.Female == true)
+                                {
+                                    mappedData.categoryType = 2;
+                                }
+                                mappedData.createDate = item.CreateDate.ToString(@"dd-MM-yyyy");
+                                mappedData.status = true;
+                                var categoryStatus = await _context.VendorCategory.Where(u => (u.SalonId == model.salonId)
+                                   && (u.SubCategoryId == item.SubCategoryId)
+                                   ).FirstOrDefaultAsync();
+
+                                // if (categoryStatus != null)
+                                // {
+                                //     if (model.categoryType == 1)
+                                //     {
+                                //         categoryStatus = categoryStatus.Male == true ? categoryStatus : null;
+                                //     }
+                                //     else if (model.categoryType == 2)
+                                //     {
+                                //         categoryStatus = categoryStatus.Female == true ? categoryStatus : null;
+                                //     }
+                                //     else if (model.categoryType == 3)
+                                //     {
+                                //         categoryStatus = categoryStatus.Male == true && categoryStatus.Female == true ? categoryStatus : null;
+                                //     }
+                                //     else
+                                //     {
+                                //         categoryStatus = categoryStatus;
+                                //     }
+                                // }
+                                if (categoryStatus == null)
+                                {
+                                    Categories.Add(mappedData);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            var categoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == model.mainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
+
+                            if (model.categoryType == 1)
+                            {
+                                categoryDetail = categoryDetail.Where(u => u.Male == true).ToList();
+                            }
+                            else if (model.categoryType == 2)
+                            {
+                                categoryDetail = categoryDetail.Where(u => u.Female == true).ToList();
+                            }
+                            else if (model.categoryType == 3)
+                            {
+                                categoryDetail = categoryDetail.Where(u => u.Female == true && u.Male == true).ToList();
+                            }
+                            else
+                            {
+                                categoryDetail = categoryDetail;
+                            }
+                            Categories = new List<VendorCategoryDTO>();
+                            foreach (var item in categoryDetail)
+                            {
+                                var mappedData = _mapper.Map<VendorCategoryDTO>(item);
+
+                                mappedData.status = true;
+                                // mappedData.createDate = (Convert.ToDateTime(item.CreateDate)).ToString(@"dd-MM-yyyy");
+                                mappedData.createDate = item.CreateDate.ToString(@"dd-MM-yyyy");
+
+                                if (item.Male == true && item.Female == true)
+                                {
+                                    mappedData.categoryType = 3;
+                                }
+                                if (item.Male == false && item.Female == false)
+                                {
+                                    mappedData.categoryType = 0;
+                                }
+                                if (item.Male == true && item.Female == false)
+                                {
+                                    mappedData.categoryType = 1;
+                                }
+                                if (item.Male == false && item.Female == true)
+                                {
+                                    mappedData.categoryType = 2;
+                                }
                                 Categories.Add(mappedData);
                             }
                         }
                     }
                     else
                     {
-                        var categoryDetail = await _context.MainCategory.Where(u => u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
-                        if (model.categoryType == 1)
+                        if (model.salonId > 0)
                         {
-                            categoryDetail = categoryDetail.Where(u => u.Male == true).ToList();
-                        }
-                        else if (model.categoryType == 2)
-                        {
-                            categoryDetail = categoryDetail.Where(u => u.Female == true).ToList();
-                        }
-                        else if (model.categoryType == 3)
-                        {
-                            categoryDetail = categoryDetail.Where(u => u.Male == true && u.Female == true).ToList();
+                            var categoryDetail = await _context.MainCategory.Where(u => u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
+
+                            if (model.categoryType == 1)
+                            {
+                                categoryDetail = categoryDetail.Where(u => u.Male == true).ToList();
+                            }
+                            else if (model.categoryType == 2)
+                            {
+                                categoryDetail = categoryDetail.Where(u => u.Female == true).ToList();
+                            }
+                            else if (model.categoryType == 3)
+                            {
+                                categoryDetail = categoryDetail.Where(u => u.Male == true && u.Female == true).ToList();
+                            }
+                            else
+                            {
+                                categoryDetail = categoryDetail;
+                            }
+                            Categories = new List<VendorCategoryDTO>();
+                            foreach (var item in categoryDetail)
+                            {
+                                var mappedData = _mapper.Map<VendorCategoryDTO>(item);
+
+                                var subCategoryDetail = new List<SubCategory>();
+
+                                subCategoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == item.MainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
+
+                                mappedData.isNext = subCategoryDetail.Count > 0 ? true : false;
+                                mappedData.createDate = item.CreateDate.ToString(@"dd-MM-yyyy");
+                                mappedData.status = true;
+
+                                if (item.Male == true && item.Female == true)
+                                {
+                                    mappedData.categoryType = 3;
+                                }
+                                else if (item.Male == false && item.Female == true)
+                                {
+                                    mappedData.categoryType = 2;
+                                }
+                                else if (item.Male == true && item.Female == false)
+                                {
+                                    mappedData.categoryType = 1;
+                                }
+                                else
+                                {
+                                    mappedData.categoryType = 0;
+                                }
+
+                                var categoryStatus = await _context.VendorCategory.Where(u => (u.SalonId == model.salonId)
+                                   && (u.MainCategoryId == item.MainCategoryId)
+                                   ).FirstOrDefaultAsync();
+
+                                // if (categoryStatus == null)
+                                // {
+                                //     if (model.categoryType == 1)
+                                //     {
+                                //         categoryStatus = categoryStatus.Male == true ? categoryStatus : null;
+                                //     }
+                                //     else if (model.categoryType == 2)
+                                //     {
+                                //         categoryStatus = categoryStatus.Female == true ? categoryStatus : null;
+                                //     }
+                                //     else if (model.categoryType == 3)
+                                //     {
+                                //         categoryStatus = categoryStatus.Male == true && categoryStatus.Female == true ? categoryStatus : null;
+                                //     }
+                                //     else
+                                //     {
+                                //         categoryStatus = categoryStatus;
+                                //     }
+                                // }
+
+                                if (categoryStatus == null)
+                                {
+                                    Categories.Add(mappedData);
+                                }
+                            }
                         }
                         else
                         {
-                            categoryDetail = categoryDetail;
-                        }
-                        // Categories = (_mapper.Map<List<CategoryDTO>>(categoryDetail));
-                        Categories = new List<CategoryDTO>();
-                        foreach (var item in categoryDetail)
-                        {
-                            var mappedData = _mapper.Map<CategoryDTO>(item);
-                            mappedData.status = true;
-                            //mappedData.createDate = item.CreateDate.ToString(@"dd-MM-yyyy");
-                            if (item.Male == true && item.Female == true)
+                            var categoryDetail = await _context.MainCategory.Where(u => u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
+                            if (model.categoryType == 1)
                             {
-                                mappedData.categoryType = 3;
+                                categoryDetail = categoryDetail.Where(u => u.Male == true).ToList();
                             }
-                            if (item.Male == false && item.Female == false)
+                            else if (model.categoryType == 2)
                             {
-                                mappedData.categoryType = 0;
+                                categoryDetail = categoryDetail.Where(u => u.Female == true).ToList();
                             }
-                            if (item.Male == true && item.Female == false)
+                            else if (model.categoryType == 3)
                             {
-                                mappedData.categoryType = 1;
+                                categoryDetail = categoryDetail.Where(u => u.Male == true && u.Female == true).ToList();
                             }
-                            if (item.Male == false && item.Female == true)
+                            else
                             {
-                                mappedData.categoryType = 2;
+                                categoryDetail = categoryDetail;
                             }
-                            Categories.Add(mappedData);
-                        }
-                        foreach (var item in Categories)
-                        {
-                            var subCategoryDetail = new List<SubCategory>();
+                            // Categories = (_mapper.Map<List<CategoryDTO>>(categoryDetail));
+                            Categories = new List<VendorCategoryDTO>();
+                            foreach (var item in categoryDetail)
+                            {
+                                var mappedData = _mapper.Map<VendorCategoryDTO>(item);
 
-                            subCategoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == item.mainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
+                                mappedData.status = true;
+                                //mappedData.createDate = item.CreateDate.ToString(@"dd-MM-yyyy");
+                                if (item.Male == true && item.Female == true)
+                                {
+                                    mappedData.categoryType = 3;
+                                }
+                                if (item.Male == false && item.Female == false)
+                                {
+                                    mappedData.categoryType = 0;
+                                }
+                                if (item.Male == true && item.Female == false)
+                                {
+                                    mappedData.categoryType = 1;
+                                }
+                                if (item.Male == false && item.Female == true)
+                                {
+                                    mappedData.categoryType = 2;
+                                }
+                                Categories.Add(mappedData);
+                            }
+                            foreach (var item in Categories)
+                            {
+                                var subCategoryDetail = new List<SubCategory>();
 
-                            item.isNext = subCategoryDetail.Count > 0 ? true : false;
-                            item.status = true;
-                            item.createDate = (Convert.ToDateTime(item.createDate)).ToString(@"dd-MM-yyyy");
+                                subCategoryDetail = await _context.SubCategory.Where(u => u.MainCategoryId == item.mainCategoryId && u.CategoryStatus == Convert.ToInt32(Status.Approved)).ToListAsync();
+
+                                item.isNext = subCategoryDetail.Count > 0 ? true : false;
+                                item.status = true;
+                                item.createDate = (Convert.ToDateTime(item.createDate)).ToString(@"dd-MM-yyyy");
+                            }
                         }
                     }
-                }
 
-                if (roles[0].ToString() == "Vendor")
-                {
-                    Categories = Categories.Where(u => u.mainCategoryId != 53).ToList();
-                }
+                    if (roles[0].ToString() == "Vendor")
+                    {
+                        Categories = Categories.Where(u => u.mainCategoryId != 53).ToList();
+                    }
 
-                if (Categories.Count > 0)
-                {
-                    _response.StatusCode = HttpStatusCode.OK;
-                    _response.IsSuccess = true;
-                    _response.Data = Categories;
-                    _response.Messages = "Category shown successfully.";
-                    return Ok(_response);
+                    if (Categories.Count > 0)
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = true;
+                        _response.Data = Categories;
+                        _response.Messages = "Category shown successfully.";
+                        return Ok(_response);
+                    }
+
                 }
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
@@ -965,12 +1272,12 @@ namespace BeautyHubAPI.Controllers
         {
             try
             {
-                CategoryDTO Category = new CategoryDTO();
+                VendorCategoryDTO Category = new VendorCategoryDTO();
                 if (model.subCategoryId > 0)
                 {
                     var categoryDetail = await _context.SubCategory.Where(u => (u.SubCategoryId == model.subCategoryId)).FirstOrDefaultAsync();
 
-                    Category = _mapper.Map<CategoryDTO>(categoryDetail);
+                    Category = _mapper.Map<VendorCategoryDTO>(categoryDetail);
                     if (categoryDetail.Male == true && categoryDetail.Female == true)
                     {
                         Category.categoryType = 3;
@@ -1001,7 +1308,7 @@ namespace BeautyHubAPI.Controllers
                     var categoryDetail = await _context.MainCategory.Where(u =>
                     (u.MainCategoryId == model.mainCategoryId)
                     ).FirstOrDefaultAsync();
-                    Category = _mapper.Map<CategoryDTO>(categoryDetail);
+                    Category = _mapper.Map<VendorCategoryDTO>(categoryDetail);
                     if (categoryDetail.Male == true && categoryDetail.Female == true)
                     {
                         Category.categoryType = 3;
@@ -1059,14 +1366,17 @@ namespace BeautyHubAPI.Controllers
                 CategoryDTO Category = new CategoryDTO();
                 if (model.subCategoryId > 0)
                 {
-                    // var categoryDetail = await _context.Inventory.Where(u => (u.SubCategoryId == model.subCategoryId)).FirstOrDefaultAsync();
-                    // if (categoryDetail != null)
-                    // {
-                    //     _response.StatusCode = HttpStatusCode.OK;
-                    //     _response.IsSuccess = false;
-                    //     _response.Messages = "Can't delete,  is added with this category.";
-                    //     return Ok(_response);
-                    // }
+                    var salonService = await _context.SalonService.Where(u => (u.SubcategoryId == model.subCategoryId) && u.IsDeleted == false).FirstOrDefaultAsync();
+                    if (salonService != null)
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Messages = "Can't delete, while service is available in this category.";
+                        return Ok(_response);
+                    }
+
+
+
                     var categoryDetail = await _context.SubCategory.Where(u => (u.SubCategoryId == model.subCategoryId)).FirstOrDefaultAsync();
                     Category = _mapper.Map<CategoryDTO>(categoryDetail);
                     if (Category == null)
@@ -1077,6 +1387,31 @@ namespace BeautyHubAPI.Controllers
                         return Ok(_response);
                     }
 
+                    // delete all service
+                    var salonServiceDelete = await _context.SalonService.Where(u => (u.SubcategoryId == model.subCategoryId)).ToListAsync();
+                    foreach (var item3 in salonServiceDelete)
+                    {
+                        var cart = await _context.Cart.Where(u => (u.ServiceId == item3.ServiceId)).ToListAsync();
+                        _context.RemoveRange(cart);
+                        await _context.SaveChangesAsync();
+
+                        var timeslots = await _context.TimeSlot.Where(u => (u.ServiceId == item3.ServiceId)).ToListAsync();
+                        _context.RemoveRange(timeslots);
+                        await _context.SaveChangesAsync();
+
+                        var bookedServices = await _context.BookedService.Where(u => (u.ServiceId == item3.ServiceId)).ToListAsync();
+
+                        var appointmentIds = bookedServices.Select(u => u.AppointmentId).Distinct().ToList();
+                        _context.RemoveRange(bookedServices);
+                        await _context.SaveChangesAsync();
+
+                        var appointments = await _context.Appointment
+                                            .Where(u => appointmentIds.Contains(u.AppointmentId))
+                                            .ToListAsync();
+
+                        _context.RemoveRange(appointments);
+                        await _context.SaveChangesAsync();
+                    }
 
                     var vendorCategory = await _context.VendorCategory.Where(u => u.SubCategoryId == categoryDetail.SubCategoryId).ToListAsync();
                     foreach (var item in vendorCategory)
@@ -1085,30 +1420,58 @@ namespace BeautyHubAPI.Controllers
                         await _context.SaveChangesAsync();
                     }
 
-                    // // Delete s from cart releted to category
-                    // var cartDetail = await _cartRepository.GetAllAsync();
-                    // foreach (var item in cartDetail)
-                    // {
-                    //     var Detail = await _context.Inventory.Where(u => (u.Id == item.Id) && (u.SubCategoryId == model.subCategoryId)).ToListAsync();
-                    //     foreach (var item1 in Detail)
-                    //     {
-                    //         await _cartRepository.RemoveEntity(item);
-                    //     }
-                    // }
-
+                    // Delete s from cart releted to category
+                    var cartDetail = await _context.Cart.ToListAsync();
+                    foreach (var item in cartDetail)
+                    {
+                        var Detail = await _context.SalonService.Where(u => (u.ServiceId == item.ServiceId) && (u.SubcategoryId == model.subCategoryId)).ToListAsync();
+                        _context.RemoveRange(Detail);
+                        await _context.SaveChangesAsync();
+                    }
                     _context.SubCategory.Remove(categoryDetail);
                     await _context.SaveChangesAsync();
                 }
                 else
                 {
-                    // var categoryDetail = await _context.Inventory.Where(u => (u.MainCategoryId == model.mainCategoryId)).FirstOrDefaultAsync();
-                    // if (categoryDetail != null)
-                    // {
-                    //     _response.StatusCode = HttpStatusCode.OK;
-                    //     _response.IsSuccess = false;
-                    //     _response.Messages = "Can't delete,  is added with this category.";
-                    //     return Ok(_response);
-                    // }
+                    var salonService = await _context.SalonService.Where(u => (u.MainCategoryId == model.mainCategoryId) && u.IsDeleted == false).FirstOrDefaultAsync();
+                    if (salonService != null)
+                    {
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = false;
+                        _response.Messages = "Can't delete, while service is available in this category.";
+                        return Ok(_response);
+                    }
+
+                    // delete all service
+                    var salonServiceDelete = await _context.SalonService.Where(u => (u.MainCategoryId == model.mainCategoryId)).ToListAsync();
+                    foreach (var item3 in salonServiceDelete)
+                    {
+                        var cart = await _context.Cart.Where(u => (u.ServiceId == item3.ServiceId)).ToListAsync();
+                        _context.RemoveRange(cart);
+                        await _context.SaveChangesAsync();
+
+                        var timeslots = await _context.TimeSlot.Where(u => (u.ServiceId == item3.ServiceId)).ToListAsync();
+                        _context.RemoveRange(timeslots);
+                        await _context.SaveChangesAsync();
+
+                        var bookedServices = await _context.BookedService.Where(u => (u.ServiceId == item3.ServiceId)).ToListAsync();
+
+                        var appointmentIds = bookedServices.Select(u => u.AppointmentId).Distinct().ToList();
+                        _context.RemoveRange(bookedServices);
+                        await _context.SaveChangesAsync();
+
+                        var appointments = await _context.Appointment
+                                            .Where(u => appointmentIds.Contains(u.AppointmentId))
+                                            .ToListAsync();
+
+                        _context.RemoveRange(appointments);
+                        await _context.SaveChangesAsync();
+                    }
+
+
+                    _context.RemoveRange(salonServiceDelete);
+                    await _context.SaveChangesAsync();
+
                     var categoryDetail = await _context.MainCategory.Where(u =>
                     (u.MainCategoryId == model.mainCategoryId)
                     ).FirstOrDefaultAsync();
@@ -1142,15 +1505,13 @@ namespace BeautyHubAPI.Controllers
                     }
 
                     // Delete s from cart releted to category
-                    // var cartDetail = await _cartRepository.GetAllAsync();
-                    // foreach (var item in cartDetail)
-                    // {
-                    //     var Detail = await _context.Inventory.Where(u => (u.Id == item.Id) && (u.MainCategoryId == model.mainCategoryId)).ToListAsync();
-                    //     foreach (var item1 in Detail)
-                    //     {
-                    //         await _cartRepository.RemoveEntity(item);
-                    //     }
-                    // }
+                    var cartDetail = await _context.Cart.ToListAsync();
+                    foreach (var item in cartDetail)
+                    {
+                        var Detail = await _context.SalonService.Where(u => (u.ServiceId == item.ServiceId) && (u.MainCategoryId == model.mainCategoryId)).ToListAsync();
+                        _context.RemoveRange(Detail);
+                        await _context.SaveChangesAsync();
+                    }
                     _context.Remove(categoryDetail);
                     await _context.SaveChangesAsync();
                 }
@@ -1175,7 +1536,7 @@ namespace BeautyHubAPI.Controllers
         ///  Get requested  category list.
         /// </summary>
         [HttpGet("GetCategoryRequests")]
-        [Authorize(Roles = "SuperAdmin")]
+        [Authorize(Roles = "Vendor,SuperAdmin")]
         public async Task<IActionResult> GetCategoryRequests()
         {
             try
@@ -1189,70 +1550,176 @@ namespace BeautyHubAPI.Controllers
                     return Ok(_response);
                 }
 
-                List<CategoryRequestDTO> Categories = new List<CategoryRequestDTO>();
-                var mainCategories = await _context.MainCategory.Where(u => u.CategoryStatus != Convert.ToInt32(Status.Approved)).ToListAsync();
-                mainCategories = mainCategories.OrderByDescending(u => u.CreateDate).ToList();
-                foreach (var item in mainCategories)
+                var user = await _userManager.FindByIdAsync(currentUserId);
+                var userRoles = await _userManager.GetRolesAsync(user);
+
+                var mainCategory = await _context.MainCategory.ToListAsync();
+                var subCategory = await _context.SubCategory.ToListAsync();
+
+                if (userRoles[0].ToString() == "Vendor")
                 {
-                    var mainCategory = new CategoryRequestDTO();
-                    mainCategory.mainCategoryId = item.MainCategoryId;
-                    mainCategory.maincategoryName = item.CategoryName;
-                    mainCategory.categorystatus = item.CategoryStatus;
-                    if (item.Male == true && item.Female == true)
+                    List<CategoryRequestDTO> Category = new List<CategoryRequestDTO>();
+
+                    var maincategories = mainCategory.Where(u => u.CreatedBy == currentUserId).ToList();
+
+                    maincategories = maincategories.OrderByDescending(u => u.CreateDate).ToList();
+
+                    foreach (var item in maincategories)
                     {
-                        mainCategory.categoryType = 3;
+                        var maincategory = new CategoryRequestDTO();
+
+                        maincategory.mainCategoryId = item.MainCategoryId;
+                        maincategory.maincategoryName = item.CategoryName;
+                        maincategory.categorystatus = item.CategoryStatus;
+                        maincategory.createDate = item.CreateDate.ToShortDateString();
+                        maincategory.CategoryImageMale = item.CategoryImageMale;
+                        maincategory.CategoryImageFemale = item.CategoryImageFemale;
+
+                        if (item.Male == true && item.Female == true)
+                        {
+                            maincategory.categoryType = 3;
+                        }
+                        if (item.Male == false && item.Female == false)
+                        {
+                            maincategory.categoryType = 0;
+                        }
+                        if (item.Male == true && item.Female == false)
+                        {
+                            maincategory.categoryType = 1;
+                        }
+                        if (item.Male == false && item.Female == true)
+                        {
+                            maincategory.categoryType = 2;
+                        }
+
+                        Category.Add(maincategory);
                     }
-                    if (item.Male == false && item.Female == false)
+
+                    var subcategories = subCategory.Where(u => u.CreatedBy == currentUserId).ToList();
+
+                    subcategories = subcategories.OrderByDescending(u => u.CreateDate).ToList();
+
+                    foreach (var item in subcategories)
                     {
-                        mainCategory.categoryType = 0;
+                        var subcategory = new CategoryRequestDTO();
+                        subcategory.mainCategoryId = item.MainCategoryId;
+                        subcategory.subCategoryId = item.SubCategoryId;
+                        subcategory.subcategoryName = item.CategoryName;
+                        subcategory.categorystatus = item.CategoryStatus;
+                        subcategory.createDate = item.CreateDate.ToShortDateString();
+                        subcategory.CategoryImageMale = item.CategoryImageMale;
+                        subcategory.CategoryImageFemale = item.CategoryImageFemale;
+
+                        if (item.Male == true && item.Female == true)
+                        {
+                            subcategory.categoryType = 3;
+                        }
+                        if (item.Male == false && item.Female == false)
+                        {
+                            subcategory.categoryType = 0;
+                        }
+                        if (item.Male == true && item.Female == false)
+                        {
+                            subcategory.categoryType = 1;
+                        }
+                        if (item.Male == false && item.Female == true)
+                        {
+                            subcategory.categoryType = 2;
+                        }
+
+                        var maincategory = await _context.MainCategory.Where(u => u.MainCategoryId == item.MainCategoryId).FirstOrDefaultAsync();
+                        subcategory.maincategoryName = maincategory.CategoryName;
+                        Category.Add(subcategory);
                     }
-                    if (item.Male == true && item.Female == false)
+                    if (Category.Count > 0)
                     {
-                        mainCategory.categoryType = 1;
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = true;
+                        _response.Data = Category;
+                        _response.Messages = "Category shown successfully.";
+                        return Ok(_response);
                     }
-                    if (item.Male == false && item.Female == true)
-                    {
-                        mainCategory.categoryType = 2;
-                    }
-                    Categories.Add(mainCategory);
                 }
-                var subCategories = await _context.SubCategory.Where(u => u.CategoryStatus != Convert.ToInt32(Status.Approved)).ToListAsync();
-                subCategories = subCategories.OrderByDescending(u => u.CreateDate).ToList();
-                foreach (var item in subCategories)
+                else
                 {
-                    var subCategory = new CategoryRequestDTO();
-                    subCategory.mainCategoryId = item.MainCategoryId;
-                    subCategory.subCategoryId = item.SubCategoryId;
-                    subCategory.subcategoryName = item.CategoryName;
-                    subCategory.categorystatus = item.CategoryStatus;
-                    if (item.Male == true && item.Female == true)
+                    List<CategoryRequestDTO> Categories = new List<CategoryRequestDTO>();
+
+                    mainCategory = mainCategory.OrderByDescending(u => u.CreateDate).ToList();
+
+                    foreach (var item in mainCategory)
                     {
-                        subCategory.categoryType = 3;
+                        var maincategory = new CategoryRequestDTO();
+                        maincategory.mainCategoryId = item.MainCategoryId;
+                        maincategory.maincategoryName = item.CategoryName;
+                        maincategory.categorystatus = item.CategoryStatus;
+                        maincategory.createDate = item.CreateDate.ToShortDateString();
+                        maincategory.CategoryImageMale = item.CategoryImageMale;
+                        maincategory.CategoryImageFemale = item.CategoryImageFemale;
+
+                        if (item.Male == true && item.Female == true)
+                        {
+                            maincategory.categoryType = 3;
+                        }
+                        if (item.Male == false && item.Female == false)
+                        {
+                            maincategory.categoryType = 0;
+                        }
+                        if (item.Male == true && item.Female == false)
+                        {
+                            maincategory.categoryType = 1;
+                        }
+                        if (item.Male == false && item.Female == true)
+                        {
+                            maincategory.categoryType = 2;
+                        }
+                        Categories.Add(maincategory);
                     }
-                    if (item.Male == false && item.Female == false)
+
+                    subCategory = subCategory.OrderByDescending(u => u.CreateDate).ToList();
+
+                    foreach (var item in subCategory)
                     {
-                        subCategory.categoryType = 0;
+                        var subcategory = new CategoryRequestDTO();
+                        subcategory.mainCategoryId = item.MainCategoryId;
+                        subcategory.subCategoryId = item.SubCategoryId;
+                        subcategory.subcategoryName = item.CategoryName;
+                        subcategory.categorystatus = item.CategoryStatus;
+                        subcategory.createDate = item.CreateDate.ToShortDateString();
+                        subcategory.CategoryImageMale = item.CategoryImageMale;
+                        subcategory.CategoryImageFemale = item.CategoryImageFemale;
+
+                        if (item.Male == true && item.Female == true)
+                        {
+                            subcategory.categoryType = 3;
+                        }
+                        if (item.Male == false && item.Female == false)
+                        {
+                            subcategory.categoryType = 0;
+                        }
+                        if (item.Male == true && item.Female == false)
+                        {
+                            subcategory.categoryType = 1;
+                        }
+                        if (item.Male == false && item.Female == true)
+                        {
+                            subcategory.categoryType = 2;
+                        }
+
+                        var maincategory = await _context.MainCategory.Where(u => u.MainCategoryId == item.MainCategoryId).FirstOrDefaultAsync();
+                        subcategory.maincategoryName = maincategory.CategoryName;
+                        Categories.Add(subcategory);
+
                     }
-                    if (item.Male == true && item.Female == false)
+                    if (Categories.Count > 0)
                     {
-                        subCategory.categoryType = 1;
+                        _response.StatusCode = HttpStatusCode.OK;
+                        _response.IsSuccess = true;
+                        _response.Data = Categories;
+                        _response.Messages = "Category shown successfully.";
+                        return Ok(_response);
                     }
-                    if (item.Male == false && item.Female == true)
-                    {
-                        subCategory.categoryType = 2;
-                    }
-                    var mainCategory = await _context.MainCategory.Where(u => u.MainCategoryId == item.MainCategoryId).FirstOrDefaultAsync();
-                    subCategory.maincategoryName = mainCategory.CategoryName;
-                    Categories.Add(subCategory);
                 }
-                if (Categories.Count > 0)
-                {
-                    _response.StatusCode = HttpStatusCode.OK;
-                    _response.IsSuccess = true;
-                    _response.Data = Categories;
-                    _response.Messages = "Category shown successfully.";
-                    return Ok(_response);
-                }
+
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
                 _response.Messages = "Record not found.";

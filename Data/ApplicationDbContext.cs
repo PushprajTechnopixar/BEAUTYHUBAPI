@@ -6,7 +6,10 @@ namespace BeautyHubAPI.Data
 {
     public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+        {
+            Database.SetCommandTimeout(300);
+        }
         public DbSet<ApplicationUser> ApplicationUsers { get; set; }
         public virtual DbSet<BankDetail> BankDetail { get; set; } = null!;
         public virtual DbSet<Banner> Banner { get; set; } = null!;
@@ -36,10 +39,28 @@ namespace BeautyHubAPI.Data
         public virtual DbSet<Appointment> Appointment { get; set; } = null!;
         public virtual DbSet<BookedService> BookedService { get; set; } = null!;
         public virtual DbSet<ServicePackage> ServicePackage { get; set; } = null!;
+        public virtual DbSet<CustomerSearchRecord> CustomerSearchRecord { get; set; } = null!;
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<CustomerSearchRecord>(entity =>
+                                    {
+                                        entity.HasKey(e => e.RecordId);
+
+                                        entity.Property(e => e.CreateDate)
+                                            .HasColumnType("datetime")
+                                            .HasDefaultValueSql("(getdate())");
+
+                                        entity.Property(e => e.CustomerSearchItem).HasMaxLength(500);
+
+                                        entity.Property(e => e.CustomerUserId).HasMaxLength(450);
+
+                                        entity.HasOne(d => d.CustomerUser)
+                                            .WithMany(p => p.CustomerSearchRecord)
+                                            .HasForeignKey(d => d.CustomerUserId)
+                                            .HasConstraintName("FK_CustomerSearchRecord_UserDetail");
+                                    });
 
             modelBuilder.Entity<ServicePackage>(entity =>
             {
