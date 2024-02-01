@@ -516,6 +516,7 @@ namespace BeautyHubAPI.Controllers
                 {
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
+                    _response.Messages = ResponseMessages.msgNotFound + "record.";
                     return Ok(_response);
                 }
                 // Delete previous file

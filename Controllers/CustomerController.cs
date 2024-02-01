@@ -657,6 +657,7 @@ namespace BeautyHubAPI.Controllers
                     {
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = false;
+                        _response.Messages = "Address type has been already added.";
                         return Ok(_response);
                     }
                 }
