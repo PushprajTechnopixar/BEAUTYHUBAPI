@@ -26,6 +26,10 @@ using BeautyHubAPI.Models.Helper;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using Quartz;
+using Quartz.Impl;
+using Quartz.Spi;
+using BeautyHubAPI.JobScheduler;
 
 // public partial class Program
 // {
@@ -89,19 +93,34 @@ builder.Services.AddSingleton<IMobileMessagingClient, MobileMessagingClient>();
 
 builder.Services.AddHostedService<MyBackgroundService>();
 builder.Services.AddScoped<MyBackgroundService>();
-builder.Services.AddHostedService<EverydayMidnightService>();
-builder.Services.AddScoped<EverydayMidnightService>();
 builder.Services.AddHostedService<ApplointmentListBackgroundService>();
 builder.Services.AddScoped<ApplointmentListBackgroundService>();
 // builder.Services.AddTransient<ApplicationDbContext>();
+
+// Add Quartz services
+builder.Services.AddSingleton<IJobFactory, SingletonJobFactory>();
+builder.Services.AddSingleton<ISchedulerFactory, StdSchedulerFactory>();
+
+builder.Services.AddScoped<EverydayMidnightJob>();
+
+
+//Add our job 
+builder.Services.AddSingleton(new JobSchedule(
+   jobType: typeof(EverydayMidnightJob),
+   cronExpression: "0 57 12 ? * *"));//12:45 PM
+
+// builder.Services.AddSingleton(new JobSchedule(
+//    jobType: typeof(EverydayMidnightJob),
+//    cronExpression: "0 1 0 * * ?"));
+
+builder.Services.AddSingleton<QuartzJobRunner>();
+builder.Services.AddHostedService<QuartzHostedService>();
 
 //Inject EmailSettings
 builder.Services.AddOptions();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("GoogleAuthentication"));
 builder.Services.AddSingleton<IEmailManager, EmailManager>();
-
-
 
 // builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
 //         .AddEntityFrameworkStores<ApplicationDbContext>()
