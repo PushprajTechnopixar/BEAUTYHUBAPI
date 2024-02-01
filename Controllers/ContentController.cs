@@ -9,6 +9,7 @@ using AutoMapper;
 using BeautyHubAPI.Models;
 using BeautyHubAPI.Models.Dtos;
 using BeautyHubAPI.Repository;
+using BeautyHubAPI.Common;
 
 namespace BeautyHubAPI.Controllers
 {
@@ -36,7 +37,7 @@ namespace BeautyHubAPI.Controllers
             _ContentRepository = contentRepository;
             _context = context;
             _response = new();
-            _mapper = mapper; 
+            _mapper = mapper;
             _bannerRepository = bannerRepository;
 
         }
@@ -61,7 +62,7 @@ namespace BeautyHubAPI.Controllers
                 }
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
-                _response.Messages = "Shown successfully.";
+                _response.Messages = ResponseMessages.msgShownSuccess;
                 _response.Data = countryList;
                 return Ok(_response);
             }
@@ -69,7 +70,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.InternalServerError;
                 _response.IsSuccess = false;
-                _response.Messages = "Something went wrong.";
+                _response.Messages = ResponseMessages.msgSomethingWentWrong;
                 return Ok(_response);
             }
         }
@@ -96,7 +97,7 @@ namespace BeautyHubAPI.Controllers
                 }
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
-                _response.Messages = "Shown successfully.";
+                _response.Messages = ResponseMessages.msgShownSuccess;
                 _response.Data = stateList;
                 return Ok(_response);
             }
@@ -104,7 +105,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.InternalServerError;
                 _response.IsSuccess = false;
-                _response.Messages = "Something went wrong.";
+                _response.Messages = ResponseMessages.msgSomethingWentWrong;
                 return Ok(_response);
             }
         }
@@ -217,7 +218,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.InternalServerError;
                 _response.IsSuccess = false;
-                _response.Messages = "Something went wrong.";
+                _response.Messages = ResponseMessages.msgSomethingWentWrong;
                 return Ok(_response);
             }
         }
@@ -256,7 +257,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.InternalServerError;
                 _response.IsSuccess = false;
-                _response.Messages = "Something went wrong.";
+                _response.Messages = ResponseMessages.msgSomethingWentWrong;
                 return Ok(_response);
             }
         }

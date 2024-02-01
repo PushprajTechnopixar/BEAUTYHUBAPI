@@ -19,6 +19,7 @@ using MimeKit;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using GSF;
+using BeautyHubAPI.Common;
 
 namespace BeautyHubAPI.Controllers
 {
@@ -84,7 +85,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
-                _response.Messages = "User does not exists.";
+                _response.Messages = ResponseMessages.msgUserNotFound;
                 return Ok(_response);
             }
 
@@ -98,7 +99,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
-                _response.Messages = "User does not exists.";
+                _response.Messages = ResponseMessages.msgUserNotFound;
                 return Ok(_response);
             }
             var mappedData = _mapper.Map<SuperAdminResponseDTO>(userToReturn);
@@ -140,7 +141,7 @@ namespace BeautyHubAPI.Controllers
             _response.StatusCode = HttpStatusCode.OK;
             _response.IsSuccess = true;
             _response.Data = mappedData;
-            _response.Messages = "Detail shown successfully.";
+            _response.Messages = "Detail" + ResponseMessages.msgShownSuccess;
             return Ok(_response);
         }
         #endregion
@@ -161,7 +162,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
-                _response.Messages = "User does not exists.";
+                _response.Messages = ResponseMessages.msgUserNotFound;
                 return Ok(_response);
             }
             var roles = await _userManager.GetRolesAsync(currentUserDetail);
@@ -174,7 +175,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
-                _response.Messages = "User does not exists.";
+                _response.Messages = ResponseMessages.msgUserNotFound;
                 return Ok(_response);
             }
 
@@ -326,7 +327,7 @@ namespace BeautyHubAPI.Controllers
             _response.StatusCode = HttpStatusCode.OK;
             _response.IsSuccess = true;
             _response.Data = superAdminDetail;
-            _response.Messages = "profile updated successfully.";
+            _response.Messages = "profile" + ResponseMessages.msgUpdationSuccess;
             return Ok(_response);
         }
         #endregion
@@ -357,7 +358,7 @@ namespace BeautyHubAPI.Controllers
                 {
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
-                    _response.Messages = "Not found any plan.";
+                    _response.Messages = "plan" + ResponseMessages.msgNotFound;
                     return Ok(_response);
                 }
 
@@ -368,7 +369,7 @@ namespace BeautyHubAPI.Controllers
                 {
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
-                    _response.Messages = "Not found any record.";
+                    _response.Messages = ResponseMessages.msgNotFound + "record";
                     return Ok(_response);
                 }
 
@@ -411,7 +412,7 @@ namespace BeautyHubAPI.Controllers
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
                 _response.Data = paymentOptions;
-                _response.Messages = "Payment option shown successfully.";
+                _response.Messages = "Payment option" + ResponseMessages.msgShownSuccess;
                 return Ok(_response);
             }
             catch (Exception ex)
@@ -515,7 +516,6 @@ namespace BeautyHubAPI.Controllers
                 {
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
-                    _response.Messages = "Not found any record.";
                     return Ok(_response);
                 }
                 // Delete previous file
@@ -716,7 +716,7 @@ namespace BeautyHubAPI.Controllers
                     {
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = false;
-                        _response.Messages = "Not found any record.";
+                        _response.Messages = "record." + ResponseMessages.msgNotFound;
                         return Ok(_response);
                     }
                 }
@@ -828,7 +828,7 @@ namespace BeautyHubAPI.Controllers
                 {
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
-                    _response.Messages = "Not found any record.";
+                    _response.Messages = ResponseMessages.msgNotFound + "record.";
                     return Ok(_response);
                 }
             }
@@ -880,7 +880,7 @@ namespace BeautyHubAPI.Controllers
                 {
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
-                    _response.Messages = "Not found any record.";
+                    _response.Messages = "record." + ResponseMessages.msgNotFound;
                     return Ok(_response);
                 }
             }
@@ -922,7 +922,7 @@ namespace BeautyHubAPI.Controllers
                 {
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
-                    _response.Messages = "Not found any record.";
+                    _response.Messages = "record." + ResponseMessages.msgNotFound;
                     return Ok(_response);
                 }
                 // // set plan status false for subscriber of this plan
@@ -981,7 +981,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
-                _response.Messages = "User does not exists.";
+                _response.Messages = ResponseMessages.msgUserNotFound;
                 return Ok(_response);
             }
 
@@ -1150,7 +1150,7 @@ namespace BeautyHubAPI.Controllers
             _response.StatusCode = HttpStatusCode.OK;
             _response.IsSuccess = true;
             _response.Data = vendorDetail;
-            _response.Messages = "Vendor detail added successfully.";
+            _response.Messages = "Vendor detail" + ResponseMessages.msgAdditionSuccess;
             return Ok(_response);
         }
         #endregion
@@ -1171,7 +1171,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
-                _response.Messages = "User does not exists.";
+                _response.Messages = ResponseMessages.msgUserNotFound;
                 return Ok(_response);
             }
             var roles = await _userManager.GetRolesAsync(currentUserDetail);
@@ -1184,7 +1184,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
-                _response.Messages = "User does not exists.";
+                _response.Messages = ResponseMessages.msgUserNotFound;
                 return Ok(_response);
             }
 
@@ -1195,7 +1195,7 @@ namespace BeautyHubAPI.Controllers
                 {
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
-                    _response.Messages = "Email already exists.";
+                    _response.Messages = ResponseMessages.msgEmailAlreadyUsed;
                     return Ok(_response);
                 }
             }
@@ -1443,7 +1443,7 @@ namespace BeautyHubAPI.Controllers
             _response.StatusCode = HttpStatusCode.OK;
             _response.IsSuccess = true;
             _response.Data = vendorDetail;
-            _response.Messages = "Vendor detail updated successfully.";
+            _response.Messages = "Vendor detail" + ResponseMessages.msgUpdationSuccess;
             return Ok(_response);
         }
         #endregion
@@ -1464,7 +1464,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
-                _response.Messages = "User does not exists.";
+                _response.Messages = ResponseMessages.msgUserNotFound;
                 return Ok(_response);
             }
 
@@ -1573,7 +1573,7 @@ namespace BeautyHubAPI.Controllers
             _response.StatusCode = HttpStatusCode.OK;
             _response.IsSuccess = true;
             _response.Data = obj;
-            _response.Messages = "List shown successfully.";
+            _response.Messages = ResponseMessages.msgListFoundSuccess;
             return Ok(_response);
         }
         #endregion
@@ -1594,7 +1594,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
-                _response.Messages = "User does not exists.";
+                _response.Messages = ResponseMessages.msgUserNotFound;
                 return Ok(_response);
             }
 
@@ -1680,7 +1680,7 @@ namespace BeautyHubAPI.Controllers
             _response.StatusCode = HttpStatusCode.OK;
             _response.IsSuccess = true;
             _response.Data = mappedData;
-            _response.Messages = "Detail shown successfully.";
+            _response.Messages = "Detail" + ResponseMessages.msgShownSuccess;
             return Ok(_response);
         }
         #endregion
@@ -1707,7 +1707,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
-                _response.Messages = "User not found.";
+                _response.Messages = "User" + ResponseMessages.msgNotFound;
                 return Ok(_response);
             }
             var vendorDetail = _userManager.FindByIdAsync(VendorId).GetAwaiter().GetResult();
@@ -1715,7 +1715,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
-                _response.Messages = "User does not exists.";
+                _response.Messages = ResponseMessages.msgUserNotFound;
                 return Ok(_response);
             }
             var vendorProfileDetail = await _context.UserDetail.Where(u => (u.UserId == vendorDetail.Id) && (u.IsDeleted == false)).FirstOrDefaultAsync();
@@ -1723,7 +1723,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
-                _response.Messages = "User does not exists.";
+                _response.Messages = ResponseMessages.msgUserNotFound;
                 return Ok(_response);
             }
 
@@ -1788,7 +1788,7 @@ namespace BeautyHubAPI.Controllers
 
             _response.StatusCode = HttpStatusCode.OK;
             _response.IsSuccess = true;
-            _response.Messages = "Deleted successfully.";
+            _response.Messages = ResponseMessages.msgDeletionSuccess;
             return Ok(_response);
         }
         #endregion
@@ -1808,7 +1808,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
-                _response.Messages = "Record not found.";
+                _response.Messages = "record." + ResponseMessages.msgNotFound;
                 return Ok(_response);
             }
             salonDetails.Status = model.status;
@@ -1822,7 +1822,7 @@ namespace BeautyHubAPI.Controllers
             _response.StatusCode = HttpStatusCode.OK;
             _response.IsSuccess = true;
             _response.Data = shopResponse;
-            _response.Messages = "Status updated successfully.";
+            _response.Messages = "Status" + ResponseMessages.msgUpdationSuccess;
             return Ok(_response);
         }
         #endregion
@@ -1897,7 +1897,7 @@ namespace BeautyHubAPI.Controllers
             _response.StatusCode = HttpStatusCode.OK;
             _response.IsSuccess = true;
             _response.Data = user;
-            _response.Messages = "Registered successfully.";
+            _response.Messages = ResponseMessages.msgUserRegisterSuccess;
             return Ok(_response);
         }
         #endregion
@@ -1918,7 +1918,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
-                _response.Messages = "User does not exists.";
+                _response.Messages = ResponseMessages.msgUserNotFound;
                 return Ok(_response);
             }
             var roles = await _userManager.GetRolesAsync(currentUserDetail);
@@ -2001,7 +2001,7 @@ namespace BeautyHubAPI.Controllers
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
                 _response.Data = mappedData;
-                _response.Messages = "Updated successfully.";
+                _response.Messages = ResponseMessages.msgUpdationSuccess;
                 return Ok(_response);
             }
             _response.StatusCode = HttpStatusCode.OK;
@@ -2026,7 +2026,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
-                _response.Messages = "Record not found.";
+                _response.Messages = ResponseMessages.msgNotFound + "record.";
                 return Ok(_response);
             }
 
@@ -2099,7 +2099,7 @@ namespace BeautyHubAPI.Controllers
             _response.StatusCode = HttpStatusCode.OK;
             _response.IsSuccess = true;
             _response.Data = obj;
-            _response.Messages = "List shown successfully.";
+            _response.Messages = ResponseMessages.msgListFoundSuccess;
             return Ok(_response);
         }
         #endregion
@@ -2124,7 +2124,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
-                _response.Messages = "User does not exists.";
+                _response.Messages = ResponseMessages.msgUserNotFound;
                 return Ok(_response);
             }
             var adminUserProfileDetail = await _context.UserDetail.FirstOrDefaultAsync(u => (u.UserId == adminDetail.Id) && (u.IsDeleted == false));
@@ -2132,7 +2132,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
-                _response.Messages = "User does not exists.";
+                _response.Messages = ResponseMessages.msgUserNotFound;
                 return Ok(_response);
             }
             var mappedData = _mapper.Map<UserDetailDTO>(adminDetail);
@@ -2161,7 +2161,7 @@ namespace BeautyHubAPI.Controllers
             _response.StatusCode = HttpStatusCode.OK;
             _response.IsSuccess = true;
             _response.Data = mappedData;
-            _response.Messages = "Detail shown successfully.";
+            _response.Messages = "Detail" + ResponseMessages.msgShownSuccess;
             return Ok(_response);
         }
         #endregion
@@ -2188,7 +2188,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
-                _response.Messages = "User not found.";
+                _response.Messages = "User" + ResponseMessages.msgNotFound;
                 return Ok(_response);
             }
             var adminDetail = _userManager.FindByIdAsync(id).GetAwaiter().GetResult();
@@ -2196,7 +2196,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
-                _response.Messages = "User does not exists.";
+                _response.Messages = ResponseMessages.msgUserNotFound;
                 return Ok(_response);
             }
             var adminUserProfileDetail = await _context.UserDetail.FirstOrDefaultAsync(u => (u.UserId == adminDetail.Id) && (u.IsDeleted == false));
@@ -2204,7 +2204,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
-                _response.Messages = "User does not exists.";
+                _response.Messages = ResponseMessages.msgUserNotFound;
                 return Ok(_response);
             }
 
@@ -2215,7 +2215,7 @@ namespace BeautyHubAPI.Controllers
 
             _response.StatusCode = HttpStatusCode.OK;
             _response.IsSuccess = true;
-            _response.Messages = "Deleted successfully.";
+            _response.Messages = ResponseMessages.msgDeletionSuccess;
             return Ok(_response);
         }
         #endregion

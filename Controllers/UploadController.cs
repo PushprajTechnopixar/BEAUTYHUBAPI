@@ -16,6 +16,7 @@ using System.Net.Http.Headers;
 using AutoMapper;
 using Amazon.S3.Model;
 using Amazon.S3;
+using BeautyHubAPI.Common;
 
 namespace BeautyHubAPI.Controllers
 {
@@ -65,7 +66,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
-                _response.Messages = "User does not exists.";
+                _response.Messages = ResponseMessages.msgUserNotFound;
                 return Ok(_response);
             }
 
@@ -98,7 +99,7 @@ namespace BeautyHubAPI.Controllers
 
             _response.StatusCode = HttpStatusCode.OK;
             _response.IsSuccess = true;
-            _response.Messages = "Uploaded successfully.";
+            _response.Messages = ResponseMessages.msgUpdationSuccess;
             _response.Data = documentPath;
             return Ok(_response);
         }
@@ -195,7 +196,7 @@ namespace BeautyHubAPI.Controllers
                 {
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
-                    _response.Messages = "Record not found.";
+                    _response.Messages = "Record" + ResponseMessages.msgNotFound;
                     return Ok(_response);
                 }
 
@@ -223,7 +224,7 @@ namespace BeautyHubAPI.Controllers
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
                 _response.Data = SalonResponse;
-                _response.Messages = "Salon image uploaded successfully.";
+                _response.Messages = "Salon image" + ResponseMessages.msgUpdationSuccess;
                 return Ok(_response);
             }
             catch (Exception ex)
@@ -275,7 +276,7 @@ namespace BeautyHubAPI.Controllers
                         {
                             _response.StatusCode = HttpStatusCode.OK;
                             _response.IsSuccess = false;
-                            _response.Messages = "Record not found.";
+                            _response.Messages = "record" + ResponseMessages.msgNotFound;
                             return Ok(_response);
                         }
 
@@ -306,7 +307,7 @@ namespace BeautyHubAPI.Controllers
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
                 // _response.Data = SalonResponse;
-                _response.Messages = "QR image uploaded successfully.";
+                _response.Messages = "QR image" + ResponseMessages.msgUpdationSuccess;
                 return Ok(_response);
             }
             catch (Exception ex)
@@ -355,7 +356,7 @@ namespace BeautyHubAPI.Controllers
                     {
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = false;
-                        _response.Messages = "Record not found.";
+                        _response.Messages = "record" + ResponseMessages.msgNotFound;
                         return Ok(_response);
                     }
 
@@ -414,9 +415,9 @@ namespace BeautyHubAPI.Controllers
                     {
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = false;
-                        _response.Messages = "Record not found.";
+                        _response.Messages = "record" + ResponseMessages.msgNotFound;
                         return Ok(_response);
-                    }
+                    }   
 
                     if (model.CategoryImageMale != null)
                     {
@@ -524,7 +525,7 @@ namespace BeautyHubAPI.Controllers
                 {
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
-                    _response.Messages = "Record not found.";
+                    _response.Messages = "record" + ResponseMessages.msgNotFound;
                     return Ok(_response);
                 }
 
@@ -657,7 +658,7 @@ namespace BeautyHubAPI.Controllers
                 {
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
-                    _response.Messages = "Record not found.";
+                    _response.Messages = "record" + ResponseMessages.msgNotFound;
                     return Ok(_response);
                 }
 
