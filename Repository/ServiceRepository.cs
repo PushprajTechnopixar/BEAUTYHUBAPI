@@ -48,35 +48,9 @@ namespace BeautyHubAPI.Repository
             _applointmentListBackgroundService = applointmentListBackgroundService;
         }
 
-        public async Task<List<serviceDetailDTO>> GetSalonServiceDetail(int serviceId, string? serviceType)
+        public async Task<serviceDetailDTO> GetSalonServiceDetail(int serviceId, string? serviceType)
         {
-           
-            serviceType = string.IsNullOrEmpty(serviceType) ? "Single" : serviceType;
-
-            if (serviceType != "Single" && serviceType != "Package")
-            {
-                _response.StatusCode = HttpStatusCode.OK;
-                _response.IsSuccess = false;
-                _response.Messages = "Please enter valid service type.";
-                return new List<serviceDetailDTO>();
-            }
-
-            // var serviceDetail1 = await _context.SalonService.ToListAsync();
-            // foreach (var item in serviceDetail1)
-            // {
-            //     item.ServiceIconImage = item.ServiceImage1;
-            //     _context.Update(item);
-            //     _context.SaveChanges();
-            // }
-
             var serviceDetail = await _context.SalonService.FirstOrDefaultAsync(u => u.ServiceId == serviceId);
-            if (serviceDetail == null)
-            {
-                _response.StatusCode = HttpStatusCode.OK;
-                _response.IsSuccess = false;
-                _response.Messages = ResponseMessages.msgNotFound + "record";
-                return new List<serviceDetailDTO>();
-            }
 
             var serviceResponse = _mapper.Map<serviceDetailDTO>(serviceDetail);
 
@@ -174,11 +148,60 @@ namespace BeautyHubAPI.Repository
                 serviceResponse.subCategoryName = categoryDetail != null ? categoryDetail.CategoryName : null;
             }
 
-            _response.StatusCode = HttpStatusCode.OK;
-            _response.IsSuccess = true;
-            _response.Data = serviceResponse;
-            _response.Messages = "Service detail" + ResponseMessages.msgShownSuccess;
-            return new List<serviceDetailDTO> { serviceResponse };
+            return  serviceResponse ;
+        }
+
+        public async Task<Object> DeleteSalonService(int serviceId)
+        {
+            var salonService = await _context.SalonService.Where(x => (x.ServiceId == serviceId) && (x.IsDeleted != true)).FirstOrDefaultAsync();
+
+            List<string> serviceIdList = new List<string>();
+
+            var salonServiceInPackage = await _context.ServicePackage.Select(u => u.IncludeServiceId).ToListAsync();
+
+            foreach (var item in salonServiceInPackage)
+            {
+                string[] includedIds = item.Split(',');
+
+                // Display the result
+                foreach (string id in includedIds)
+                {
+                    serviceIdList.Add(id);
+                }
+            }
+
+            if (serviceIdList.Contains(serviceId.ToString()))
+            {
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = false;
+                _response.Messages = "Unable to delete. The service is currently in use within a package.";
+                return _response;
+            }
+
+            var timeSlots = await _context.TimeSlot.Where(x => (x.ServiceId == serviceId)).ToListAsync();
+            foreach (var item in timeSlots)
+            {
+                item.IsDeleted = true;
+                item.Status = false;
+            }
+            _context.UpdateRange(timeSlots);
+            await _context.SaveChangesAsync();
+
+            var favouriteServices = await _context.FavouriteService.Where(x => (x.ServiceId == serviceId)).ToListAsync();
+            _context.RemoveRange(favouriteServices);
+            await _context.SaveChangesAsync();
+
+            var cartServices = await _context.Cart.Where(x => (x.ServiceId == serviceId)).ToListAsync();
+            _context.RemoveRange(cartServices);
+            await _context.SaveChangesAsync();
+
+            salonService.IsDeleted = true;
+
+            _context.Update(salonService);
+            await _context.SaveChangesAsync();
+
+            return _response;
+
         }
     }
 }

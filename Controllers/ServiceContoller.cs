@@ -1064,32 +1064,25 @@ namespace BeautyHubAPI.Controllers
                 _response.Messages = ResponseMessages.msgUserNotFound;
                 return Ok(_response);
             }
-            //serviceType = string.IsNullOrEmpty(serviceType) ? "Single" : serviceType;
 
-            //if (serviceType != "Single" && serviceType != "Package")
-            //{
-            //    _response.StatusCode = HttpStatusCode.OK;
-            //    _response.IsSuccess = false;
-            //    _response.Messages = "Please enter valid servivce type.";
-            //    return Ok(_response);
-            //}
+            serviceType = string.IsNullOrEmpty(serviceType) ? "Single" : serviceType;
 
-            //// var serviceDetail1 = await _context.SalonService.ToListAsync();
-            //// foreach (var item in serviceDetail1)
-            //// {
-            ////     item.ServiceIconImage = item.ServiceImage1;
-            ////     _context.Update(item);
-            ////     _context.SaveChanges();
-            //// }
+            if (serviceType != "Single" && serviceType != "Package")
+            {
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = false;
+                _response.Messages = "Please enter valid service type.";
+                return Ok(_response);
+            }
 
-            //var serviceDetail = await _context.SalonService.FirstOrDefaultAsync(u => u.ServiceId == serviceId);
-            //if (serviceDetail == null)
-            //{
-            //    _response.StatusCode = HttpStatusCode.OK;
-            //    _response.IsSuccess = false;
-            //    _response.Messages = ResponseMessages.msgNotFound + "record";
-            //    return Ok(_response);
-            //}
+            var serviceDetail = await _context.SalonService.FirstOrDefaultAsync(u => u.ServiceId == serviceId);
+            if (serviceDetail == null)
+            {
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = false;
+                _response.Messages = ResponseMessages.msgNotFound + "record";
+                return Ok(_response);
+            }
 
             //var serviceResponse = _mapper.Map<serviceDetailDTO>(serviceDetail);
 
@@ -1187,7 +1180,7 @@ namespace BeautyHubAPI.Controllers
             //    serviceResponse.subCategoryName = categoryDetail != null ? categoryDetail.CategoryName : null;
             //}
 
-            var serviceResponse = await _serviceRepository.GetSalonServiceDetail( serviceId, serviceType);
+            var serviceResponse = await _serviceRepository.GetSalonServiceDetail(serviceId, serviceType);
 
             _response.StatusCode = HttpStatusCode.OK;
             _response.IsSuccess = true;
@@ -2237,63 +2230,23 @@ namespace BeautyHubAPI.Controllers
                     _response.Messages = "Token expired.";
                     return Ok(_response);
                 }
+
                 var salonService = await _context.SalonService.Where(x => (x.ServiceId == serviceId) && (x.IsDeleted != true)).FirstOrDefaultAsync();
                 if (salonService == null)
                 {
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
-                    _response.Messages = "record." + ResponseMessages.msgNotFound;
+                    _response.Messages = ResponseMessages.msgNotFound + "record";
                     return Ok(_response);
                 }
 
-                List<string> serviceIdList = new List<string>();
-                var salonServiceInPackage = await _context.ServicePackage.Select(u => u.IncludeServiceId).ToListAsync();
-
-                foreach (var item in salonServiceInPackage)
-                {
-                    string[] includedIds = item.Split(',');
-
-                    // Display the result
-                    foreach (string id in includedIds)
-                    {
-                        serviceIdList.Add(id);
-                    }
-                }
-
-                if (serviceIdList.Contains(serviceId.ToString()))
-                {
-                    _response.StatusCode = HttpStatusCode.OK;
-                    _response.IsSuccess = false;
-                    _response.Messages = "Unable to delete. The service is currently in use within a package.";
-                    return Ok(_response);
-                }
-
-                var timeSlots = await _context.TimeSlot.Where(x => (x.ServiceId == serviceId)).ToListAsync();
-                foreach (var item in timeSlots)
-                {
-                    item.IsDeleted = true;
-                    item.Status = false;
-                }
-                _context.UpdateRange(timeSlots);
-                await _context.SaveChangesAsync();
-
-                var favouriteServices = await _context.FavouriteService.Where(x => (x.ServiceId == serviceId)).ToListAsync();
-                _context.RemoveRange(favouriteServices);
-                await _context.SaveChangesAsync();
-
-                var cartServices = await _context.Cart.Where(x => (x.ServiceId == serviceId)).ToListAsync();
-                _context.RemoveRange(cartServices);
-                await _context.SaveChangesAsync();
-
-                salonService.IsDeleted = true;
-
-                _context.Update(salonService);
-                await _context.SaveChangesAsync();
+                var service = await _serviceRepository.DeleteSalonService(serviceId);
 
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
                 _response.Messages = "Service is" + ResponseMessages.msgDeletionSuccess;
                 return Ok(_response);
+
             }
             catch (Exception ex)
             {
