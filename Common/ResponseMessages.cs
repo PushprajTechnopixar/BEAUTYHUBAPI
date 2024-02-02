@@ -1,9 +1,13 @@
-﻿namespace BeautyHubAPI.Helpers
+﻿using BeautyHubAPI;
+using BeautyHubAPI.Common;
+using BeautyHubAPI.Helpers;
+
+namespace BeautyHubAPI.Common
 {
     public static class ResponseMessages
     {
-        public static readonly string msgUserRegisterSuccess = "User registered succesfully.";
-        public static readonly string msgDoctorRegisterSuccess = "Doctor registered succesfully.";
+        public static readonly string msgUserRegisterSuccess = "User registered successfully.";
+        public static readonly string msgDoctorRegisterSuccess = "Doctor registered successfully.";
 
         public static readonly string msgUserRoleNotAuthorized =
             "Requested user type is not authorized.";

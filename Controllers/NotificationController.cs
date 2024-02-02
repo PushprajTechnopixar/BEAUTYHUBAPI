@@ -22,6 +22,7 @@ using BeautyHubAPI.Models;
 using Microsoft.AspNetCore.Identity;
 using BeautyHubAPI.Models.Helper;
 using System.Net;
+using BeautyHubAPI.Common;
 
 namespace BeautyHubAPI.Controllers
 {
@@ -133,7 +134,7 @@ namespace BeautyHubAPI.Controllers
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
                 _response.Data = obj1;
-                _response.Messages = "Notification list shown sucessfullly.";
+                _response.Messages = "Notification" + ResponseMessages.msgListFoundSuccess;
                 return Ok(_response);
             }
             catch (Exception ex)
@@ -317,14 +318,14 @@ namespace BeautyHubAPI.Controllers
 
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = true;
-                        _response.Messages = "Notification deleted successfully.";
+                        _response.Messages = "Notification" + ResponseMessages.msgDeletionSuccess;
                         return Ok(_response);
                     }
                     else
                     {
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = true;
-                        _response.Messages = "Not found any record.";
+                        _response.Messages = ResponseMessages.msgNotFound;
                         return Ok(_response);
                     }
                 }
@@ -445,7 +446,7 @@ namespace BeautyHubAPI.Controllers
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
                 _response.Data = new { unreadnotificationCount = unreadnotificationCount, notificationList = obj1 };
-                _response.Messages = "Notification list shown successfully.";
+                _response.Messages = "Notification" + ResponseMessages.msgListFoundSuccess;
                 return Ok(_response);
 
             }
@@ -543,7 +544,7 @@ namespace BeautyHubAPI.Controllers
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
                 // _response.Data = obj1;
-                _response.Messages = "Notification status updated successfully.";
+                _response.Messages = "Notification status" + ResponseMessages.msgUpdationSuccess;
                 return Ok(_response);
             }
             catch (Exception ex)
@@ -648,14 +649,14 @@ namespace BeautyHubAPI.Controllers
 
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = true;
-                        _response.Messages = "Notification deleted successfully.";
+                        _response.Messages = "Notification" + ResponseMessages.msgDeletionSuccess;
                         return Ok(_response);
                     }
                     else
                     {
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = true;
-                        _response.Messages = "Not found any record.";
+                        _response.Messages = ResponseMessages.msgNotFound;
                         return Ok(_response);
                     }
                 }
@@ -672,7 +673,7 @@ namespace BeautyHubAPI.Controllers
 
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = true;
-                    _response.Messages = "Notification deleted successfully.";
+                    _response.Messages = "Notification" + ResponseMessages.msgDeletionSuccess;
                     return Ok(_response);
                 }
             }
@@ -720,14 +721,14 @@ namespace BeautyHubAPI.Controllers
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = true;
                     _response.Data = model;
-                    _response.Messages = "Token updated successfully.";
+                    _response.Messages = "Token" + ResponseMessages.msgUpdationSuccess;
                     return Ok(_response);
                 }
                 else
                 {
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
-                    _response.Messages = "Not found any record.";
+                    _response.Messages = ResponseMessages.msgNotFound;
                     return Ok(_response);
                 }
             }

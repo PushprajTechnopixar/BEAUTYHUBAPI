@@ -23,6 +23,7 @@ using System.Text;
 using MimeKit.Encodings;
 using Newtonsoft.Json;
 using RestSharp;
+using BeautyHubAPI.Common;
 
 namespace BeautyHubAPI.Controllers
 {
@@ -87,7 +88,7 @@ namespace BeautyHubAPI.Controllers
                 {
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
-                    _response.Messages = "User does not exists.";
+                    _response.Messages = ResponseMessages.msgUserNotFound;
                     return Ok(_response);
                 }
 
@@ -122,7 +123,7 @@ namespace BeautyHubAPI.Controllers
                 {
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
-                    _response.Messages = "Not found any record.";
+                    _response.Messages = ResponseMessages.msgNotFound + "record.";
                     return Ok(_response);
                 }
 
@@ -141,7 +142,7 @@ namespace BeautyHubAPI.Controllers
                             {
                                 _response.StatusCode = HttpStatusCode.OK;
                                 _response.IsSuccess = false;
-                                _response.Messages = "Not found any record.";
+                                _response.Messages = ResponseMessages.msgNotFound + "record.";
                                 return Ok(_response);
                             }
                             membershipRecord.PaymentReceiptId = paymentReceipt.PaymentReceiptId;
@@ -681,12 +682,12 @@ namespace BeautyHubAPI.Controllers
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = true;
                     _response.Data = Categories;
-                    _response.Messages = "Category shown successfully.";
+                    _response.Messages = "Category" + ResponseMessages.msgListFoundSuccess;
                     return Ok(_response);
                 }
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
-                _response.Messages = "Record not found.";
+                _response.Messages = ResponseMessages.msgNotFound + "record.";
                 return Ok(_response);
             }
             catch (Exception ex)
@@ -728,7 +729,7 @@ namespace BeautyHubAPI.Controllers
                     {
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = false;
-                        _response.Messages = "Not found any Salon.";
+                        _response.Messages = ResponseMessages.msgNotFound + "Salon.";
                         return Ok(_response);
                     }
                 }
@@ -909,7 +910,7 @@ namespace BeautyHubAPI.Controllers
                         {
                             _response.StatusCode = HttpStatusCode.OK;
                             _response.IsSuccess = false;
-                            _response.Messages = "Not found any category.";
+                            _response.Messages = ResponseMessages.msgNotFound + "category.";
                             return Ok(_response);
                         }
                         // var cartDetail = await _cartRepository.GetAllAsync(u => u.SalonId == model.salonId);
@@ -1027,7 +1028,7 @@ namespace BeautyHubAPI.Controllers
 
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
-                _response.Messages = "Category status updated successfully.";
+                _response.Messages = "Category status" + ResponseMessages.msgUpdationSuccess;
                 return Ok(_response);
             }
             catch (Exception ex)
@@ -1108,7 +1109,7 @@ namespace BeautyHubAPI.Controllers
                     {
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = false;
-                        _response.Messages = "Category not found.";
+                        _response.Messages = ResponseMessages.msgNotFound + "Category";
                         return Ok(_response);
                     }
                     else
@@ -1150,7 +1151,7 @@ namespace BeautyHubAPI.Controllers
                     {
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = false;
-                        _response.Messages = "Category not found.";
+                        _response.Messages = ResponseMessages.msgNotFound + "Category";
                         return Ok(_response);
                     }
                     else
@@ -1306,7 +1307,7 @@ namespace BeautyHubAPI.Controllers
                     {
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = false;
-                        _response.Messages = "Category not found.";
+                        _response.Messages = ResponseMessages.msgNotFound + "Category";
                         return Ok(_response);
                     }
                     else
@@ -1348,7 +1349,7 @@ namespace BeautyHubAPI.Controllers
                     {
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = false;
-                        _response.Messages = "Category not found.";
+                        _response.Messages = ResponseMessages.msgNotFound + "Category";
                         return Ok(_response);
                     }
                     else
@@ -1662,7 +1663,7 @@ namespace BeautyHubAPI.Controllers
                 {
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
-                    _response.Messages = "Not found any record.";
+                    _response.Messages = ResponseMessages.msgNotFound + "record.";
                     return Ok(_response);
                 }
                 salonBanners = salonBanners.OrderByDescending(u => u.ModifyDate).ToList();
@@ -1721,7 +1722,7 @@ namespace BeautyHubAPI.Controllers
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
                 _response.Data = SalonBannerList;
-                _response.Messages = "SalonBanner list shown successfully.";
+                _response.Messages = "SalonBanner" + ResponseMessages.msgListFoundSuccess;
                 return Ok(_response);
             }
             catch (System.Exception ex)
@@ -1771,7 +1772,7 @@ namespace BeautyHubAPI.Controllers
                     {
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = false;
-                        _response.Messages = "Not found any record.";
+                        _response.Messages = ResponseMessages.msgNotFound + "record.";
                         return Ok(_response);
                     }
                 }
@@ -1782,7 +1783,7 @@ namespace BeautyHubAPI.Controllers
                     {
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = false;
-                        _response.Messages = "Not found any record.";
+                        _response.Messages = ResponseMessages.msgNotFound + "record.";
                         return Ok(_response);
                     }
                 }
@@ -1932,14 +1933,14 @@ namespace BeautyHubAPI.Controllers
                 {
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
-                    _response.Messages = "Something went wrong.";
+                    _response.Messages = ResponseMessages.msgSomethingWentWrong;
                     return Ok(_response);
                 }
 
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
                 _response.Data = orderList;
-                _response.Messages = "Appointment list shown successfully.";
+                _response.Messages = ResponseMessages.msgListFoundSuccess + "Appointment";
                 return Ok(_response);
             }
             catch (Exception ex)
@@ -2061,7 +2062,7 @@ namespace BeautyHubAPI.Controllers
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
                     _response.Data = new Object { };
-                    _response.Messages = "Not found any appointment.";
+                    _response.Messages = ResponseMessages.msgNotFound+"appointment.";
                     return Ok(_response);
                 }
 
@@ -2345,7 +2346,7 @@ namespace BeautyHubAPI.Controllers
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
                     _response.Data = new Object { };
-                    _response.Messages = "Not found any appointment.";
+                    _response.Messages = ResponseMessages.msgNotFound+"appointment.";
                     return Ok(_response);
                 }
 
@@ -2377,7 +2378,7 @@ namespace BeautyHubAPI.Controllers
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = false;
                         _response.Data = new Object { };
-                        _response.Messages = "Status can't be channge from unpaid to refunded.";
+                        _response.Messages = "Status can't be change from unpaid to refunded.";
                         return Ok(_response);
                     }
                 }
@@ -2534,7 +2535,7 @@ namespace BeautyHubAPI.Controllers
                 {
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
-                    _response.Messages = "Not found any Salon.";
+                    _response.Messages = ResponseMessages.msgNotFound+"Salon.";
                     return Ok(_response);
                 }
 
@@ -2550,7 +2551,7 @@ namespace BeautyHubAPI.Controllers
 
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = bookServices.Count == 0 ? false : true;
-                _response.Messages = bookServices.Count == 0 ? "Not found any record." : "Upcoming slot found successfully";
+                _response.Messages = bookServices.Count == 0 ? ResponseMessages.msgNotFound + "record." : "Upcoming slot found successfully";
                 _response.Data = bookServices;
                 return Ok(_response);
 
@@ -2628,7 +2629,8 @@ namespace BeautyHubAPI.Controllers
 
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = upcomingScheduleDetailDTO.Count == 0 ? false : true;
-                _response.Messages = upcomingScheduleDetailDTO.Count == 0 ? "Not found any record." : "Upcoming schedule details found successfully";
+                _response.Messages = upcomingScheduleDetailDTO.Count == 0 ?
+                ResponseMessages.msgNotFound + "record." : "Upcoming schedule details found successfully";
                 _response.Data = upcomingScheduleDetailDTO;
                 return Ok(_response);
             }
