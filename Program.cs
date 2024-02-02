@@ -105,13 +105,13 @@ builder.Services.AddScoped<EverydayMidnightJob>();
 
 
 //Add our job 
-builder.Services.AddSingleton(new JobSchedule(
-   jobType: typeof(EverydayMidnightJob),
-   cronExpression: "0 57 12 ? * *"));//12:45 PM
-
 // builder.Services.AddSingleton(new JobSchedule(
 //    jobType: typeof(EverydayMidnightJob),
-//    cronExpression: "0 1 0 * * ?"));
+//    cronExpression: "0 57 12 ? * *"));//12:45 PM
+
+builder.Services.AddSingleton(new JobSchedule(
+   jobType: typeof(EverydayMidnightJob),
+   cronExpression: "0 1 0 * * ?"));
 
 builder.Services.AddSingleton<QuartzJobRunner>();
 builder.Services.AddHostedService<QuartzHostedService>();
