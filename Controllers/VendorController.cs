@@ -2062,7 +2062,7 @@ namespace BeautyHubAPI.Controllers
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
                     _response.Data = new Object { };
-                    _response.Messages = ResponseMessages.msgNotFound+"appointment.";
+                    _response.Messages = ResponseMessages.msgNotFound + "appointment.";
                     return Ok(_response);
                 }
 
@@ -2346,7 +2346,7 @@ namespace BeautyHubAPI.Controllers
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
                     _response.Data = new Object { };
-                    _response.Messages = ResponseMessages.msgNotFound+"appointment.";
+                    _response.Messages = ResponseMessages.msgNotFound + "appointment.";
                     return Ok(_response);
                 }
 
@@ -2535,7 +2535,7 @@ namespace BeautyHubAPI.Controllers
                 {
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
-                    _response.Messages = ResponseMessages.msgNotFound+"Salon.";
+                    _response.Messages = ResponseMessages.msgNotFound + "Salon.";
                     return Ok(_response);
                 }
 

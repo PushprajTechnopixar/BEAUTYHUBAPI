@@ -196,7 +196,7 @@ namespace BeautyHubAPI.Controllers
                 {
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
-                    _response.Messages = "Record" + ResponseMessages.msgNotFound;
+                    _response.Messages = ResponseMessages.msgNotFound + "Record";
                     return Ok(_response);
                 }
 
@@ -276,7 +276,7 @@ namespace BeautyHubAPI.Controllers
                         {
                             _response.StatusCode = HttpStatusCode.OK;
                             _response.IsSuccess = false;
-                            _response.Messages = "record" + ResponseMessages.msgNotFound;
+                            _response.Messages = ResponseMessages.msgNotFound + "record";
                             return Ok(_response);
                         }
 
@@ -356,7 +356,7 @@ namespace BeautyHubAPI.Controllers
                     {
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = false;
-                        _response.Messages = "record" + ResponseMessages.msgNotFound;
+                        _response.Messages = ResponseMessages.msgNotFound + "record";
                         return Ok(_response);
                     }
 
@@ -415,7 +415,7 @@ namespace BeautyHubAPI.Controllers
                     {
                         _response.StatusCode = HttpStatusCode.OK;
                         _response.IsSuccess = false;
-                        _response.Messages = "record" + ResponseMessages.msgNotFound;
+                        _response.Messages = ResponseMessages.msgNotFound + "record";
                         return Ok(_response);
                     }   
 
@@ -525,7 +525,7 @@ namespace BeautyHubAPI.Controllers
                 {
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
-                    _response.Messages = "record" + ResponseMessages.msgNotFound;
+                    _response.Messages = ResponseMessages.msgNotFound + "record";
                     return Ok(_response);
                 }
 
@@ -658,7 +658,7 @@ namespace BeautyHubAPI.Controllers
                 {
                     _response.StatusCode = HttpStatusCode.OK;
                     _response.IsSuccess = false;
-                    _response.Messages = "record" + ResponseMessages.msgNotFound;
+                    _response.Messages = ResponseMessages.msgNotFound + "record";
                     return Ok(_response);
                 }
 
