@@ -105,7 +105,7 @@ namespace BeautyHubAPI.Controllers
             {
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = false;
-                _response.Messages = "Email or phone numeber already exists.";
+                _response.Messages = "Email or phone number already exists.";
                 return Ok(_response);
             }
 
