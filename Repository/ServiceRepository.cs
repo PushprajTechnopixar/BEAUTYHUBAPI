@@ -1,4 +1,6 @@
-﻿using AutoMapper;
+﻿
+
+using AutoMapper;
 using BeautyHubAPI.Data;
 using BeautyHubAPI.Models.Helper;
 using BeautyHubAPI.Models;
@@ -333,7 +335,6 @@ namespace BeautyHubAPI.Repository
 
             return _response;
         }
-
         public async Task<Object> vendorServiceList([FromQuery] SalonServiceFilterationListDTO model, string currentUserId)
         {
 
@@ -553,9 +554,11 @@ namespace BeautyHubAPI.Repository
             }
 
         }
+        public async Task<Object> GetSalonServiceDetail(int serviceId, string? serviceType, string currentUserId)
 
-        public async Task<serviceDetailDTO> GetSalonServiceDetail(int serviceId, string? serviceType)
         {
+            var currentUserDetail = await _userManager.FindByIdAsync(currentUserId);
+
             var serviceDetail = await _context.SalonService.FirstOrDefaultAsync(u => u.ServiceId == serviceId);
 
             var serviceResponse = _mapper.Map<serviceDetailDTO>(serviceDetail);
@@ -582,58 +585,58 @@ namespace BeautyHubAPI.Repository
 
             }
 
-            var serivceImageList = new List<ServiceImageDTO>();
+            var serviceImageList = new List<ServiceImageDTO>();
 
             if (!string.IsNullOrEmpty(serviceDetail.ServiceImage1))
             {
                 var serviceImageDTO = new ServiceImageDTO();
                 serviceImageDTO.salonServiceImage = serviceDetail.ServiceImage1;
-                serivceImageList.Add(serviceImageDTO);
+                serviceImageList.Add(serviceImageDTO);
             }
             if (!string.IsNullOrEmpty(serviceDetail.ServiceImage2))
             {
                 var serviceImageDTO = new ServiceImageDTO();
                 serviceImageDTO.salonServiceImage = serviceDetail.ServiceImage2;
-                serivceImageList.Add(serviceImageDTO);
+                serviceImageList.Add(serviceImageDTO);
             }
             if (!string.IsNullOrEmpty(serviceDetail.ServiceImage3))
             {
                 var serviceImageDTO = new ServiceImageDTO();
                 serviceImageDTO.salonServiceImage = serviceDetail.ServiceImage3;
-                serivceImageList.Add(serviceImageDTO);
+                serviceImageList.Add(serviceImageDTO);
             }
             if (!string.IsNullOrEmpty(serviceDetail.ServiceImage4))
             {
                 var serviceImageDTO = new ServiceImageDTO();
                 serviceImageDTO.salonServiceImage = serviceDetail.ServiceImage4;
-                serivceImageList.Add(serviceImageDTO);
+                serviceImageList.Add(serviceImageDTO);
             }
             if (!string.IsNullOrEmpty(serviceDetail.ServiceImage5))
             {
                 var serviceImageDTO = new ServiceImageDTO();
                 serviceImageDTO.salonServiceImage = serviceDetail.ServiceImage5;
-                serivceImageList.Add(serviceImageDTO);
+                serviceImageList.Add(serviceImageDTO);
             }
 
-            //var roles = await _userManager.GetRolesAsync(currentUserDetail);
-            //if (roles[0].ToString() == "Customer")
-            //{
-            //    // var getCartItems = await _cartRepository.GetAsync(u => (u.CustomerUserId == currentUserId) && (u.ProductId == productDetail.ProductId && u.IsDairyProduct != true && u.IsSubscriptionProduct != true));
-            //    // if (getCartItems != null)
-            //    // {
-            //    //     productResponse.ProductCountInCart = getCartItems.ProductCountInCart;
-            //    // }
+            var roles = await _userManager.GetRolesAsync(currentUserDetail);
+            if (roles[0].ToString() == "Customer")
+            {
+                // var getCartItems = await _cartRepository.GetAsync(u => (u.CustomerUserId == currentUserId) && (u.ProductId == productDetail.ProductId && u.IsDairyProduct != true && u.IsSubscriptionProduct != true));
+                // if (getCartItems != null)
+                // {
+                //     productResponse.ProductCountInCart = getCartItems.ProductCountInCart;
+                // }
 
-            //    // var favoritesStatus = await _context.FavouriteService.Where(u => u.ServiceId == serviceId && u.CustomerUserId == currentUserId).FirstOrDefaultAsync();
-            //    // serviceResponse.favouriteStatus = favoritesStatus != null ? true : false;
-            //}
+                // var favoritesStatus = await _context.FavouriteService.Where(u => u.ServiceId == serviceId && u.CustomerUserId == currentUserId).FirstOrDefaultAsync();
+                // serviceResponse.favouriteStatus = favoritesStatus != null ? true : false;
+            }
 
             var salonDetail = await _context.SalonDetail.Where(u => u.SalonId == serviceResponse.salonId).FirstOrDefaultAsync();
             var vendorDetail = _userManager.FindByIdAsync(salonDetail.VendorId).GetAwaiter().GetResult();
             serviceResponse.vendorName = vendorDetail.FirstName + " " + vendorDetail.LastName;
             serviceResponse.salonName = salonDetail.SalonName;
             serviceResponse.vendorId = salonDetail.VendorId;
-            serviceResponse.serviceImage = serivceImageList;
+            serviceResponse.serviceImage = serviceImageList;
             // serviceResponse.isSlotAvailable = _context.TimeSlot.Where(a => a.ServiceId == serviceId && a.Status && a.SlotCount > 0 && !a.IsDeleted)
             //                                             .Select(u => u.SlotDate).Distinct().Count();
             serviceResponse.LockTimeStart = !string.IsNullOrEmpty(serviceResponse.LockTimeStart) ? Convert.ToDateTime(serviceResponse.LockTimeStart).ToString(@"HH:mm") : null;
@@ -654,9 +657,12 @@ namespace BeautyHubAPI.Repository
                 serviceResponse.subCategoryName = categoryDetail != null ? categoryDetail.CategoryName : null;
             }
 
-            return serviceResponse;
+            _response.StatusCode = HttpStatusCode.OK;
+            _response.IsSuccess = true;
+            _response.Data = serviceResponse;
+            _response.Messages = "Service detail shown successfully.";
+            return _response;
         }
-
         public async Task<Object> DeleteSalonService(int serviceId)
         {
             var salonService = await _context.SalonService.Where(x => (x.ServiceId == serviceId) && (x.IsDeleted != true)).FirstOrDefaultAsync();
@@ -709,10 +715,373 @@ namespace BeautyHubAPI.Repository
             return _response;
 
         }
+        public async Task<Object> SetServiceStatus(SetServiceStatusDTO model)
+        {
+
+            var serviceDetails = await _context.SalonService.FirstOrDefaultAsync(u => u.ServiceId == model.serviceId);
+
+            serviceDetails.Status = model.status;
+            _context.Update(serviceDetails);
+            _context.SaveChanges();
+
+            var getService = await _context.SalonService.FirstOrDefaultAsync(u => u.ServiceId == model.serviceId);
+            if (getService != null)
+            {
+                var response = _mapper.Map<serviceDetailDTO>(getService);
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = true;
+                _response.Data = response;
+                _response.Messages = "Service" + ResponseMessages.msgUpdationSuccess;
+                return _response;
+            }
+            else
+            {
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = false;
+                _response.Data = new Object { };
+                _response.Messages = ResponseMessages.msgSomethingWentWrong;
+                return _response;
+            }
+        }
+        public async Task<Object> getServiceImageInBase64(int serviceId, string? Status)
+        {
+            List<string> serviceImageList = new List<string>();
+
+            var serviceDetail = await _context.SalonService.Where(u => u.ServiceId == serviceId).FirstOrDefaultAsync();
+
+            if (!string.IsNullOrEmpty(serviceDetail.ServiceImage1))
+            {
+                var httpClient = new HttpClient();
+                // string imageUrl = imgURL + productDetail.ProductImage1;
+                string imageUrl = imgURL + serviceDetail.ServiceImage1;
+                byte[]? imageBytes;
+                try
+                {
+                    imageBytes = await httpClient.GetByteArrayAsync(imageUrl);
+                    if (imageBytes != null)
+                    {
+                        var base64String = Convert.ToBase64String(imageBytes);
+                        var image = imgData + base64String;
+
+                        serviceImageList.Add(image);
+                    }
+                }
+                catch
+                {
+                }
+            }
+            if (!string.IsNullOrEmpty(serviceDetail.ServiceImage2))
+            {
+                var httpClient = new HttpClient();
+
+                string imageUrl = imgURL + serviceDetail.ServiceImage2;
+                byte[]? imageBytes;
+                try
+                {
+                    imageBytes = await httpClient.GetByteArrayAsync(imageUrl);
+                    if (imageBytes != null)
+                    {
+                        var base64String = Convert.ToBase64String(imageBytes);
+                        var image = imgData + base64String;
+
+                        serviceImageList.Add(image);
+                    }
+                }
+                catch
+                {
+                }
+            }
+            if (!string.IsNullOrEmpty(serviceDetail.ServiceImage3))
+            {
+                var httpClient = new HttpClient();
+                // string imageUrl = imgURL + productDetail.ProductImage3;
+                string imageUrl = imgURL + serviceDetail.ServiceImage3;
+                byte[]? imageBytes;
+                try
+                {
+                    imageBytes = await httpClient.GetByteArrayAsync(imageUrl);
+                    if (imageBytes != null)
+                    {
+                        var base64String = Convert.ToBase64String(imageBytes);
+                        var image = imgData + base64String;
+
+                        serviceImageList.Add(image);
+                    }
+                }
+                catch
+                {
+                }
+            }
+            if (!string.IsNullOrEmpty(serviceDetail.ServiceImage4))
+            {
+                var httpClient = new HttpClient();
+                // string imageUrl = imgURL + productDetail.ProductImage4;
+                string imageUrl = imgURL + serviceDetail.ServiceImage4;
+                byte[]? imageBytes;
+                try
+                {
+                    imageBytes = await httpClient.GetByteArrayAsync(imageUrl);
+                    if (imageBytes != null)
+                    {
+                        var base64String = Convert.ToBase64String(imageBytes);
+                        var image = imgData + base64String;
+
+                        serviceImageList.Add(image);
+                    }
+                }
+                catch
+                {
+                }
+            }
+            if (!string.IsNullOrEmpty(serviceDetail.ServiceImage5))
+            {
+                var httpClient = new HttpClient();
+                // string imageUrl = imgURL + productDetail.ProductImage5;
+                string imageUrl = imgURL + serviceDetail.ServiceImage5;
+                byte[]? imageBytes;
+                try
+                {
+                    imageBytes = await httpClient.GetByteArrayAsync(imageUrl);
+                    if (imageBytes != null)
+                    {
+                        var base64String = Convert.ToBase64String(imageBytes);
+                        var image = imgData + base64String;
+
+                        serviceImageList.Add(image);
+                    }
+                }
+                catch
+                {
+                }
+            }
+
+            _response.StatusCode = HttpStatusCode.OK;
+            _response.IsSuccess = true;
+            _response.Data = serviceImageList;
+            _response.Messages = "Service image" + ResponseMessages.msgListFoundSuccess;
+            return _response;
+        }
+        public async Task<Object> getAvailableTimeSlots(int serviceId, string queryDate)
+        {
+
+            // queryDate = Convert.ToDateTime(queryDate.ToString(@"yyyy-MM-dd"));
+            string format = "dd-MM-yyyy";
+            DateTime searchDate = new DateTime();
+
+            try
+            {
+                // Parse the string into a DateTime object using the specified format
+                searchDate = DateTime.ParseExact(queryDate, format, null);
+            }
+            catch (FormatException)
+            {
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = false;
+                _response.Messages = "Invalid date format.";
+                return _response;
+            }
+            var slotDetail = await _context.TimeSlot
+                               .Where(a => a.ServiceId == serviceId && a.Status != false && a.SlotCount > 0 && a.IsDeleted != true && a.SlotDate == searchDate)
+                               .ToListAsync();
+            // get scheduled days
+            var sortedSlots = slotDetail.OrderBy(a => Convert.ToDateTime(a.FromTime)).ToList();
+
+            // Get the current time and add 2 hours to it
+            var limitDate = DateTime.Now.AddHours(2);
+            var availableSlots = new List<timeSlotsDTO>();
+
+            var ctz = TZConvert.GetTimeZoneInfo("India Standard Time");
+            var convrtedZoneDate = TimeZoneInfo.ConvertTimeFromUtc(Convert.ToDateTime(DateTime.UtcNow), ctz);
+
+            foreach (var item in sortedSlots)
+            {
+                if (searchDate.Date == convrtedZoneDate.Date)
+                {
+                    var fromTime = (Convert.ToDateTime(item.FromTime).TimeOfDay);
+                    var currentTime = convrtedZoneDate.TimeOfDay;
+                    var timeDifference = (fromTime.TotalMinutes - currentTime.TotalMinutes);
+
+                    int minutesThreshold = 05; // Set your threshold here
+                    if (timeDifference >= minutesThreshold)
+                    {
+                        availableSlots.Add(_mapper.Map<timeSlotsDTO>(item));
+                    }
+                }
+                else
+                {
+                    availableSlots.Add(_mapper.Map<timeSlotsDTO>(item));
+                }
+            }
+
+            if (availableSlots.Any())
+            {
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = true;
+                _response.Messages = "Slots shown" + ResponseMessages.msgShownSuccess;
+                _response.Data = availableSlots;
+                return _response;
+            }
+            _response.StatusCode = HttpStatusCode.OK;
+            _response.IsSuccess = false;
+            _response.Messages = ResponseMessages.msgNotFound + "record";
+            return _response;
 
 
+        }
+        public async Task<Object> getAvailableDates(int serviceId)
+        {
 
+
+            // get scheduled days
+            var slotDetail = await _context.TimeSlot
+                                .Where(a => a.ServiceId == serviceId && a.Status != false && a.SlotCount > 0 && a.IsDeleted != true)
+                                .Select(u => u.SlotDate)
+                                .Distinct()
+                                .ToListAsync();
+
+            var availableDates = new List<string>();
+            var ctz = TZConvert.GetTimeZoneInfo("India Standard Time");
+            var convrtedZoneDate = TimeZoneInfo.ConvertTimeFromUtc(Convert.ToDateTime(DateTime.UtcNow), ctz);
+            foreach (var item in slotDetail)
+            {
+                if (item.Date == convrtedZoneDate.Date)
+                {
+                    // get scheduled days
+                    var slotDetail1 = await _context.TimeSlot
+                                        .Where(a => a.ServiceId == serviceId && a.Status != false && a.SlotCount > 0 && a.IsDeleted != true && a.SlotDate == DateTime.Now.Date)
+                                        .ToListAsync();
+
+                    // Get the current time and add 2 hours to it
+                    var limitDate = DateTime.Now.AddHours(2);
+                    var availableSlots = new List<timeSlotsDTO>();
+                    foreach (var item1 in slotDetail1)
+                    {
+                        var fromTime = (Convert.ToDateTime(item1.FromTime).TimeOfDay);
+
+                        var currentTime = convrtedZoneDate.TimeOfDay;
+                        var timeDifference = (fromTime.TotalMinutes - currentTime.TotalMinutes);
+
+                        int minutesThreshold = 05; // Set your threshold here
+                        if (timeDifference >= minutesThreshold)
+                        {
+                            availableSlots.Add(_mapper.Map<timeSlotsDTO>(item1));
+                        }
+                    }
+                    if (availableSlots.Count > 0)
+                    {
+                        availableDates.Add(item.ToString(@"dd-MM-yyyy"));
+                    }
+                }
+                else
+                    availableDates.Add(item.ToString(@"dd-MM-yyyy"));
+            }
+
+            var ascendingDates = availableDates.OrderBy(dateString => dateString).ToList();
+
+            if (slotDetail != null)
+            {
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = true;
+                _response.Messages = "Dates shown" + ResponseMessages.msgShownSuccess;
+                _response.Data = ascendingDates;
+                return _response;
+            }
+            _response.StatusCode = HttpStatusCode.OK;
+            _response.IsSuccess = false;
+            _response.Messages = ResponseMessages.msgNotFound + "record";
+            return _response;
+
+        }
+        public async Task<Object> GetScheduledDaysTime(int salonId)
+        {
+            // get scheduled days
+            var SalonSchedule = await _context.SalonSchedule.Where(a => (a.SalonId == salonId) && (a.IsDeleted != true)).FirstOrDefaultAsync();
+
+            var scheduleDayViewModel = new ScheduleDayResonceDTO();
+            scheduleDayViewModel.monday = SalonSchedule.Monday;
+            scheduleDayViewModel.tuesday = SalonSchedule.Tuesday;
+            scheduleDayViewModel.wednesday = SalonSchedule.Wednesday;
+            scheduleDayViewModel.thursday = SalonSchedule.Thursday;
+            scheduleDayViewModel.friday = SalonSchedule.Friday;
+            scheduleDayViewModel.saturday = SalonSchedule.Saturday;
+            scheduleDayViewModel.sunday = SalonSchedule.Sunday;
+            scheduleDayViewModel.fromTime = Convert.ToDateTime(SalonSchedule.FromTime).ToString(@"HH:mm");
+            scheduleDayViewModel.toTime = Convert.ToDateTime(SalonSchedule.ToTime).ToString(@"HH:mm");
+            // scheduleDayViewModel.fromTime = SalonSchedule.FromTime;
+            // scheduleDayViewModel.toTime = SalonSchedule.ToTime;
+            scheduleDayViewModel.salonId = SalonSchedule.SalonId;
+            scheduleDayViewModel.updateStatus = SalonSchedule.UpdateStatus;
+
+            _response.StatusCode = HttpStatusCode.OK;
+            _response.IsSuccess = true;
+            _response.Messages = "Detail" + ResponseMessages.msgShownSuccess;
+            _response.Data = scheduleDayViewModel;
+            return _response;
+
+        }
+        public async Task<Object> SetSalonServiceFavouriteStatus(SetSalonServiceFavouriteStatusDTO model, string currentUserId)
+        {
+
+            var serviceDetail = await _context.SalonService.FirstOrDefaultAsync(u => u.ServiceId == model.serviceId);
+
+            var salonServiceFavouriteStatus = await _context.FavouriteService.Where(u => u.ServiceId == model.serviceId && u.CustomerUserId == currentUserId).FirstOrDefaultAsync();
+            string msg = "";
+            if (model.status == true)
+            {
+                if (salonServiceFavouriteStatus != null)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Data = new Object { };
+                    _response.Messages = "Already added to favorites.";
+                    return _response;
+                }
+                var addFavouriteService = new FavouriteService();
+                addFavouriteService.CustomerUserId = currentUserId;
+                addFavouriteService.ServiceId = model.serviceId;
+                _context.Add(addFavouriteService);
+                _context.SaveChanges();
+                msg = "Added to favorites.";
+
+            }
+            else
+            {
+                if (salonServiceFavouriteStatus == null)
+                {
+                    _response.StatusCode = HttpStatusCode.OK;
+                    _response.IsSuccess = false;
+                    _response.Data = new Object { };
+                    _response.Messages = ResponseMessages.msgNotFound + "record";
+                    return _response;
+                }
+                _context.Remove(salonServiceFavouriteStatus);
+                _context.SaveChanges();
+                msg = "Removed from favorites.";
+            }
+
+            var getService = await _context.SalonService.FirstOrDefaultAsync(u => u.ServiceId == model.serviceId);
+            var response = _mapper.Map<serviceDetailDTO>(getService);
+            var favouriteStatus = await _context.FavouriteService.FirstOrDefaultAsync(u => u.ServiceId == model.serviceId && u.CustomerUserId == currentUserId);
+            response.favouriteStatus = favouriteStatus != null ? true : false;
+
+            if (getService != null)
+            {
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = true;
+                _response.Data = response;
+                _response.Messages = msg;
+                return _response;
+            }
+            else
+            {
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = false;
+                _response.Data = new Object { };
+                _response.Messages = ResponseMessages.msgSomethingWentWrong;
+                return _response;
+            }
+
+        }
 
     }
-
 }
