@@ -132,234 +132,237 @@ namespace BeautyHubAPI.Controllers
                     model.toTime = Convert.ToDateTime(model.toTime).ToString(@"hh:mm tt");
                 }
 
-                // save scheduled time slot
-                string startTime = model.fromTime;
-                string endTime = model.toTime;
+                var response = await _serviceRepository.addUpdateSalonSchedule(model);
+                return Ok(response);
 
-                List<TimeList> timeList = new List<TimeList>();
+                //// save scheduled time slot
+                //string startTime = model.fromTime;
+                //string endTime = model.toTime;
 
-                var indiaDate = DateTime.Now.ToString(@"yyyy-MM-dd");
+                //List<TimeList> timeList = new List<TimeList>();
 
-                var startDateTime = Convert.ToDateTime(indiaDate + " " + startTime);
-                var endDateTime = Convert.ToDateTime(indiaDate + " " + endTime);
+                //var indiaDate = DateTime.Now.ToString(@"yyyy-MM-dd");
 
-                model.fromTime = startDateTime.ToString(@"hh\:mm tt");
-                model.toTime = endDateTime.ToString(@"hh\:mm tt");
+                //var startDateTime = Convert.ToDateTime(indiaDate + " " + startTime);
+                //var endDateTime = Convert.ToDateTime(indiaDate + " " + endTime);
 
-                int update = 1;
-                var SalonScheduleDays = await _context.SalonSchedule.Where(a => a.SalonId == model.salonId).FirstOrDefaultAsync();
-                if (SalonScheduleDays != null)
-                {
-                    if (SalonScheduleDays.UpdateStatus == false)
-                    {
-                        _response.StatusCode = HttpStatusCode.OK;
-                        _response.IsSuccess = false;
-                        _response.Messages = "Please wait while the schedule is updating.";
-                        return Ok(_response);
-                    }
-                    var scheduledDaysList = new List<string>();
-                    if (SalonScheduleDays.Monday == true)
-                    {
-                        scheduledDaysList.Add("Monday");
-                    }
-                    if (SalonScheduleDays.Tuesday == true)
-                    {
-                        scheduledDaysList.Add("Tuesday");
-                    }
-                    if (SalonScheduleDays.Wednesday == true)
-                    {
-                        scheduledDaysList.Add("Wednesday");
-                    }
-                    if (SalonScheduleDays.Thursday == true)
-                    {
-                        scheduledDaysList.Add("Thursday");
-                    }
-                    if (SalonScheduleDays.Friday == true)
-                    {
-                        scheduledDaysList.Add("Friday");
-                    }
-                    if (SalonScheduleDays.Saturday == true)
-                    {
-                        scheduledDaysList.Add("Saturday");
-                    }
-                    if (SalonScheduleDays.Sunday == true)
-                    {
-                        scheduledDaysList.Add("Sunday");
-                    }
+                //model.fromTime = startDateTime.ToString(@"hh\:mm tt");
+                //model.toTime = endDateTime.ToString(@"hh\:mm tt");
 
-                    var daysList = new List<string>();
-                    if (model.monday == true)
-                    {
-                        daysList.Add("Monday");
-                    }
-                    if (model.tuesday == true)
-                    {
-                        daysList.Add("Tuesday");
-                    }
-                    if (model.wednesday == true)
-                    {
-                        daysList.Add("Wednesday");
-                    }
-                    if (model.thursday == true)
-                    {
-                        daysList.Add("Thursday");
-                    }
-                    if (model.friday == true)
-                    {
-                        daysList.Add("Friday");
-                    }
-                    if (model.saturday == true)
-                    {
-                        daysList.Add("Saturday");
-                    }
-                    if (model.sunday == true)
-                    {
-                        daysList.Add("Sunday");
-                    }
+                //int update = 1;
+                //var SalonScheduleDays = await _context.SalonSchedule.Where(a => a.SalonId == model.salonId).FirstOrDefaultAsync();
+                //if (SalonScheduleDays != null)
+                //{
+                //    if (SalonScheduleDays.UpdateStatus == false)
+                //    {
+                //        _response.StatusCode = HttpStatusCode.OK;
+                //        _response.IsSuccess = false;
+                //        _response.Messages = "Please wait while the schedule is updating.";
+                //        return Ok(_response);
+                //    }
+                //    var scheduledDaysList = new List<string>();
+                //    if (SalonScheduleDays.Monday == true)
+                //    {
+                //        scheduledDaysList.Add("Monday");
+                //    }
+                //    if (SalonScheduleDays.Tuesday == true)
+                //    {
+                //        scheduledDaysList.Add("Tuesday");
+                //    }
+                //    if (SalonScheduleDays.Wednesday == true)
+                //    {
+                //        scheduledDaysList.Add("Wednesday");
+                //    }
+                //    if (SalonScheduleDays.Thursday == true)
+                //    {
+                //        scheduledDaysList.Add("Thursday");
+                //    }
+                //    if (SalonScheduleDays.Friday == true)
+                //    {
+                //        scheduledDaysList.Add("Friday");
+                //    }
+                //    if (SalonScheduleDays.Saturday == true)
+                //    {
+                //        scheduledDaysList.Add("Saturday");
+                //    }
+                //    if (SalonScheduleDays.Sunday == true)
+                //    {
+                //        scheduledDaysList.Add("Sunday");
+                //    }
 
-                    List<string> modelTimeList = new List<string>();
-                    foreach (var addTime in timeList)
-                    {
-                        modelTimeList.Add(addTime.time);
-                    }
+                //    var daysList = new List<string>();
+                //    if (model.monday == true)
+                //    {
+                //        daysList.Add("Monday");
+                //    }
+                //    if (model.tuesday == true)
+                //    {
+                //        daysList.Add("Tuesday");
+                //    }
+                //    if (model.wednesday == true)
+                //    {
+                //        daysList.Add("Wednesday");
+                //    }
+                //    if (model.thursday == true)
+                //    {
+                //        daysList.Add("Thursday");
+                //    }
+                //    if (model.friday == true)
+                //    {
+                //        daysList.Add("Friday");
+                //    }
+                //    if (model.saturday == true)
+                //    {
+                //        daysList.Add("Saturday");
+                //    }
+                //    if (model.sunday == true)
+                //    {
+                //        daysList.Add("Sunday");
+                //    }
 
-                    // foreach (var appointmentDetail in appointmentDetails)
-                    // {
-                    //     var bookingDay = appointmentDetail.BookingDate.ToString("dddd");
-                    //     var bookingTime = appointmentDetail.BookingTime;
+                //    List<string> modelTimeList = new List<string>();
+                //    foreach (var addTime in timeList)
+                //    {
+                //        modelTimeList.Add(addTime.time);
+                //    }
 
-                    //     if (!daysList.Contains(bookingDay) || !modelTimeList.Contains(bookingTime))
-                    //     {
-                    //         update = 0;
-                    //     }
-                    // }
+                //    // foreach (var appointmentDetail in appointmentDetails)
+                //    // {
+                //    //     var bookingDay = appointmentDetail.BookingDate.ToString("dddd");
+                //    //     var bookingTime = appointmentDetail.BookingTime;
 
-                    if (update == 1)
-                    {
-                        var scheduledStartDateTime = Convert.ToDateTime(indiaDate + " " + SalonScheduleDays.FromTime);
-                        var scheduledEndDateTime = Convert.ToDateTime(indiaDate + " " + SalonScheduleDays.ToTime);
-                        var modelFromTime = Convert.ToDateTime(indiaDate + " " + model.fromTime);
-                        var modelToTime = Convert.ToDateTime(indiaDate + " " + model.toTime);
-                        var timeSlots = await _context.BookedService.Where(u => u.AppointmentStatus == "Scheduled" && u.SalonId == model.salonId).ToListAsync();
-                        var bookeddates = timeSlots.DistinctBy(u => u.AppointmentDate);
-                        var bookeddays = new List<string>();
-                        foreach (var item in bookeddates)
-                        {
-                            bookeddays.Add(Convert.ToDateTime(item.AppointmentDate).DayOfWeek.ToString());
-                        }
-                        var remainingBookedDays = bookeddays.Except(daysList);
-                        if (remainingBookedDays.Any())
-                        {
-                            _response.StatusCode = HttpStatusCode.OK;
-                            _response.IsSuccess = false;
-                            _response.Messages = "Can't update while an appointment is scheduled.";
-                            return Ok(_response);
-                        }
-                        if (modelFromTime > scheduledStartDateTime || modelToTime < scheduledEndDateTime)
-                        {
-                            if (modelFromTime > scheduledStartDateTime)
-                            {
-                                foreach (var item in timeSlots)
-                                {
-                                    var scheduledToTime = Convert.ToDateTime(indiaDate + " " + item.ToTime);
-                                    var scheduledFromTime = Convert.ToDateTime(indiaDate + " " + item.FromTime);
-                                    if (scheduledFromTime < modelFromTime)
-                                    {
-                                        _response.StatusCode = HttpStatusCode.OK;
-                                        _response.IsSuccess = false;
-                                        _response.Messages = "Can't update while an appointment is scheduled.";
-                                        return Ok(_response);
-                                    }
-                                }
-                            }
-                            if (modelToTime < scheduledEndDateTime)
-                            {
-                                foreach (var item in timeSlots)
-                                {
-                                    var scheduledToTime = Convert.ToDateTime(indiaDate + " " + item.ToTime);
-                                    var scheduledFromTime = Convert.ToDateTime(indiaDate + " " + item.FromTime);
-                                    if (scheduledToTime > modelToTime)
-                                    {
-                                        _response.StatusCode = HttpStatusCode.OK;
-                                        _response.IsSuccess = false;
-                                        _response.Messages = "Can't update while an appointment is scheduled.";
-                                        return Ok(_response);
-                                    }
-                                }
-                            }
+                //    //     if (!daysList.Contains(bookingDay) || !modelTimeList.Contains(bookingTime))
+                //    //     {
+                //    //         update = 0;
+                //    //     }
+                //    // }
 
-                        }
+                //    if (update == 1)
+                //    {
+                //        var scheduledStartDateTime = Convert.ToDateTime(indiaDate + " " + SalonScheduleDays.FromTime);
+                //        var scheduledEndDateTime = Convert.ToDateTime(indiaDate + " " + SalonScheduleDays.ToTime);
+                //        var modelFromTime = Convert.ToDateTime(indiaDate + " " + model.fromTime);
+                //        var modelToTime = Convert.ToDateTime(indiaDate + " " + model.toTime);
+                //        var timeSlots = await _context.BookedService.Where(u => u.AppointmentStatus == "Scheduled" && u.SalonId == model.salonId).ToListAsync();
+                //        var bookeddates = timeSlots.DistinctBy(u => u.AppointmentDate);
+                //        var bookeddays = new List<string>();
+                //        foreach (var item in bookeddates)
+                //        {
+                //            bookeddays.Add(Convert.ToDateTime(item.AppointmentDate).DayOfWeek.ToString());
+                //        }
+                //        var remainingBookedDays = bookeddays.Except(daysList);
+                //        if (remainingBookedDays.Any())
+                //        {
+                //            _response.StatusCode = HttpStatusCode.OK;
+                //            _response.IsSuccess = false;
+                //            _response.Messages = "Can't update while an appointment is scheduled.";
+                //            return Ok(_response);
+                //        }
+                //        if (modelFromTime > scheduledStartDateTime || modelToTime < scheduledEndDateTime)
+                //        {
+                //            if (modelFromTime > scheduledStartDateTime)
+                //            {
+                //                foreach (var item in timeSlots)
+                //                {
+                //                    var scheduledToTime = Convert.ToDateTime(indiaDate + " " + item.ToTime);
+                //                    var scheduledFromTime = Convert.ToDateTime(indiaDate + " " + item.FromTime);
+                //                    if (scheduledFromTime < modelFromTime)
+                //                    {
+                //                        _response.StatusCode = HttpStatusCode.OK;
+                //                        _response.IsSuccess = false;
+                //                        _response.Messages = "Can't update while an appointment is scheduled.";
+                //                        return Ok(_response);
+                //                    }
+                //                }
+                //            }
+                //            if (modelToTime < scheduledEndDateTime)
+                //            {
+                //                foreach (var item in timeSlots)
+                //                {
+                //                    var scheduledToTime = Convert.ToDateTime(indiaDate + " " + item.ToTime);
+                //                    var scheduledFromTime = Convert.ToDateTime(indiaDate + " " + item.FromTime);
+                //                    if (scheduledToTime > modelToTime)
+                //                    {
+                //                        _response.StatusCode = HttpStatusCode.OK;
+                //                        _response.IsSuccess = false;
+                //                        _response.Messages = "Can't update while an appointment is scheduled.";
+                //                        return Ok(_response);
+                //                    }
+                //                }
+                //            }
 
-                        SalonScheduleDays.Monday = model.monday;
-                        SalonScheduleDays.Tuesday = model.tuesday;
-                        SalonScheduleDays.Wednesday = model.wednesday;
-                        SalonScheduleDays.Thursday = model.thursday;
-                        SalonScheduleDays.Friday = model.friday;
-                        SalonScheduleDays.Saturday = model.saturday;
-                        SalonScheduleDays.Sunday = model.sunday;
-                        SalonScheduleDays.FromTime = model.fromTime;
-                        SalonScheduleDays.ToTime = model.toTime;
+                //        }
 
-                        SalonScheduleDays.Status = true;
-                        SalonScheduleDays.UpdateStatus = false;
+                //        SalonScheduleDays.Monday = model.monday;
+                //        SalonScheduleDays.Tuesday = model.tuesday;
+                //        SalonScheduleDays.Wednesday = model.wednesday;
+                //        SalonScheduleDays.Thursday = model.thursday;
+                //        SalonScheduleDays.Friday = model.friday;
+                //        SalonScheduleDays.Saturday = model.saturday;
+                //        SalonScheduleDays.Sunday = model.sunday;
+                //        SalonScheduleDays.FromTime = model.fromTime;
+                //        SalonScheduleDays.ToTime = model.toTime;
 
-                        _context.Update(SalonScheduleDays);
-                        var res = await _context.SaveChangesAsync();
+                //        SalonScheduleDays.Status = true;
+                //        SalonScheduleDays.UpdateStatus = false;
 
-                        _backgroundService.StartService(model.salonId);
+                //        _context.Update(SalonScheduleDays);
+                //        var res = await _context.SaveChangesAsync();
 
-                        _response.StatusCode = HttpStatusCode.OK;
-                        _response.IsSuccess = true;
-                        _response.Messages = "Scheduled" + ResponseMessages.msgUpdationSuccess;
-                        return Ok(_response);
-                    }
+                //        _backgroundService.StartService(model.salonId);
 
-                    if (update == 0)
-                    {
-                        _response.StatusCode = HttpStatusCode.InternalServerError;
-                        _response.IsSuccess = false;
-                        _response.Data = new { };
-                        _response.Messages = "Can't update, while your scheduled timing is booked.";
-                        return Ok(_response);
-                    }
-                }
+                //        _response.StatusCode = HttpStatusCode.OK;
+                //        _response.IsSuccess = true;
+                //        _response.Messages = "Scheduled" + ResponseMessages.msgUpdationSuccess;
+                //        return Ok(_response);
+                //    }
 
-                // Add Salon Schedule
-                var SalonSchedule = new SalonSchedule();
-                SalonSchedule.SalonId = model.salonId;
-                SalonSchedule.Monday = model.monday;
-                SalonSchedule.Tuesday = model.tuesday;
-                SalonSchedule.Wednesday = model.wednesday;
-                SalonSchedule.Thursday = model.thursday;
-                SalonSchedule.Friday = model.friday;
-                SalonSchedule.Saturday = model.saturday;
-                SalonSchedule.Sunday = model.sunday;
-                SalonSchedule.FromTime = model.fromTime;
-                SalonSchedule.ToTime = model.toTime;
-                SalonSchedule.Status = false;
-                SalonSchedule.UpdateStatus = false;
+                //    if (update == 0)
+                //    {
+                //        _response.StatusCode = HttpStatusCode.InternalServerError;
+                //        _response.IsSuccess = false;
+                //        _response.Data = new { };
+                //        _response.Messages = "Can't update, while your scheduled timing is booked.";
+                //        return Ok(_response);
+                //    }
+                //}
 
-                _context.SalonSchedule.Add(SalonSchedule);
-                _context.SaveChanges();
+                //// Add Salon Schedule
+                //var SalonSchedule = new SalonSchedule();
+                //SalonSchedule.SalonId = model.salonId;
+                //SalonSchedule.Monday = model.monday;
+                //SalonSchedule.Tuesday = model.tuesday;
+                //SalonSchedule.Wednesday = model.wednesday;
+                //SalonSchedule.Thursday = model.thursday;
+                //SalonSchedule.Friday = model.friday;
+                //SalonSchedule.Saturday = model.saturday;
+                //SalonSchedule.Sunday = model.sunday;
+                //SalonSchedule.FromTime = model.fromTime;
+                //SalonSchedule.ToTime = model.toTime;
+                //SalonSchedule.Status = false;
+                //SalonSchedule.UpdateStatus = false;
 
-                _backgroundService.StartService(model.salonId);
+                //_context.SalonSchedule.Add(SalonSchedule);
+                //_context.SaveChanges();
 
-                var scheduledDays = new ScheduleDayResonceDTO();
-                scheduledDays.monday = SalonSchedule.Monday;
-                scheduledDays.tuesday = SalonSchedule.Tuesday;
-                scheduledDays.wednesday = SalonSchedule.Wednesday;
-                scheduledDays.thursday = SalonSchedule.Thursday;
-                scheduledDays.friday = SalonSchedule.Friday;
-                scheduledDays.saturday = SalonSchedule.Saturday;
-                scheduledDays.sunday = SalonSchedule.Sunday;
-                scheduledDays.fromTime = SalonSchedule.FromTime;
-                scheduledDays.toTime = SalonSchedule.ToTime;
-                scheduledDays.updateStatus = SalonSchedule.UpdateStatus;
+                //_backgroundService.StartService(model.salonId);
 
-                _response.StatusCode = HttpStatusCode.OK;
-                _response.IsSuccess = true;
-                _response.Messages = "Scheduled detail" + ResponseMessages.msgDataSavedSuccess;
-                return Ok(_response);
+                //var scheduledDays = new ScheduleDayResonceDTO();
+                //scheduledDays.monday = SalonSchedule.Monday;
+                //scheduledDays.tuesday = SalonSchedule.Tuesday;
+                //scheduledDays.wednesday = SalonSchedule.Wednesday;
+                //scheduledDays.thursday = SalonSchedule.Thursday;
+                //scheduledDays.friday = SalonSchedule.Friday;
+                //scheduledDays.saturday = SalonSchedule.Saturday;
+                //scheduledDays.sunday = SalonSchedule.Sunday;
+                //scheduledDays.fromTime = SalonSchedule.FromTime;
+                //scheduledDays.toTime = SalonSchedule.ToTime;
+                //scheduledDays.updateStatus = SalonSchedule.UpdateStatus;
+
+                //_response.StatusCode = HttpStatusCode.OK;
+                //_response.IsSuccess = true;
+                //_response.Messages = "Scheduled detail" + ResponseMessages.msgDataSavedSuccess;
+                //return Ok(_response);
             }
             catch (Exception ex)
             {
@@ -817,45 +820,45 @@ namespace BeautyHubAPI.Controllers
                     }
                 }
 
-                string[] splitLockTimeStart = model.lockTimeStart.Split(",");
-                string[] splitLockTimeend = model.lockTimeEnd.Split(",");
-                string[] splitIncludeProduct = new string[0];
-                if (!string.IsNullOrEmpty(model.IncludeServiceId))
-                {
-                    splitIncludeProduct = model.IncludeServiceId.Split(",");
+                //string[] splitLockTimeStart = model.lockTimeStart.Split(",");
+                //string[] splitLockTimeend = model.lockTimeEnd.Split(",");
+                //string[] splitIncludeProduct = new string[0];
+                //if (!string.IsNullOrEmpty(model.IncludeServiceId))
+                //{
+                //    splitIncludeProduct = model.IncludeServiceId.Split(",");
 
-                    foreach (var item in splitIncludeProduct)
-                    {
-                        var ckeckService = await _context.SalonService.Where(u => u.ServiceId == Convert.ToInt32(item)).FirstOrDefaultAsync();
-                        if (splitLockTimeStart.Length != splitLockTimeend.Length)
-                        {
-                            _response.StatusCode = HttpStatusCode.OK;
-                            _response.IsSuccess = false;
-                            _response.Messages = ResponseMessages.msgNotFound + "selected service for package.";
-                            return Ok(_response);
-                        }
-                    }
-                }
+                //    foreach (var item in splitIncludeProduct)
+                //    {
+                //        var ckeckService = await _context.SalonService.Where(u => u.ServiceId == Convert.ToInt32(item)).FirstOrDefaultAsync();
+                //        if (splitLockTimeStart.Length != splitLockTimeend.Length)
+                //        {
+                //            _response.StatusCode = HttpStatusCode.OK;
+                //            _response.IsSuccess = false;
+                //            _response.Messages = ResponseMessages.msgNotFound + "selected service for package.";
+                //            return Ok(_response);
+                //        }
+                //    }
+                //}
 
-                if (splitLockTimeStart.Length != splitLockTimeend.Length)
-                {
-                    _response.StatusCode = HttpStatusCode.OK;
-                    _response.IsSuccess = false;
-                    _response.Messages = "Locked start and end time should be same.";
-                    return Ok(_response);
-                }
+                //if (splitLockTimeStart.Length != splitLockTimeend.Length)
+                //{
+                //    _response.StatusCode = HttpStatusCode.OK;
+                //    _response.IsSuccess = false;
+                //    _response.Messages = "Locked start and end time should be same.";
+                //    return Ok(_response);
+                //}
 
-                List<DateTime> lockTimeStart = new List<DateTime>();
-                List<DateTime> lockTimend = new List<DateTime>();
+                //List<DateTime> lockTimeStart = new List<DateTime>();
+                //List<DateTime> lockTimend = new List<DateTime>();
 
-                if (!string.IsNullOrEmpty(model.lockTimeStart))
-                {
-                    for (int l = 0; l < splitLockTimeStart.Length; l++)
-                    {
-                        lockTimeStart.Add(Convert.ToDateTime(splitLockTimeStart[l]));
-                        lockTimend.Add(Convert.ToDateTime(splitLockTimeend[l]));
-                    }
-                }
+                //if (!string.IsNullOrEmpty(model.lockTimeStart))
+                //{
+                //    for (int l = 0; l < splitLockTimeStart.Length; l++)
+                //    {
+                //        lockTimeStart.Add(Convert.ToDateTime(splitLockTimeStart[l]));
+                //        lockTimend.Add(Convert.ToDateTime(splitLockTimeend[l]));
+                //    }
+                //}
 
                 var scheduleDetail = await _context.SalonSchedule.Where(u => u.SalonId == model.salonId).FirstOrDefaultAsync();
                 if (scheduleDetail == null)
@@ -865,294 +868,298 @@ namespace BeautyHubAPI.Controllers
                     _response.Messages = "Can't add service before schedule.";
                     return Ok(_response);
                 }
-                var serviceDetail = await _context.SalonService.Where(u => u.ServiceId == model.serviceId).FirstOrDefaultAsync();
-                if (model.serviceId > 0)
-                {
-                    if (serviceDetail == null)
-                    {
-                        _response.StatusCode = HttpStatusCode.OK;
-                        _response.IsSuccess = false;
-                        _response.Messages = ResponseMessages.msgNotFound + "Service";
-                        return Ok(_response);
-                    }
 
-                    string indiaDate = DateTime.Now.ToString(@"yyyy-MM-dd");
-                    var lockStartDateTime = Convert.ToDateTime(indiaDate + " " + serviceDetail.LockTimeStart);
-                    var lockEndDateTime = Convert.ToDateTime(indiaDate + " " + serviceDetail.LockTimeEnd);
-                    var modelFromTime = Convert.ToDateTime(indiaDate + " " + model.lockTimeStart);
-                    var modelToTime = Convert.ToDateTime(indiaDate + " " + model.lockTimeEnd);
-                    var timeSlots = await _context.BookedService.Where(u => u.AppointmentStatus == "Scheduled" && u.ServiceId == model.serviceId && u.SalonId == model.salonId).ToListAsync();
+                //var serviceDetail = await _context.SalonService.Where(u => u.ServiceId == model.serviceId).FirstOrDefaultAsync();
+                //if (model.serviceId > 0)
+                //{
+                //    if (serviceDetail == null)
+                //    {
+                //        _response.StatusCode = HttpStatusCode.OK;
+                //        _response.IsSuccess = false;
+                //        _response.Messages = ResponseMessages.msgNotFound + "Service";
+                //        return Ok(_response);
+                //    }
 
-                    if (modelFromTime > lockStartDateTime || modelToTime < lockEndDateTime)
-                    {
+                //    string indiaDate = DateTime.Now.ToString(@"yyyy-MM-dd");
+                //    var lockStartDateTime = Convert.ToDateTime(indiaDate + " " + serviceDetail.LockTimeStart);
+                //    var lockEndDateTime = Convert.ToDateTime(indiaDate + " " + serviceDetail.LockTimeEnd);
+                //    var modelFromTime = Convert.ToDateTime(indiaDate + " " + model.lockTimeStart);
+                //    var modelToTime = Convert.ToDateTime(indiaDate + " " + model.lockTimeEnd);
+                //    var timeSlots = await _context.BookedService.Where(u => u.AppointmentStatus == "Scheduled" && u.ServiceId == model.serviceId && u.SalonId == model.salonId).ToListAsync();
 
-                        if (modelFromTime <= lockStartDateTime || modelFromTime >= lockStartDateTime)
-                        {
-                            foreach (var item in timeSlots)
-                            {
-                                var scheduledToTime = Convert.ToDateTime(indiaDate + " " + item.ToTime);
-                                var scheduledFromTime = Convert.ToDateTime(indiaDate + " " + item.FromTime);
-                                var fromtime = Convert.ToDateTime(indiaDate + " " + model.lockTimeStart);
-                                var totime = Convert.ToDateTime(indiaDate + " " + model.lockTimeEnd);
-                                if (scheduledFromTime <= modelFromTime && scheduledToTime >= modelFromTime)
-                                {
-                                    _response.StatusCode = HttpStatusCode.OK;
-                                    _response.IsSuccess = false;
-                                    _response.Messages = "Can't update while an appointment is scheduled.";
-                                    return Ok(_response);
-                                }
-                            }
-                        }
-                        if (modelToTime <= lockEndDateTime || modelToTime >= lockEndDateTime)
-                        {
-                            foreach (var item in timeSlots)
-                            {
-                                var scheduledToTime = Convert.ToDateTime(indiaDate + " " + item.ToTime);
-                                var scheduledFromTime = Convert.ToDateTime(indiaDate + " " + item.FromTime);
-                                var fromtime = Convert.ToDateTime(indiaDate + " " + model.lockTimeStart);
-                                var totime = Convert.ToDateTime(indiaDate + " " + model.lockTimeEnd);
-                                if (scheduledToTime > modelToTime && scheduledToTime <= modelToTime)
-                                {
-                                    _response.StatusCode = HttpStatusCode.OK;
-                                    _response.IsSuccess = false;
-                                    _response.Messages = "Can't update while an appointment is scheduled.";
-                                    return Ok(_response);
-                                }
-                            }
-                        }
+                //    if (modelFromTime > lockStartDateTime || modelToTime < lockEndDateTime)
+                //    {
 
-                    }
+                //        if (modelFromTime <= lockStartDateTime || modelFromTime >= lockStartDateTime)
+                //        {
+                //            foreach (var item in timeSlots)
+                //            {
+                //                var scheduledToTime = Convert.ToDateTime(indiaDate + " " + item.ToTime);
+                //                var scheduledFromTime = Convert.ToDateTime(indiaDate + " " + item.FromTime);
+                //                var fromtime = Convert.ToDateTime(indiaDate + " " + model.lockTimeStart);
+                //                var totime = Convert.ToDateTime(indiaDate + " " + model.lockTimeEnd);
+                //                if (scheduledFromTime <= modelFromTime && scheduledToTime >= modelFromTime)
+                //                {
+                //                    _response.StatusCode = HttpStatusCode.OK;
+                //                    _response.IsSuccess = false;
+                //                    _response.Messages = "Can't update while an appointment is scheduled.";
+                //                    return Ok(_response);
+                //                }
+                //            }
+                //        }
+                //        if (modelToTime <= lockEndDateTime || modelToTime >= lockEndDateTime)
+                //        {
+                //            foreach (var item in timeSlots)
+                //            {
+                //                var scheduledToTime = Convert.ToDateTime(indiaDate + " " + item.ToTime);
+                //                var scheduledFromTime = Convert.ToDateTime(indiaDate + " " + item.FromTime);
+                //                var fromtime = Convert.ToDateTime(indiaDate + " " + model.lockTimeStart);
+                //                var totime = Convert.ToDateTime(indiaDate + " " + model.lockTimeEnd);
+                //                if (scheduledToTime > modelToTime && scheduledToTime <= modelToTime)
+                //                {
+                //                    _response.StatusCode = HttpStatusCode.OK;
+                //                    _response.IsSuccess = false;
+                //                    _response.Messages = "Can't update while an appointment is scheduled.";
+                //                    return Ok(_response);
+                //                }
+                //            }
+                //        }
 
-                }
+                //    }
 
-                var scheduledDaysList = new List<string>();
-                if (scheduleDetail.Monday == true)
-                {
-                    scheduledDaysList.Add("Monday");
-                }
-                if (scheduleDetail.Tuesday == true)
-                {
-                    scheduledDaysList.Add("Tuesday");
-                }
-                if (scheduleDetail.Wednesday == true)
-                {
-                    scheduledDaysList.Add("Wednesday");
-                }
-                if (scheduleDetail.Thursday == true)
-                {
-                    scheduledDaysList.Add("Thursday");
-                }
-                if (scheduleDetail.Friday == true)
-                {
-                    scheduledDaysList.Add("Friday");
-                }
-                if (scheduleDetail.Saturday == true)
-                {
-                    scheduledDaysList.Add("Saturday");
-                }
-                if (scheduleDetail.Sunday == true)
-                {
-                    scheduledDaysList.Add("Sunday");
-                }
+                //}
 
-                model.mainCategoryId = model.mainCategoryId == null ? model.mainCategoryId = 0 : model.mainCategoryId;
-                model.subCategoryId = model.subCategoryId == null ? model.subCategoryId = 0 : model.subCategoryId;
+                //var scheduledDaysList = new List<string>();
+                //if (scheduleDetail.Monday == true)
+                //{
+                //    scheduledDaysList.Add("Monday");
+                //}
+                //if (scheduleDetail.Tuesday == true)
+                //{
+                //    scheduledDaysList.Add("Tuesday");
+                //}
+                //if (scheduleDetail.Wednesday == true)
+                //{
+                //    scheduledDaysList.Add("Wednesday");
+                //}
+                //if (scheduleDetail.Thursday == true)
+                //{
+                //    scheduledDaysList.Add("Thursday");
+                //}
+                //if (scheduleDetail.Friday == true)
+                //{
+                //    scheduledDaysList.Add("Friday");
+                //}
+                //if (scheduleDetail.Saturday == true)
+                //{
+                //    scheduledDaysList.Add("Saturday");
+                //}
+                //if (scheduleDetail.Sunday == true)
+                //{
+                //    scheduledDaysList.Add("Sunday");
+                //}
 
-                model.listingPrice = (double)(model.basePrice - model.discount);
+                //model.mainCategoryId = model.mainCategoryId == null ? model.mainCategoryId = 0 : model.mainCategoryId;
+                //model.subCategoryId = model.subCategoryId == null ? model.subCategoryId = 0 : model.subCategoryId;
 
-                // var userDetail = _userManager.FindByIdAsync(currentUserId).GetAwaiter().GetResult();
-                // if (userDetail != null)
-                // {
-                //     var roles = await _userManager.GetRolesAsync(userDetail);
-                //     if (roles[0] == "SuperAdmin")
-                //     {
-                //         model.status = 1;
-                //     }
-                // }
-                model.status = 1;
+                //model.listingPrice = (double)(model.basePrice - model.discount);
 
-                var addUpdateServiceEntity = _mapper.Map<SalonService>(model);
-                GetSalonServiceDTO? response = new GetSalonServiceDTO();
-                var message = "";
+                //// var userDetail = _userManager.FindByIdAsync(currentUserId).GetAwaiter().GetResult();
+                //// if (userDetail != null)
+                //// {
+                ////     var roles = await _userManager.GetRolesAsync(userDetail);
+                ////     if (roles[0] == "SuperAdmin")
+                ////     {
+                ////         model.status = 1;
+                ////     }
+                //// }
+                //model.status = 1;
 
-                if (model.mainCategoryId > 0)
-                {
-                    var isCategoryExist = await _context.MainCategory.Where(u => u.MainCategoryId == model.mainCategoryId).FirstOrDefaultAsync();
-                    if (isCategoryExist == null)
-                    {
-                        _response.StatusCode = HttpStatusCode.OK;
-                        _response.IsSuccess = false;
-                        _response.Messages = ResponseMessages.msgNotFound + "Category";
-                        return Ok(_response);
-                    }
-                }
-                if (model.subCategoryId > 0)
-                {
-                    var isCategoryExist = await _context.SubCategory.Where(u => u.SubCategoryId == model.subCategoryId).FirstOrDefaultAsync();
-                    if (isCategoryExist == null)
-                    {
-                        _response.StatusCode = HttpStatusCode.OK;
-                        _response.IsSuccess = false;
-                        _response.Messages = ResponseMessages.msgNotFound + "Category";
-                        return Ok(_response);
-                    }
-                    addUpdateServiceEntity.MainCategoryId = isCategoryExist.MainCategoryId;
-                }
-                if (model.serviceId == 0)
-                {
-                    await _context.AddAsync(addUpdateServiceEntity);
-                    await _context.SaveChangesAsync();
+                //var addUpdateServiceEntity = _mapper.Map<SalonService>(model);
+                //GetSalonServiceDTO? response = new GetSalonServiceDTO();
+                //var message = "";
 
-                    if (splitIncludeProduct.Count() > 0)
-                    {
-                        var servicePackage = new ServicePackage();
-                        servicePackage.ServiceId = addUpdateServiceEntity.ServiceId;
-                        servicePackage.IncludeServiceId = model.IncludeServiceId;
-                        servicePackage.SalonId = model.salonId;
+                //if (model.mainCategoryId > 0)
+                //{
+                //    var isCategoryExist = await _context.MainCategory.Where(u => u.MainCategoryId == model.mainCategoryId).FirstOrDefaultAsync();
+                //    if (isCategoryExist == null)
+                //    {
+                //        _response.StatusCode = HttpStatusCode.OK;
+                //        _response.IsSuccess = false;
+                //        _response.Messages = ResponseMessages.msgNotFound + "Category";
+                //        return Ok(_response);
+                //    }
+                //}
+                //if (model.subCategoryId > 0)
+                //{
+                //    var isCategoryExist = await _context.SubCategory.Where(u => u.SubCategoryId == model.subCategoryId).FirstOrDefaultAsync();
+                //    if (isCategoryExist == null)
+                //    {
+                //        _response.StatusCode = HttpStatusCode.OK;
+                //        _response.IsSuccess = false;
+                //        _response.Messages = ResponseMessages.msgNotFound + "Category";
+                //        return Ok(_response);
+                //    }
+                //    addUpdateServiceEntity.MainCategoryId = isCategoryExist.MainCategoryId;
+                //}
+                //if (model.serviceId == 0)
+                //{
+                //    await _context.AddAsync(addUpdateServiceEntity);
+                //    await _context.SaveChangesAsync();
 
-                        await _context.AddAsync(servicePackage);
-                        await _context.SaveChangesAsync();
-                    }
+                //    if (splitIncludeProduct.Count() > 0)
+                //    {
+                //        var servicePackage = new ServicePackage();
+                //        servicePackage.ServiceId = addUpdateServiceEntity.ServiceId;
+                //        servicePackage.IncludeServiceId = model.IncludeServiceId;
+                //        servicePackage.SalonId = model.salonId;
 
-                    response = _mapper.Map<GetSalonServiceDTO>(addUpdateServiceEntity);
+                //        await _context.AddAsync(servicePackage);
+                //        await _context.SaveChangesAsync();
+                //    }
 
-                    message = "Service" + ResponseMessages.msgAdditionSuccess;
-                }
-                else
-                {
-                    _mapper.Map(model, serviceDetail);
-                    _context.Update(serviceDetail);
-                    await _context.SaveChangesAsync();
+                //    response = _mapper.Map<GetSalonServiceDTO>(addUpdateServiceEntity);
 
-                    if (splitIncludeProduct.Count() > 0)
-                    {
-                        var servicePackage = await _context.ServicePackage.FirstOrDefaultAsync(u => u.ServiceId == serviceDetail.ServiceId);
-                        if (servicePackage != null)
-                        {
-                            servicePackage.IncludeServiceId = model.IncludeServiceId;
+                //    message = "Service" + ResponseMessages.msgAdditionSuccess;
+                //}
+                //else
+                //{
+                //    _mapper.Map(model, serviceDetail);
+                //    _context.Update(serviceDetail);
+                //    await _context.SaveChangesAsync();
 
-                            _context.Update(servicePackage);
-                            await _context.SaveChangesAsync();
-                        }
-                    }
+                //    if (splitIncludeProduct.Count() > 0)
+                //    {
+                //        var servicePackage = await _context.ServicePackage.FirstOrDefaultAsync(u => u.ServiceId == serviceDetail.ServiceId);
+                //        if (servicePackage != null)
+                //        {
+                //            servicePackage.IncludeServiceId = model.IncludeServiceId;
 
-                    response = _mapper.Map<GetSalonServiceDTO>(serviceDetail);
-                    message = "Service" + ResponseMessages.msgUpdationSuccess;
-                }
+                //            _context.Update(servicePackage);
+                //            await _context.SaveChangesAsync();
+                //        }
+                //    }
 
-                var deleteTimeSlot = _context.TimeSlot.Where(u => u.ServiceId == response.serviceId);
+                //    response = _mapper.Map<GetSalonServiceDTO>(serviceDetail);
+                //    message = "Service" + ResponseMessages.msgUpdationSuccess;
+                //}
 
-                foreach (var item3 in deleteTimeSlot)
-                {
-                    item3.Status = false;
-                }
-                _context.UpdateRange(deleteTimeSlot);
-                await _context.SaveChangesAsync();
+                //var deleteTimeSlot = _context.TimeSlot.Where(u => u.ServiceId == response.serviceId);
 
-                int addDay = 0;
-                for (int i = 0; i < 7; i++)
-                {
-                    DateTime currentDate = DateTime.Now.AddDays(i);
-                    string currentDateStr = currentDate.ToString("yyyy-MM-dd");
-                    string dayName = currentDate.ToString("dddd");
+                //foreach (var item3 in deleteTimeSlot)
+                //{
+                //    item3.Status = false;
+                //}
+                //_context.UpdateRange(deleteTimeSlot);
+                //await _context.SaveChangesAsync();
 
-                    var existingTimeSlot = _context.TimeSlot
-                        .Where(u => u.ServiceId == response.serviceId && u.SlotDate.Date == currentDate.Date)
-                        .ToList();
+                //int addDay = 0;
+                //for (int i = 0; i < 7; i++)
+                //{
+                //    DateTime currentDate = DateTime.Now.AddDays(i);
+                //    string currentDateStr = currentDate.ToString("yyyy-MM-dd");
+                //    string dayName = currentDate.ToString("dddd");
 
-                    if (!scheduledDaysList.Contains(dayName))
-                    {
-                        foreach (var existingSlot in existingTimeSlot)
-                        {
-                            existingSlot.Status = false;
-                        }
+                //    var existingTimeSlot = _context.TimeSlot
+                //        .Where(u => u.ServiceId == response.serviceId && u.SlotDate.Date == currentDate.Date)
+                //        .ToList();
 
-                        _context.UpdateRange(existingTimeSlot);
-                        await _context.SaveChangesAsync();
-                        continue;
-                    }
+                //    if (!scheduledDaysList.Contains(dayName))
+                //    {
+                //        foreach (var existingSlot in existingTimeSlot)
+                //        {
+                //            existingSlot.Status = false;
+                //        }
 
-                    DateTime startDateTime = DateTime.Parse(currentDateStr + " " + scheduleDetail.FromTime);
-                    DateTime endDateTime = DateTime.Parse(currentDateStr + " " + scheduleDetail.ToTime);
-                    int minutes = response.durationInMinutes;
-                    startDateTime = startDateTime.AddMinutes(-minutes);
-                    endDateTime = endDateTime.AddMinutes(-minutes);
+                //        _context.UpdateRange(existingTimeSlot);
+                //        await _context.SaveChangesAsync();
+                //        continue;
+                //    }
 
-                    TimeSpan timeInterval = endDateTime - startDateTime;
-                    int totalMinutes = (int)timeInterval.TotalMinutes;
-                    int noOfTimeSlot = totalMinutes / minutes;
+                //    DateTime startDateTime = DateTime.Parse(currentDateStr + " " + scheduleDetail.FromTime);
+                //    DateTime endDateTime = DateTime.Parse(currentDateStr + " " + scheduleDetail.ToTime);
+                //    int minutes = response.durationInMinutes;
+                //    startDateTime = startDateTime.AddMinutes(-minutes);
+                //    endDateTime = endDateTime.AddMinutes(-minutes);
 
-                    var timeList = new List<TimeList>();
-                    for (int j = 0; j < noOfTimeSlot; j++)
-                    {
-                        TimeList obj1 = new TimeList();
-                        startDateTime = startDateTime.AddMinutes(minutes);
-                        obj1.time = startDateTime.ToString("hh:mm tt");
-                        timeList.Add(obj1);
-                    }
+                //    TimeSpan timeInterval = endDateTime - startDateTime;
+                //    int totalMinutes = (int)timeInterval.TotalMinutes;
+                //    int noOfTimeSlot = totalMinutes / minutes;
 
-                    foreach (var item2 in timeList)
-                    {
-                        var timeslot = new TimeSlot
-                        {
-                            ServiceId = response.serviceId,
-                            FromTime = item2.time,
-                            ToTime = DateTime.Parse(item2.time).AddMinutes(minutes).ToString("hh:mm tt"),
-                            SlotDate = Convert.ToDateTime(currentDate.ToString(@"yyyy-MM-dd")),
-                            SlotCount = response.totalCountPerDuration,
-                            Status = true
-                        };
+                //    var timeList = new List<TimeList>();
+                //    for (int j = 0; j < noOfTimeSlot; j++)
+                //    {
+                //        TimeList obj1 = new TimeList();
+                //        startDateTime = startDateTime.AddMinutes(minutes);
+                //        obj1.time = startDateTime.ToString("hh:mm tt");
+                //        timeList.Add(obj1);
+                //    }
 
-                        bool pass = true;
-                        var existingTimeSlotDetails = existingTimeSlot.FirstOrDefault(u => u.FromTime == timeslot.FromTime);
-                        if (!string.IsNullOrEmpty(model.lockTimeStart))
-                        {
-                            for (int m = 0; m < lockTimeStart.Count; m++)
-                            {
-                                var chkLockedFrom = DateTime.Parse(currentDateStr + " " + lockTimeStart[m].ToString(@"hh:mm tt"));
-                                var chkLockedTo = DateTime.Parse(currentDateStr + " " + lockTimend[m].ToString(@"hh:mm tt"));
-                                var fromTime = DateTime.Parse(currentDateStr + " " + timeslot.FromTime);
-                                var toTime = DateTime.Parse(currentDateStr + " " + timeslot.ToTime);
-                                if ((fromTime <= chkLockedFrom && toTime <= chkLockedFrom) || (fromTime >= chkLockedTo && toTime >= chkLockedTo))
-                                {
-                                    if (existingTimeSlotDetails == null)
-                                    {
-                                        await _context.AddAsync(timeslot);
-                                        await _context.SaveChangesAsync();
-                                    }
-                                    else
-                                    {
-                                        existingTimeSlotDetails.Status = true;
-                                        _context.Update(existingTimeSlotDetails);
-                                        await _context.SaveChangesAsync();
-                                    }
-                                }
-                            }
-                        }
-                        else
-                        {
-                            if (existingTimeSlotDetails == null)
-                            {
-                                await _context.AddAsync(timeslot);
-                                await _context.SaveChangesAsync();
-                            }
-                            else
-                            {
-                                existingTimeSlotDetails.Status = true;
-                                _context.Update(existingTimeSlotDetails);
-                                await _context.SaveChangesAsync();
-                            }
-                        }
-                    }
-                    addDay++;
-                }
+                //    foreach (var item2 in timeList)
+                //    {
+                //        var timeslot = new TimeSlot
+                //        {
+                //            ServiceId = response.serviceId,
+                //            FromTime = item2.time,
+                //            ToTime = DateTime.Parse(item2.time).AddMinutes(minutes).ToString("hh:mm tt"),
+                //            SlotDate = Convert.ToDateTime(currentDate.ToString(@"yyyy-MM-dd")),
+                //            SlotCount = response.totalCountPerDuration,
+                //            Status = true
+                //        };
 
-                _response.StatusCode = HttpStatusCode.OK;
-                _response.IsSuccess = true;
-                _response.Data = response;
-                _response.Messages = message;
-                return Ok(_response);
+                //        bool pass = true;
+                //        var existingTimeSlotDetails = existingTimeSlot.FirstOrDefault(u => u.FromTime == timeslot.FromTime);
+                //        if (!string.IsNullOrEmpty(model.lockTimeStart))
+                //        {
+                //            for (int m = 0; m < lockTimeStart.Count; m++)
+                //            {
+                //                var chkLockedFrom = DateTime.Parse(currentDateStr + " " + lockTimeStart[m].ToString(@"hh:mm tt"));
+                //                var chkLockedTo = DateTime.Parse(currentDateStr + " " + lockTimend[m].ToString(@"hh:mm tt"));
+                //                var fromTime = DateTime.Parse(currentDateStr + " " + timeslot.FromTime);
+                //                var toTime = DateTime.Parse(currentDateStr + " " + timeslot.ToTime);
+                //                if ((fromTime <= chkLockedFrom && toTime <= chkLockedFrom) || (fromTime >= chkLockedTo && toTime >= chkLockedTo))
+                //                {
+                //                    if (existingTimeSlotDetails == null)
+                //                    {
+                //                        await _context.AddAsync(timeslot);
+                //                        await _context.SaveChangesAsync();
+                //                    }
+                //                    else
+                //                    {
+                //                        existingTimeSlotDetails.Status = true;
+                //                        _context.Update(existingTimeSlotDetails);
+                //                        await _context.SaveChangesAsync();
+                //                    }
+                //                }
+                //            }
+                //        }
+                //        else
+                //        {
+                //            if (existingTimeSlotDetails == null)
+                //            {
+                //                await _context.AddAsync(timeslot);
+                //                await _context.SaveChangesAsync();
+                //            }
+                //            else
+                //            {
+                //                existingTimeSlotDetails.Status = true;
+                //                _context.Update(existingTimeSlotDetails);
+                //                await _context.SaveChangesAsync();
+                //            }
+                //        }
+                //    }
+                //    addDay++;
+                //}
 
+                //_response.StatusCode = HttpStatusCode.OK;
+                //_response.IsSuccess = true;
+                //_response.Data = response;
+                //_response.Messages = message;
+                //return Ok(_response);
+
+
+                var response = await _serviceRepository.AddUpdateSalonService(model);
+                return Ok(response);
             }
             catch (Exception ex)
             {

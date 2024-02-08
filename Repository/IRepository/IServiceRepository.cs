@@ -6,7 +6,8 @@ namespace BeautyHubAPI.Repository.IRepository
 {
     public interface IServiceRepository
     {
-
+        Task<Object> addUpdateSalonSchedule([FromBody] ScheduleDayDTO model);
+        Task<Object> AddUpdateSalonService([FromBody] AddUpdateSalonServiceDTO model);
         Task<Object> customerServiceList([FromQuery] SalonServiceFilterationListDTO model, string currentUserId);
         Task<Object> vendorServiceList([FromQuery] SalonServiceFilterationListDTO model, string currentUserId);
         Task<Object> GetSalonServiceDetail(int serviceId, string? serviceType, string currentUserId);
