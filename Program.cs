@@ -75,6 +75,7 @@ builder.Services.AddScoped<UPIService>();
 builder.Services.AddAutoMapper(typeof(MappingConfig));
 builder.Services.AddScoped<ITwilioManager, TwilioManager>();
 builder.Services.Configure<Aws3Services>(builder.Configuration.GetSection("Aws3Services"));
+builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
