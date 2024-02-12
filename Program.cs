@@ -77,6 +77,7 @@ builder.Services.AddScoped<ITwilioManager, TwilioManager>();
 builder.Services.Configure<Aws3Services>(builder.Configuration.GetSection("Aws3Services"));
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<IVendorRepository, VendorRepository>();
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
 builder.Services.AddScoped<IContentRepository, ContentRepository>();

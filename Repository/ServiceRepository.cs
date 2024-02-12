@@ -58,7 +58,6 @@ namespace BeautyHubAPI.Repository
         {
             try
             {
-
                 var Salon = await _context.SalonDetail.Where(a => a.SalonId == model.salonId).FirstOrDefaultAsync();
 
                 // save scheduled time slot
