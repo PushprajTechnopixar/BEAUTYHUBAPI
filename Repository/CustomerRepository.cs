@@ -2179,8 +2179,10 @@ namespace BeautyHubAPI.Repository
 
             query1 = from t1 in _context.SalonService
                      join t2 in _context.MainCategory on t1.MainCategoryId equals t2.MainCategoryId
+                     join t3 in _context.SubCategory on t1.SubcategoryId equals t3.SubCategoryId
                      where t1.IsDeleted != true && t1.SalonId == model.salonId
                      where t1.Status == 1
+                     where (model.genderPreferences == "Male") ? (t2.Male == true && t3.Male == true) : (t2.Female == true && t3.Female == true)
                      // where t1.ServiceType == (model.mainCategoryId != 53 ? "Single" : "Package")
                      // where t6.CustomerUserId == currentUserId
                      orderby t1.CreateDate descending
@@ -2195,7 +2197,7 @@ namespace BeautyHubAPI.Repository
                          mainCategoryId = t1.MainCategoryId,
                          mainCategoryName = t2.CategoryName,
                          subCategoryId = t1.SubcategoryId,
-                         subCategoryName = _context.SubCategory.Where(u => u.SubCategoryId == (t1.SubcategoryId != null ? t1.SubcategoryId : 0)).Select(u => u.CategoryName).FirstOrDefault(),
+                         subCategoryName = t3.CategoryName,
                          serviceDescription = t1.ServiceDescription,
                          serviceImage = t1.ServiceIconImage,
                          listingPrice = t1.ListingPrice,
