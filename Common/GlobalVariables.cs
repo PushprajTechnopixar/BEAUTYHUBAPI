@@ -35,8 +35,8 @@
         // public const string bucketURL = "https://beautyhubtest-file.s3.ap-south-1.amazonaws.com/FileToSave/";
 
 
-        public const string imgURL = "https://salonnearmefile.s3.ap-south-1.amazonaws.com/FileToSave/";
-        public const string bucketURL = "https://salonnearmefile.s3.ap-south-1.amazonaws.com/FileToSave/";
+        public const string imgURL = "https://salon-near-me-file.s3.ap-south-1.amazonaws.com/FileToSave/";
+        public const string bucketURL = "https://salon-near-me-file.s3.ap-south-1.amazonaws.com/FileToSave/";
         public const string imgData = $"data:image/jpeg;base64,";
         public static readonly string vendor_registration = "Vendor_Register.html";
         public static readonly string distributor_registration = "Distributor_Register.html";
@@ -49,7 +49,7 @@
         public static readonly string ExcelFileContainer = "ExcelFiles/";
 
         public static readonly char stringSplitterPipe = '|';
-        public static string distancematrixAPIKey = "AIzaSyBStBK-iNO1S6himB2q41PLm9bSoBfVmP4";
+        public static string distancematrixAPIKey = "AIzaSyBgLMQ8wvy5yda0qP1_8y1e_aJJ_HrTdZw";
         public enum TwilioChannelTypes
         {
             Sms = 1,
