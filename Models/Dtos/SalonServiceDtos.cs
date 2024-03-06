@@ -237,6 +237,8 @@
         public string CategoryImage { get; set; }
         public double? Discount { get; set; }
         public string? MaxOrMinDiscount { get; set; }
+        public bool? male { get; set; }
+        public bool? female { get; set; }
 
     }
 

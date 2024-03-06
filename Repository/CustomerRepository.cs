@@ -54,7 +54,7 @@ namespace BeautyHubAPI.Repository
             _mobileMessagingClient = mobileMessagingClient;
         }
 
-        public async Task<Object> AddSalon([FromBody] AddCustomerSalonDTO model, string currentUserId)
+        public async Task<Object> AddSalon(AddCustomerSalonDTO model, string currentUserId)
         {
             var userProfileDetail = await _context.UserDetail.Where(u => u.UserId == currentUserId).FirstOrDefaultAsync();
 
@@ -404,7 +404,7 @@ namespace BeautyHubAPI.Repository
 
 
         }
-        public async Task<Object> AddCustomerAddress([FromBody] AddCustomerAddressRequestDTO model, string currentUserId)
+        public async Task<Object> AddCustomerAddress(AddCustomerAddressRequestDTO model, string currentUserId)
         {
             var checkCustomerDetail = await _context.CustomerAddress.Where(u => (u.CustomerUserId == currentUserId) && (u.AddressType == model.addressType)).FirstOrDefaultAsync();
 
@@ -427,7 +427,7 @@ namespace BeautyHubAPI.Repository
             return _response;
 
         }
-        public async Task<Object> UpdateCustomerAddress([FromBody] UpdateCustomerAddressRequestDTO model, string currentUserId)
+        public async Task<Object> UpdateCustomerAddress(UpdateCustomerAddressRequestDTO model, string currentUserId)
         {
             var checkCustomerDetail = await _context.CustomerAddress.FirstOrDefaultAsync(u => (u.CustomerAddressId == model.customerAddressId) && (u.AddressType == model.addressType));
             if (checkCustomerDetail != null)
@@ -497,7 +497,7 @@ namespace BeautyHubAPI.Repository
             return _response;
 
         }
-        public async Task<Object> SetCustomerAddressStatus([FromBody] SerCustomerAddressRequestStatusDTO model, string currentUserId)
+        public async Task<Object> SetCustomerAddressStatus(SerCustomerAddressRequestStatusDTO model, string currentUserId)
         {
             var userProfileDetail = await _context.UserDetail.FirstOrDefaultAsync(u => u.UserId == currentUserId);
 
@@ -620,7 +620,7 @@ namespace BeautyHubAPI.Repository
             return _response;
 
         }
-        public async Task<Object> AddServiceToCart([FromBody] AddServiceToCartDTO model, string currentUserId)
+        public async Task<Object> AddServiceToCart(AddServiceToCartDTO model, string currentUserId)
         {
 
             var userProfileDetail = await _context.UserDetail.Where(u => u.UserId == currentUserId).FirstOrDefaultAsync();
@@ -1661,7 +1661,7 @@ namespace BeautyHubAPI.Repository
             return _response;
 
         }
-        public async Task<Object> GetCustomerAppointmentList([FromQuery] CustomerAppointmentFilterationListDTO model, string currentUserId)
+        public async Task<Object> GetCustomerAppointmentList(CustomerAppointmentFilterationListDTO model, string currentUserId)
         {
 
             var ctz = TZConvert.GetTimeZoneInfo("India Standard Time");
@@ -2147,7 +2147,7 @@ namespace BeautyHubAPI.Repository
 
 
         }
-        public async Task<Object> GetCustomerDashboardData([FromQuery] DashboardServiceFilterationListDTO model, string currentUserId)
+        public async Task<Object> GetCustomerDashboardData(DashboardServiceFilterationListDTO model, string currentUserId)
         {
 
             var currentUserDetail = _userManager.FindByIdAsync(currentUserId).GetAwaiter().GetResult();
@@ -2179,8 +2179,10 @@ namespace BeautyHubAPI.Repository
 
             query1 = from t1 in _context.SalonService
                      join t2 in _context.MainCategory on t1.MainCategoryId equals t2.MainCategoryId
+                     join t3 in _context.SubCategory on t1.SubcategoryId equals t3.SubCategoryId
                      where t1.IsDeleted != true && t1.SalonId == model.salonId
                      where t1.Status == 1
+                     where (model.genderPreferences == "Male") ? (t2.Male == true && t3.Male == true) : (t2.Female == true && t3.Female == true)
                      // where t1.ServiceType == (model.mainCategoryId != 53 ? "Single" : "Package")
                      // where t6.CustomerUserId == currentUserId
                      orderby t1.CreateDate descending
@@ -2195,7 +2197,7 @@ namespace BeautyHubAPI.Repository
                          mainCategoryId = t1.MainCategoryId,
                          mainCategoryName = t2.CategoryName,
                          subCategoryId = t1.SubcategoryId,
-                         subCategoryName = _context.SubCategory.Where(u => u.SubCategoryId == (t1.SubcategoryId != null ? t1.SubcategoryId : 0)).Select(u => u.CategoryName).FirstOrDefault(),
+                         subCategoryName = t3.CategoryName,
                          serviceDescription = t1.ServiceDescription,
                          serviceImage = t1.ServiceIconImage,
                          listingPrice = t1.ListingPrice,

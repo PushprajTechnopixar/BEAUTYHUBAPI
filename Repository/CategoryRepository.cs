@@ -33,7 +33,7 @@ namespace BeautyHubAPI.Repository
         }
 
 
-        public async Task<Object> AddCategory([FromBody] AddCategoryDTO model, string currentUserId)
+        public async Task<Object> AddCategory(AddCategoryDTO model, string currentUserId)
         {
             try
             {
@@ -252,7 +252,7 @@ namespace BeautyHubAPI.Repository
                 return _response;
             }
         }
-        public async Task<Object> UpdateCategory([FromBody] UpdateCategoryDTO model, string currentUserId)
+        public async Task<Object> UpdateCategory(UpdateCategoryDTO model, string currentUserId)
         {
             try
             {
@@ -551,7 +551,7 @@ namespace BeautyHubAPI.Repository
                 return _response;
             }
         }
-        public async Task<Object> GetCategoryList([FromQuery] GetCategoryRequestDTO model, string currentUserId)
+        public async Task<Object> GetCategoryList(GetCategoryRequestDTO model, string currentUserId)
         {
             try
             {
@@ -1160,7 +1160,7 @@ namespace BeautyHubAPI.Repository
                 return _response;
             }
         }
-        public async Task<Object> GetCategoryDetail([FromQuery] GetCategoryDetailRequestDTO model)
+        public async Task<Object> GetCategoryDetail(GetCategoryDetailRequestDTO model)
         {
             try
             {
@@ -1241,7 +1241,7 @@ namespace BeautyHubAPI.Repository
                 return _response;
             }
         }
-        public async Task<Object> DeleteCategory([FromQuery] DeleteCategoryDTO model)
+        public async Task<Object> DeleteCategory(DeleteCategoryDTO model)
         {
             try
             {
@@ -1584,7 +1584,7 @@ namespace BeautyHubAPI.Repository
                 return _response;
             }
         }
-        public async Task<Object> SetCategoryStatus([FromBody] CategoryStatusRequestDTO model)
+        public async Task<Object> SetCategoryStatus(CategoryStatusRequestDTO model)
         {
             try
             {

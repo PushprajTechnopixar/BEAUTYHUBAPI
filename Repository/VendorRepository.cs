@@ -246,7 +246,7 @@ namespace BeautyHubAPI.Repository
             return _response;
 
         }
-        public async Task<Object> GetVendorCategoryList([FromQuery] GetCategoryRequestDTO model, string currentUserId)
+        public async Task<Object> GetVendorCategoryList(GetCategoryRequestDTO model, string currentUserId)
         {
             model.categoryType = model.categoryType == null ? 0 : model.categoryType;
             List<VendorCategoryDTO> Categories = new List<VendorCategoryDTO>();
@@ -636,7 +636,7 @@ namespace BeautyHubAPI.Repository
             return _response;
 
         }
-        public async Task<Object> SetVendorCategoryStatus([FromBody] VendorCategoryRequestDTO model, string currentUserId)
+        public async Task<Object> SetVendorCategoryStatus(VendorCategoryRequestDTO model, string currentUserId)
         {
 
             if (model.salonId > 0)
@@ -949,7 +949,7 @@ namespace BeautyHubAPI.Repository
             return _response;
 
         }
-        public async Task<Object> AddSalonBanner([FromForm] AddSalonBannerDTO model)
+        public async Task<Object> AddSalonBanner(AddSalonBannerDTO model)
         {
 
 
@@ -1101,7 +1101,7 @@ namespace BeautyHubAPI.Repository
             }
 
         }
-        public async Task<Object> UpdateSalonBanner([FromForm] UpdateSalonBannerDTO model)
+        public async Task<Object> UpdateSalonBanner(UpdateSalonBannerDTO model)
         {
             if (model.subCategoryId > 0)
             {
@@ -1336,7 +1336,7 @@ namespace BeautyHubAPI.Repository
             }
 
         }
-        public async Task<Object> GetSalonBannerList([FromQuery] GetSalonBannerrequestDTO model)
+        public async Task<Object> GetSalonBannerList(GetSalonBannerrequestDTO model)
         {
 
             var salonBanners = new List<SalonBanner>();
@@ -1446,7 +1446,7 @@ namespace BeautyHubAPI.Repository
             return _response;
 
         }
-        public async Task<Object> GetVendorAppointmentList([FromQuery] OrderFilterationListDTO model)
+        public async Task<Object> GetVendorAppointmentList(OrderFilterationListDTO model)
         {
             List<BookedService>? bookedService;
             double? finalPrice = 0;

@@ -113,14 +113,14 @@ namespace BeautyHubAPI.Repository
             return _response;
         }
 
-        public async Task<Object> UpdateSuperAdminDetail([FromBody] UpdateSuperAdminDTO model,string currentUserId)
+        public async Task<Object> UpdateSuperAdminDetail(UpdateSuperAdminDTO model, string currentUserId)
         {
             var currentUserDetail = _userManager.FindByIdAsync(currentUserId).GetAwaiter().GetResult();
-            
+
             var roles = await _userManager.GetRolesAsync(currentUserDetail);
-            
+
             var adminDetail = _userManager.FindByIdAsync(model.id).GetAwaiter().GetResult();
-            
+
             // var upiCheck = model.upiDetail.Where(u => u.isActive == true).ToList();
             // if (upiCheck.Count > 1)
             // {
@@ -292,7 +292,7 @@ namespace BeautyHubAPI.Repository
             return _response;
         }
 
-        public async Task<Object> AddBanner([FromForm] AddBannerDTO model)
+        public async Task<Object> AddBanner(AddBannerDTO model)
         {
             var banner = _mapper.Map<Banner>(model);
 
@@ -333,7 +333,7 @@ namespace BeautyHubAPI.Repository
 
         }
 
-        public async Task<Object> UpdateBanner([FromForm] UpdateBannerDTO model)
+        public async Task<Object> UpdateBanner(UpdateBannerDTO model)
         {
             var banner = await _bannerRepository.GetAsync(u => u.BannerId == model.bannerId);
             // Delete previous file
@@ -635,7 +635,7 @@ namespace BeautyHubAPI.Repository
             }
         }
 
-        public async Task<Object> AddVendor([FromBody] AddVendorSalonDTO model, string currentUserId)
+        public async Task<Object> AddVendor(AddVendorSalonDTO model, string currentUserId)
         {
             var adminDetail = _userManager.FindByIdAsync(currentUserId).GetAwaiter().GetResult();
 
@@ -784,7 +784,7 @@ namespace BeautyHubAPI.Repository
             return _response;
         }
 
-        public async Task<Object> UpdateVendor([FromBody] UpdateVendorSalonDTO model, string currentUserId)
+        public async Task<Object> UpdateVendor(UpdateVendorSalonDTO model, string currentUserId)
         {
             var currentUserDetail = _userManager.FindByIdAsync(currentUserId).GetAwaiter().GetResult();
             var roles = await _userManager.GetRolesAsync(currentUserDetail);
@@ -1018,7 +1018,7 @@ namespace BeautyHubAPI.Repository
             return _response;
         }
 
-        public async Task<Object> GetVendorList([FromQuery] FilterationListDTO model, string? createdBy, string? status, string? salonType, string currentUserId)
+        public async Task<Object> GetVendorList(FilterationListDTO model, string? createdBy, string? status, string? salonType, string currentUserId)
         {
             var adminDetail = _userManager.FindByIdAsync(currentUserId).GetAwaiter().GetResult();
 
@@ -1215,7 +1215,7 @@ namespace BeautyHubAPI.Repository
             return _response;
         }
 
-        public async Task<Object> DeleteVendor([FromQuery] string VendorId)
+        public async Task<Object> DeleteVendor(string VendorId)
         {
 
             var vendorDetail = _userManager.FindByIdAsync(VendorId).GetAwaiter().GetResult();
@@ -1294,7 +1294,7 @@ namespace BeautyHubAPI.Repository
             return _response;
         }
 
-        public async Task<Object> SetVendorStatus([FromBody] SetVendorStatusDTO model)
+        public async Task<Object> SetVendorStatus(SetVendorStatusDTO model)
         {
             var salonDetails = await _context.SalonDetail.Where(u => (u.VendorId == model.vendorId) && (u.SalonId == model.salonId)).FirstOrDefaultAsync();
 
@@ -1313,7 +1313,7 @@ namespace BeautyHubAPI.Repository
             return _response;
         }
 
-        public async Task<Object> AddAdminUser([FromBody] AdminUserRegisterationRequestDTO model)
+        public async Task<Object> AddAdminUser(AdminUserRegisterationRequestDTO model)
         {
 
             var user = await _userRepo.AdminUserRegistration(model);
@@ -1363,7 +1363,7 @@ namespace BeautyHubAPI.Repository
             return _response;
         }
 
-        public async Task<Object> UpdateAdminUser([FromBody] UpdateAdminUserDTO model, string currentUserId)
+        public async Task<Object> UpdateAdminUser(UpdateAdminUserDTO model, string currentUserId)
         {
             var currentUserDetail = _userManager.FindByIdAsync(currentUserId).GetAwaiter().GetResult();
 
@@ -1416,7 +1416,7 @@ namespace BeautyHubAPI.Repository
             return _response;
         }
 
-        public async Task<Object> GetAdminUserList([FromQuery] FilterationListDTO? model)
+        public async Task<Object> GetAdminUserList(FilterationListDTO? model)
         {
             var adminUsers = await _userManager.GetUsersInRoleAsync(Role.Admin.ToString());
 
@@ -1493,7 +1493,7 @@ namespace BeautyHubAPI.Repository
             return _response;
         }
 
-        public async Task<Object> GetAdminUserDetail([FromQuery] string id, string currentUserId)
+        public async Task<Object> GetAdminUserDetail(string id, string currentUserId)
         {
 
             var adminDetail = _userManager.FindByIdAsync(currentUserId).GetAwaiter().GetResult();
@@ -1530,7 +1530,7 @@ namespace BeautyHubAPI.Repository
             return _response;
         }
 
-        public async Task<Object> DeleteAdminUser([FromQuery] string id)
+        public async Task<Object> DeleteAdminUser(string id)
         {
             var adminDetail = _userManager.FindByIdAsync(id).GetAwaiter().GetResult();
 

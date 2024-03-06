@@ -6,10 +6,10 @@ namespace BeautyHubAPI.Repository.IRepository
 {
     public interface IServiceRepository
     {
-        Task<Object> addUpdateSalonSchedule([FromBody] ScheduleDayDTO model);
-        Task<Object> AddUpdateSalonService([FromBody] AddUpdateSalonServiceDTO model);
-        Task<Object> customerServiceList([FromQuery] SalonServiceFilterationListDTO model, string currentUserId);
-        Task<Object> vendorServiceList([FromQuery] SalonServiceFilterationListDTO model, string currentUserId);
+        Task<Object> addUpdateSalonSchedule(ScheduleDayDTO model);
+        Task<Object> AddUpdateSalonService(AddUpdateSalonServiceDTO model);
+        Task<Object> customerServiceList(SalonServiceFilterationListDTO model, string currentUserId);
+        Task<Object> vendorServiceList(SalonServiceFilterationListDTO model, string currentUserId);
         Task<Object> GetSalonServiceDetail(int serviceId, string? serviceType, string currentUserId);
         Task<Object> DeleteSalonService(int serviceId);
         Task<Object> getServiceImageInBase64(int serviceId, string? Status);

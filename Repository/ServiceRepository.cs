@@ -54,7 +54,7 @@ namespace BeautyHubAPI.Repository
         }
 
 
-        public async Task<Object> addUpdateSalonSchedule([FromBody] ScheduleDayDTO model)
+        public async Task<Object> addUpdateSalonSchedule(ScheduleDayDTO model)
         {
             try
             {
@@ -298,7 +298,7 @@ namespace BeautyHubAPI.Repository
                 return _response;
             }
         }
-        public async Task<Object> AddUpdateSalonService([FromBody] AddUpdateSalonServiceDTO model)
+        public async Task<Object> AddUpdateSalonService(AddUpdateSalonServiceDTO model)
         {
             string[] splitLockTimeStart = model.lockTimeStart.Split(",");
             string[] splitLockTimeend = model.lockTimeEnd.Split(",");
@@ -628,7 +628,7 @@ namespace BeautyHubAPI.Repository
             return _response;
 
         }
-        public async Task<Object> customerServiceList([FromQuery] SalonServiceFilterationListDTO model, string currentUserId)
+        public async Task<Object> customerServiceList(SalonServiceFilterationListDTO model, string currentUserId)
         {
             var currentUserDetail = await _userManager.FindByIdAsync(currentUserId);
 
@@ -908,7 +908,7 @@ namespace BeautyHubAPI.Repository
 
             return _response;
         }
-        public async Task<Object> vendorServiceList([FromQuery] SalonServiceFilterationListDTO model, string currentUserId)
+        public async Task<Object> vendorServiceList(SalonServiceFilterationListDTO model, string currentUserId)
         {
 
             var currentUserDetail = await _userManager.FindByIdAsync(currentUserId);
